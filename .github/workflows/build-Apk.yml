@@ -23,8 +23,11 @@ jobs:
           echo "-----"
           find . -maxdepth 2 -type f | sort
 
-      - name: Donner les droits à Gradle
-        run: chmod +x gradlew
+            - name: Chercher Gradle
+        run: |
+          pwd
+          find . -name gradlew -type f
+      
 
       - name: Construire l'APK
         run: ./gradlew assembleDebug --stacktrace
