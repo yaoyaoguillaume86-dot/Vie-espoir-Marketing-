@@ -8,23 +8,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Recuperer le code
         uses: actions/checkout@v4
 
-      - name: Setup Java
+      - name: Installer Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Make gradlew executable
-        run: chmod +x gradlew
+      - name: Installer Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
 
-      - name: Build APK
-        run: ./gradlew assembleDebug
+      - name: Construire l'APK
+        run: gradle assembleDebug
 
-      - name: Upload APK
+      - name: Recuperer l'APK
         uses: actions/upload-artifact@v4
         with:
           name: Vie-Espoir-Marketing-APK
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
