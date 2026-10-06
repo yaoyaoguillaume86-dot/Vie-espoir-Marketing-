@@ -1,4 +1,4 @@
-package com.example.vieespoirmarketing
+package com.vieespoir.marketing
 
 import android.app.Activity
 import android.os.Bundle
