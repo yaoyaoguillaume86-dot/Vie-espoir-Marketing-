@@ -2,6 +2,7 @@ package com.vieespoir.marketing
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.os.Bundle
 import android.content.Intent
 import android.graphics.Color
 import android.view.Gravity
@@ -11,7 +12,6 @@ import java.util.ArrayList
 
 class MainActivity : Activity() {
 
-    // Liste des produits
     private val produits = ArrayList<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,7 +82,6 @@ class MainActivity : Activity() {
         setContentView(layout)
     }
 
-    // Écran PRODUITS
     private fun afficherProduits() {
 
         val layout = LinearLayout(this)
@@ -99,7 +98,6 @@ class MainActivity : Activity() {
 
         layout.addView(titre)
 
-        // Bouton ajouter
         val ajouter = Button(this)
         ajouter.text = "➕ AJOUTER UN PRODUIT"
         ajouter.textSize = 16f
@@ -110,12 +108,11 @@ class MainActivity : Activity() {
 
         layout.addView(ajouter)
 
-        // Liste des produits
         afficherListeProduits(layout)
 
-        // Bouton retour
         val retour = Button(this)
         retour.text = "⬅ RETOUR"
+
         retour.setOnClickListener {
             afficherAccueil()
         }
@@ -125,7 +122,6 @@ class MainActivity : Activity() {
         setContentView(layout)
     }
 
-    // Afficher la liste des produits
     private fun afficherListeProduits(layout: LinearLayout) {
 
         if (produits.isEmpty()) {
@@ -176,7 +172,6 @@ class MainActivity : Activity() {
         }
     }
 
-    // Fenêtre pour ajouter un produit
     private fun afficherFenetreAjout() {
 
         val zone = LinearLayout(this)
@@ -232,7 +227,6 @@ class MainActivity : Activity() {
             .show()
     }
 
-    // Partager un produit
     private fun partagerProduit(produit: String) {
 
         val message =
@@ -245,12 +239,20 @@ class MainActivity : Activity() {
         intent.type = "text/plain"
         intent.putExtra(Intent.EXTRA_TEXT, message)
 
-        startActivity(
-            Intent.createChooser(
-                intent,
-                "Partager le produit avec"
+        try {
+            startActivity(
+                Intent.createChooser(
+                    intent,
+                    "Partager le produit avec"
+                )
             )
-        )
+        } catch (e: Exception) {
+            Toast.makeText(
+                this,
+                "Aucune application de partage disponible",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     private fun ouvrirEspace(nom: String) {
