@@ -12,277 +12,349 @@ import java.util.ArrayList
 
 class MainActivity : Activity() {
 
-    private val produits = ArrayList<String>()
+    private val produits = ArrayList<Produit>()
+    private val panier = ArrayList<Produit>()
     private val commandes = ArrayList<String>()
-    private val clients = ArrayList<String>()
 
     private lateinit var contenu: LinearLayout
 
+    data class Produit(
+        var nom: String,
+        var prix: Int,
+        var stock: Int
+    )
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Produits de démonstration
+        produits.add(Produit("Super7", 20000, 20))
+        produits.add(Produit("M7", 15000, 15))
+        produits.add(Produit("Women 7", 15000, 10))
+        produits.add(Produit("Timoc", 10000, 12))
+        produits.add(Produit("Café Royal", 5000, 25))
+
         afficherAccueil()
     }
 
-    // =========================
-    // OUTILS
-    // =========================
-
-    private fun baseLayout(): LinearLayout {
-        val layout = LinearLayout(this)
-        layout.orientation = LinearLayout.VERTICAL
-        layout.setPadding(20, 20, 20, 20)
-        layout.setBackgroundColor(Color.WHITE)
-        return layout
-    }
-
-    private fun titre(texte: String): TextView {
-        val tv = TextView(this)
-        tv.text = texte
-        tv.textSize = 25f
-        tv.setTextColor(Color.rgb(0, 110, 70))
-        tv.gravity = Gravity.CENTER
-        tv.setPadding(10, 20, 10, 20)
-        return tv
-    }
-
-    private fun bouton(texte: String): Button {
-        val b = Button(this)
-        b.text = texte
-        b.textSize = 18f
-        b.setTextColor(Color.DKGRAY)
-        b.setBackgroundColor(Color.rgb(220, 222, 222))
-
-        val params = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            65
-        )
-        params.setMargins(0, 8, 0, 8)
-        b.layoutParams = params
-
-        return b
-    }
-
-    private fun retour(layout: LinearLayout) {
-        val b = bouton("⬅ RETOUR À L'ACCUEIL")
-        b.setOnClickListener {
-            afficherAccueil()
-        }
-        layout.addView(b)
-    }
-
-    // =========================
+    // =========================================================
     // ACCUEIL
-    // =========================
+    // =========================================================
 
     private fun afficherAccueil() {
 
-        val layout = baseLayout()
+        val principal = LinearLayout(this)
+        principal.orientation = LinearLayout.VERTICAL
+        principal.setBackgroundColor(Color.WHITE)
+
+        // En-tête
+        val header = LinearLayout(this)
+        header.orientation = LinearLayout.VERTICAL
+        header.gravity = Gravity.CENTER
+        header.setPadding(20, 25, 20, 20)
+        header.setBackgroundColor(Color.WHITE)
 
         val logo = TextView(this)
         logo.text = "🦁"
-        logo.textSize = 70f
+        logo.textSize = 55f
         logo.gravity = Gravity.CENTER
-        layout.addView(logo)
 
-        layout.addView(titre("VIE ESPOIR MARKETING"))
+        val titre = TextView(this)
+        titre.text = "VIE ESPOIR MARKETING"
+        titre.textSize = 25f
+        titre.setTextColor(Color.rgb(0, 110, 75))
+        titre.gravity = Gravity.CENTER
+        titre.setPadding(0, 5, 0, 5)
 
         val sousTitre = TextView(this)
         sousTitre.text = "Votre plateforme de vente"
-        sousTitre.textSize = 20f
+        sousTitre.textSize = 17f
+        sousTitre.setTextColor(Color.DKGRAY)
         sousTitre.gravity = Gravity.CENTER
-        sousTitre.setPadding(0, 0, 0, 20)
-        layout.addView(sousTitre)
 
-        val abonnement = bouton("⭐ ABONNEMENT VENDEUR")
-        abonnement.setOnClickListener {
-            afficherAbonnement()
+        header.addView(logo)
+        header.addView(titre)
+        header.addView(sousTitre)
+
+        principal.addView(header)
+
+        // Zone centrale
+        val scroll = ScrollView(this)
+
+        contenu = LinearLayout(this)
+        contenu.orientation = LinearLayout.VERTICAL
+        contenu.setPadding(18, 10, 18, 20)
+
+        scroll.addView(contenu)
+        principal.addView(
+            scroll,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
+        )
+
+        // Navigation du bas
+        val navigation = LinearLayout(this)
+        navigation.orientation = LinearLayout.HORIZONTAL
+        navigation.gravity = Gravity.CENTER
+        navigation.setPadding(5, 8, 5, 8)
+        navigation.setBackgroundColor(Color.rgb(245, 245, 245))
+
+        val accueil = boutonBas("🏠\nAccueil")
+        val produitsBtn = boutonBas("🛍️\nProduits")
+        val panierBtn = boutonBas("🛒\nPanier")
+        val compte = boutonBas("👤\nCompte")
+
+        accueil.setOnClickListener {
+            afficherAccueil()
         }
-        layout.addView(abonnement)
 
-        val produitsBtn = bouton("📦 PRODUITS")
         produitsBtn.setOnClickListener {
             afficherProduits()
         }
-        layout.addView(produitsBtn)
 
-        val gestionProduits = bouton("⚙️ GESTION DES PRODUITS")
-        gestionProduits.setOnClickListener {
-            afficherGestionProduits()
+        panierBtn.setOnClickListener {
+            afficherPanier()
         }
-        layout.addView(gestionProduits)
 
-        val ventes = bouton("💰 VENTES")
-        ventes.setOnClickListener {
-            afficherVentes()
+        compte.setOnClickListener {
+            afficherCompte()
         }
-        layout.addView(ventes)
 
-        val commandesBtn = bouton("📋 COMMANDES")
-        commandesBtn.setOnClickListener {
-            afficherCommandes()
-        }
-        layout.addView(commandesBtn)
+        navigation.addView(accueil, poidsNavigation())
+        navigation.addView(produitsBtn, poidsNavigation())
+        navigation.addView(panierBtn, poidsNavigation())
+        navigation.addView(compte, poidsNavigation())
 
-        val stock = bouton("📦 GESTION DU STOCK")
-        stock.setOnClickListener {
-            afficherStock()
-        }
-        layout.addView(stock)
+        principal.addView(navigation)
 
-        val clientsBtn = bouton("👥 CLIENTS")
-        clientsBtn.setOnClickListener {
-            afficherClients()
-        }
-        layout.addView(clientsBtn)
+        setContentView(principal)
 
-        val paiement = bouton("💳 MOYENS DE PAIEMENT")
-        paiement.setOnClickListener {
-            afficherPaiements()
-        }
-        layout.addView(paiement)
-
-        val livraison = bouton("🚚 LIVRAISON")
-        livraison.setOnClickListener {
-            afficherLivraison()
-        }
-        layout.addView(livraison)
-
-        val commissions = bouton("💰 COMMISSIONS")
-        commissions.setOnClickListener {
-            afficherCommissions()
-        }
-        layout.addView(commissions)
-
-        val aide = bouton("🆘 AIDE / ASSISTANCE")
-        aide.setOnClickListener {
-            afficherAide()
-        }
-        layout.addView(aide)
-
-        setContentView(layout)
+        afficherMenuAccueil()
     }
 
-    // =========================
-    // ABONNEMENT VENDEUR
-    // =========================
+    // =========================================================
+    // MENU ACCUEIL
+    // =========================================================
 
-    private fun afficherAbonnement() {
+    private fun afficherMenuAccueil() {
 
-        val layout = baseLayout()
-        layout.addView(titre("⭐ ABONNEMENT VENDEUR"))
+        contenu.removeAllViews()
 
-        val info = TextView(this)
-        info.text =
-            "Choisissez un pack vendeur pour publier vos produits et vendre sur Vie Espoir Marketing."
-        info.textSize = 18f
-        info.setPadding(10, 10, 10, 20)
-        layout.addView(info)
-
-        val packs = arrayOf(
-            "PACK STARTER - 10 000 FCFA",
-            "PACK STANDARD - 25 000 FCFA",
-            "PACK PRO - 50 000 FCFA",
-            "PACK PREMIUM - 100 000 FCFA"
+        val recherche = EditText(this)
+        recherche.hint = "🔎 Rechercher un produit..."
+        recherche.setPadding(20, 15, 20, 15)
+        contenu.addView(
+            recherche,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                60
+            )
         )
 
-        for (pack in packs) {
-            val b = bouton(pack)
-            b.setOnClickListener {
-                AlertDialog.Builder(this)
-                    .setTitle("Abonnement vendeur")
-                    .setMessage(
-                        "$pack\n\n" +
-                        "Votre demande d'abonnement a été sélectionnée.\n\n" +
-                        "Choisissez ensuite votre moyen de paiement."
-                    )
-                    .setPositiveButton("CONTINUER", null)
-                    .setNegativeButton("ANNULER", null)
-                    .show()
-            }
-            layout.addView(b)
+        ajouterEspace(12)
+
+        ajouterTitre("Bienvenue sur Vie Espoir Marketing")
+
+        ajouterCarte(
+            "🛍️",
+            "PRODUITS",
+            "Découvrez tous les produits disponibles"
+        ) {
+            afficherProduits()
         }
 
-        retour(layout)
-        setContentView(layout)
+        ajouterCarte(
+            "🏪",
+            "ESPACE VENDEUR",
+            "Gérer vos produits et vos ventes"
+        ) {
+            afficherVendeur()
+        }
+
+        ajouterCarte(
+            "📦",
+            "COMMANDES",
+            "Consulter et suivre les commandes"
+        ) {
+            afficherCommandes()
+        }
+
+        ajouterCarte(
+            "📊",
+            "GESTION DU STOCK",
+            "Voir et gérer votre stock"
+        ) {
+            afficherStock()
+        }
+
+        ajouterCarte(
+            "👥",
+            "CLIENTS",
+            "Gérer vos clients"
+        ) {
+            afficherClients()
+        }
+
+        ajouterCarte(
+            "💳",
+            "PAIEMENTS",
+            "Gérer les paiements"
+        ) {
+            afficherPaiements()
+        }
+
+        ajouterCarte(
+            "🚚",
+            "LIVRAISON",
+            "Suivre les livraisons"
+        ) {
+            afficherLivraison()
+        }
+
+        ajouterCarte(
+            "💰",
+            "COMMISSIONS",
+            "Consulter vos commissions"
+        ) {
+            afficherCommissions()
+        }
+
+        ajouterCarte(
+            "👑",
+            "ADMINISTRATION",
+            "Administration de la plateforme"
+        ) {
+            afficherAdministration()
+        }
     }
 
-    // =========================
+    // =========================================================
     // PRODUITS
-    // =========================
+    // =========================================================
 
     private fun afficherProduits() {
 
-        val layout = baseLayout()
-        layout.addView(titre("📦 PRODUITS"))
+        afficherPage("🛍️ Produits")
 
-        if (produits.isEmpty()) {
+        val recherche = EditText(this)
+        recherche.hint = "Rechercher..."
+        contenu.addView(recherche)
 
-            val vide = TextView(this)
-            vide.text = "Aucun produit enregistré."
-            vide.textSize = 18f
-            vide.gravity = Gravity.CENTER
-            vide.setPadding(10, 30, 10, 30)
-            layout.addView(vide)
+        ajouterEspace(10)
 
-        } else {
+        val ajouter = boutonPrincipal("➕ Ajouter un produit")
 
-            for (produit in produits) {
-                val tv = TextView(this)
-                tv.text = "📦 $produit"
-                tv.textSize = 18f
-                tv.setPadding(15, 15, 15, 15)
-                layout.addView(tv)
-            }
-        }
-
-        val ajouter = bouton("➕ AJOUTER UN PRODUIT")
         ajouter.setOnClickListener {
             ajouterProduit()
         }
-        layout.addView(ajouter)
 
-        retour(layout)
-        setContentView(layout)
+        contenu.addView(ajouter)
+
+        ajouterEspace(10)
+
+        for (produit in produits) {
+
+            val carte = LinearLayout(this)
+            carte.orientation = LinearLayout.VERTICAL
+            carte.setPadding(20, 15, 20, 15)
+            carte.setBackgroundColor(Color.rgb(245, 245, 245))
+
+            val nom = TextView(this)
+            nom.text = "📦 ${produit.nom}"
+            nom.textSize = 20f
+            nom.setTextColor(Color.rgb(0, 100, 70))
+
+            val prix = TextView(this)
+            prix.text = "Prix : ${produit.prix} FCFA"
+            prix.textSize = 17f
+
+            val stock = TextView(this)
+            stock.text = "Stock : ${produit.stock}"
+            stock.textSize = 16f
+
+            val acheter = boutonPrincipal("🛒 Ajouter au panier")
+
+            acheter.setOnClickListener {
+                if (produit.stock > 0) {
+                    panier.add(produit)
+                    produit.stock--
+                    Toast.makeText(
+                        this,
+                        "${produit.nom} ajouté au panier",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    afficherProduits()
+                } else {
+                    Toast.makeText(
+                        this,
+                        "Produit en rupture de stock",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            carte.addView(nom)
+            carte.addView(prix)
+            carte.addView(stock)
+            carte.addView(acheter)
+
+            val params = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+
+            params.setMargins(0, 0, 0, 15)
+
+            contenu.addView(carte, params)
+        }
     }
 
-    // =========================
-    // AJOUT PRODUIT
-    // =========================
+    // =========================================================
+    // AJOUTER PRODUIT
+    // =========================================================
 
     private fun ajouterProduit() {
 
-        val container = LinearLayout(this)
-        container.orientation = LinearLayout.VERTICAL
-        container.setPadding(20, 10, 20, 10)
+        val layout = LinearLayout(this)
+        layout.orientation = LinearLayout.VERTICAL
+        layout.setPadding(30, 10, 30, 10)
 
         val nom = EditText(this)
         nom.hint = "Nom du produit"
 
         val prix = EditText(this)
-        prix.hint = "Prix du produit"
+        prix.hint = "Prix en FCFA"
         prix.inputType = 2
 
-        val quantite = EditText(this)
-        quantite.hint = "Quantité"
-        quantite.inputType = 2
+        val stock = EditText(this)
+        stock.hint = "Quantité en stock"
+        stock.inputType = 2
 
-        container.addView(nom)
-        container.addView(prix)
-        container.addView(quantite)
+        layout.addView(nom)
+        layout.addView(prix)
+        layout.addView(stock)
 
         AlertDialog.Builder(this)
             .setTitle("Ajouter un produit")
-            .setView(container)
-            .setPositiveButton("ENREGISTRER") { _, _ ->
+            .setView(layout)
+            .setNegativeButton("Annuler", null)
+            .setPositiveButton("Ajouter") { _, _ ->
 
-                val nomProduit = nom.text.toString().trim()
-                val prixProduit = prix.text.toString().trim()
-                val qte = quantite.text.toString().trim()
+                val nomProduit = nom.text.toString()
+                val prixProduit = prix.text.toString().toIntOrNull() ?: 0
+                val stockProduit = stock.text.toString().toIntOrNull() ?: 0
 
-                if (nomProduit.isNotEmpty()) {
+                if (nomProduit.isNotEmpty() && prixProduit > 0) {
 
                     produits.add(
-                        "$nomProduit | Prix : $prixProduit FCFA | Stock : $qte"
+                        Produit(
+                            nomProduit,
+                            prixProduit,
+                            stockProduit
+                        )
                     )
 
                     Toast.makeText(
@@ -292,487 +364,799 @@ class MainActivity : Activity() {
                     ).show()
 
                     afficherProduits()
-                }
-            }
-            .setNegativeButton("ANNULER", null)
-            .show()
-    }
 
-    // =========================
-    // GESTION PRODUITS
-    // =========================
-
-    private fun afficherGestionProduits() {
-
-        val layout = baseLayout()
-        layout.addView(titre("⚙️ GESTION DES PRODUITS"))
-
-        val ajouter = bouton("➕ AJOUTER UN PRODUIT")
-        ajouter.setOnClickListener {
-            ajouterProduit()
-        }
-        layout.addView(ajouter)
-
-        val modifier = bouton("✏️ MODIFIER UN PRODUIT")
-        modifier.setOnClickListener {
-            Toast.makeText(
-                this,
-                "Sélectionnez un produit à modifier.",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-        layout.addView(modifier)
-
-        val supprimer = bouton("🗑️ SUPPRIMER UN PRODUIT")
-        supprimer.setOnClickListener {
-
-            if (produits.isEmpty()) {
-                Toast.makeText(
-                    this,
-                    "Aucun produit à supprimer.",
-                    Toast.LENGTH_SHORT
-                ).show()
-            } else {
-
-                val choix = produits.toTypedArray()
-
-                AlertDialog.Builder(this)
-                    .setTitle("Supprimer un produit")
-                    .setItems(choix) { _, position ->
-
-                        produits.removeAt(position)
-
-                        Toast.makeText(
-                            this,
-                            "Produit supprimé.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-
-                        afficherGestionProduits()
-                    }
-                    .show()
-            }
-        }
-        layout.addView(supprimer)
-
-        retour(layout)
-        setContentView(layout)
-    }
-
-    // =========================
-    // VENTES
-    // =========================
-
-    private fun afficherVentes() {
-
-        val layout = baseLayout()
-        layout.addView(titre("💰 VENTES"))
-
-        val chiffre = TextView(this)
-        chiffre.text = "Chiffre d'affaires\n\n0 FCFA"
-        chiffre.textSize = 25f
-        chiffre.gravity = Gravity.CENTER
-        chiffre.setPadding(10, 40, 10, 40)
-
-        layout.addView(chiffre)
-
-        val nouvelleVente = bouton("➕ ENREGISTRER UNE VENTE")
-        nouvelleVente.setOnClickListener {
-
-            AlertDialog.Builder(this)
-                .setTitle("Nouvelle vente")
-                .setMessage("Fonction d'enregistrement de vente.")
-                .setPositiveButton("OK", null)
-                .show()
-        }
-
-        layout.addView(nouvelleVente)
-
-        retour(layout)
-        setContentView(layout)
-    }
-
-    // =========================
-    // COMMANDES
-    // =========================
-
-    private fun afficherCommandes() {
-
-        val layout = baseLayout()
-        layout.addView(titre("📋 COMMANDES"))
-
-        if (commandes.isEmpty()) {
-
-            val tv = TextView(this)
-            tv.text = "Aucune commande pour le moment."
-            tv.textSize = 18f
-            tv.gravity = Gravity.CENTER
-            tv.setPadding(10, 30, 10, 30)
-
-            layout.addView(tv)
-
-        } else {
-
-            for (commande in commandes) {
-
-                val tv = TextView(this)
-                tv.text = "📋 $commande"
-                tv.textSize = 18f
-                tv.setPadding(10, 15, 10, 15)
-
-                layout.addView(tv)
-            }
-        }
-
-        val ajouter = bouton("➕ NOUVELLE COMMANDE")
-
-        ajouter.setOnClickListener {
-
-            val input = EditText(this)
-            input.hint = "Nom du client / produit"
-
-            AlertDialog.Builder(this)
-                .setTitle("Nouvelle commande")
-                .setView(input)
-                .setPositiveButton("ENREGISTRER") { _, _ ->
-
-                    if (input.text.toString().isNotEmpty()) {
-
-                        commandes.add(input.text.toString())
-
-                        Toast.makeText(
-                            this,
-                            "Commande enregistrée.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-
-                        afficherCommandes()
-                    }
-                }
-                .setNegativeButton("ANNULER", null)
-                .show()
-        }
-
-        layout.addView(ajouter)
-
-        retour(layout)
-        setContentView(layout)
-    }
-
-    // =========================
-    // STOCK
-    // =========================
-
-    private fun afficherStock() {
-
-        val layout = baseLayout()
-        layout.addView(titre("📦 GESTION DU STOCK"))
-
-        if (produits.isEmpty()) {
-
-            val tv = TextView(this)
-            tv.text = "Aucun produit dans le stock."
-            tv.textSize = 18f
-            tv.gravity = Gravity.CENTER
-            tv.setPadding(10, 30, 10, 30)
-
-            layout.addView(tv)
-
-        } else {
-
-            for (produit in produits) {
-
-                val tv = TextView(this)
-                tv.text = "📦 $produit"
-                tv.textSize = 17f
-                tv.setPadding(10, 15, 10, 15)
-
-                layout.addView(tv)
-            }
-        }
-
-        val entrée = bouton("➕ ENTRÉE DE STOCK")
-        entrée.setOnClickListener {
-
-            Toast.makeText(
-                this,
-                "Entrée de stock sélectionnée.",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-
-        layout.addView(entrée)
-
-        val sortie = bouton("➖ SORTIE DE STOCK")
-        sortie.setOnClickListener {
-
-            Toast.makeText(
-                this,
-                "Sortie de stock sélectionnée.",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-
-        layout.addView(sortie)
-
-        retour(layout)
-        setContentView(layout)
-    }
-
-    // =========================
-    // CLIENTS
-    // =========================
-
-    private fun afficherClients() {
-
-        val layout = baseLayout()
-        layout.addView(titre("👥 CLIENTS"))
-
-        if (clients.isEmpty()) {
-
-            val tv = TextView(this)
-            tv.text = "Aucun client enregistré."
-            tv.textSize = 18f
-            tv.gravity = Gravity.CENTER
-            tv.setPadding(10, 30, 10, 30)
-
-            layout.addView(tv)
-
-        } else {
-
-            for (client in clients) {
-
-                val tv = TextView(this)
-                tv.text = "👤 $client"
-                tv.textSize = 18f
-                tv.setPadding(10, 15, 10, 15)
-
-                layout.addView(tv)
-            }
-        }
-
-        val ajouter = bouton("➕ AJOUTER UN CLIENT")
-
-        ajouter.setOnClickListener {
-
-            val input = EditText(this)
-            input.hint = "Nom du client"
-
-            AlertDialog.Builder(this)
-                .setTitle("Ajouter un client")
-                .setView(input)
-                .setPositiveButton("ENREGISTRER") { _, _ ->
-
-                    if (input.text.toString().isNotEmpty()) {
-
-                        clients.add(input.text.toString())
-
-                        Toast.makeText(
-                            this,
-                            "Client ajouté.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-
-                        afficherClients()
-                    }
-                }
-                .setNegativeButton("ANNULER", null)
-                .show()
-        }
-
-        layout.addView(ajouter)
-
-        retour(layout)
-        setContentView(layout)
-    }
-
-    // =========================
-    // PAIEMENTS
-    // =========================
-
-    private fun afficherPaiements() {
-
-        val layout = baseLayout()
-        layout.addView(titre("💳 MOYENS DE PAIEMENT"))
-
-        val moyens = arrayOf(
-            "💵 Espèces",
-            "📱 Orange Money",
-            "📱 MTN Mobile Money",
-            "📱 Moov Money",
-            "📱 Wave",
-            "💳 Carte bancaire",
-            "🌐 Paiement en ligne"
-        )
-
-        for (moyen in moyens) {
-
-            val b = bouton(moyen)
-
-            b.setOnClickListener {
-
-                Toast.makeText(
-                    this,
-                    "$moyen sélectionné",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-
-            layout.addView(b)
-        }
-
-        retour(layout)
-        setContentView(layout)
-    }
-
-    // =========================
-    // LIVRAISON
-    // =========================
-
-    private fun afficherLivraison() {
-
-        val layout = baseLayout()
-        layout.addView(titre("🚚 LIVRAISON"))
-
-        val nouvelle = bouton("➕ NOUVELLE LIVRAISON")
-
-        nouvelle.setOnClickListener {
-
-            val adresse = EditText(this)
-            adresse.hint = "Adresse de livraison"
-
-            AlertDialog.Builder(this)
-                .setTitle("Nouvelle livraison")
-                .setView(adresse)
-                .setPositiveButton("ENREGISTRER") { _, _ ->
+                } else {
 
                     Toast.makeText(
                         this,
-                        "Livraison enregistrée.",
+                        "Veuillez remplir correctement les informations",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
-                .setNegativeButton("ANNULER", null)
-                .show()
+            }
+            .show()
+    }
+
+    // =========================================================
+    // PANIER
+    // =========================================================
+
+    private fun afficherPanier() {
+
+        afficherPage("🛒 Mon panier")
+
+        if (panier.isEmpty()) {
+
+            val vide = TextView(this)
+            vide.text = "Votre panier est vide."
+            vide.textSize = 20f
+            vide.gravity = Gravity.CENTER
+            vide.setPadding(10, 50, 10, 50)
+
+            contenu.addView(vide)
+
+            return
         }
 
-        layout.addView(nouvelle)
+        var total = 0
 
-        val suivie = bouton("📍 SUIVRE UNE LIVRAISON")
+        for (produit in panier) {
 
-        suivie.setOnClickListener {
+            val ligne = TextView(this)
 
+            ligne.text =
+                "📦 ${produit.nom}     ${produit.prix} FCFA"
+
+            ligne.textSize = 18f
+            ligne.setPadding(15, 20, 15, 20)
+
+            contenu.addView(ligne)
+
+            total += produit.prix
+        }
+
+        ajouterEspace(10)
+
+        val totalText = TextView(this)
+
+        totalText.text =
+            "TOTAL : $total FCFA"
+
+        totalText.textSize = 22f
+        totalText.setTextColor(Color.rgb(0, 110, 75))
+        totalText.gravity = Gravity.CENTER
+
+        contenu.addView(totalText)
+
+        ajouterEspace(15)
+
+        val commander = boutonPrincipal("✅ PASSER LA COMMANDE")
+
+        commander.setOnClickListener {
+            passerCommande(total)
+        }
+
+        contenu.addView(commander)
+
+        val vider = boutonSecondaire("🗑️ Vider le panier")
+
+        vider.setOnClickListener {
+            panier.clear()
+            afficherPanier()
+        }
+
+        contenu.addView(vider)
+    }
+
+    // =========================================================
+    // COMMANDE
+    // =========================================================
+
+    private fun passerCommande(total: Int) {
+
+        val layout = LinearLayout(this)
+        layout.orientation = LinearLayout.VERTICAL
+        layout.setPadding(30, 10, 30, 10)
+
+        val nom = EditText(this)
+        nom.hint = "Nom du client"
+
+        val telephone = EditText(this)
+        telephone.hint = "Téléphone"
+        telephone.inputType = 2
+
+        val adresse = EditText(this)
+        adresse.hint = "Adresse de livraison"
+
+        val paiement = Spinner(this)
+
+        val moyens = arrayOf(
+            "Espèces à la livraison",
+            "Mobile Money",
+            "Paiement en ligne"
+        )
+
+        paiement.adapter =
+            ArrayAdapter(
+                this,
+                android.R.layout.simple_spinner_dropdown_item,
+                moyens
+            )
+
+        layout.addView(nom)
+        layout.addView(telephone)
+        layout.addView(adresse)
+        layout.addView(paiement)
+
+        AlertDialog.Builder(this)
+            .setTitle("Confirmer la commande")
+            .setMessage("Total : $total FCFA")
+            .setView(layout)
+            .setNegativeButton("Annuler", null)
+            .setPositiveButton("Commander") { _, _ ->
+
+                commandes.add(
+                    "Commande #${commandes.size + 1} - $total FCFA"
+                )
+
+                panier.clear()
+
+                Toast.makeText(
+                    this,
+                    "Commande enregistrée avec succès",
+                    Toast.LENGTH_LONG
+                ).show()
+
+                afficherCommandes()
+            }
+            .show()
+    }
+
+    // =========================================================
+    // COMMANDES
+    // =========================================================
+
+    private fun afficherCommandes() {
+
+        afficherPage("📦 Mes commandes")
+
+        if (commandes.isEmpty()) {
+
+            val texte = TextView(this)
+            texte.text = "Aucune commande pour le moment."
+            texte.textSize = 19f
+            texte.gravity = Gravity.CENTER
+
+            contenu.addView(texte)
+
+            return
+        }
+
+        for (commande in commandes) {
+
+            ajouterCarte(
+                "📦",
+                commande,
+                "Statut : En préparation"
+            ) {
+                Toast.makeText(
+                    this,
+                    "Commande sélectionnée",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    // =========================================================
+    // VENDEUR
+    // =========================================================
+
+    private fun afficherVendeur() {
+
+        afficherPage("🏪 Espace vendeur")
+
+        ajouterCarte(
+            "💳",
+            "ABONNEMENT VENDEUR",
+            "Choisir un pack et activer votre boutique"
+        ) {
+            afficherAbonnement()
+        }
+
+        ajouterCarte(
+            "➕",
+            "MES PRODUITS",
+            "Ajouter et gérer vos produits"
+        ) {
+            afficherProduits()
+        }
+
+        ajouterCarte(
+            "📦",
+            "MES COMMANDES",
+            "Voir les commandes reçues"
+        ) {
+            afficherCommandes()
+        }
+
+        ajouterCarte(
+            "📊",
+            "MON CHIFFRE D'AFFAIRES",
+            "Voir les statistiques de vente"
+        ) {
+            afficherStatistiques()
+        }
+
+        ajouterCarte(
+            "💰",
+            "MES COMMISSIONS",
+            "Consulter les commissions"
+        ) {
+            afficherCommissions()
+        }
+    }
+
+    // =========================================================
+    // ABONNEMENT
+    // =========================================================
+
+    private fun afficherAbonnement() {
+
+        afficherPage("💳 Abonnement vendeur")
+
+        ajouterCarte(
+            "🥉",
+            "PACK STARTER",
+            "Accès vendeur de base"
+        ) {
+            confirmerAbonnement("PACK STARTER")
+        }
+
+        ajouterCarte(
+            "🥈",
+            "PACK BUSINESS",
+            "Plus de produits et plus de fonctionnalités"
+        ) {
+            confirmerAbonnement("PACK BUSINESS")
+        }
+
+        ajouterCarte(
+            "🥇",
+            "PACK PREMIUM",
+            "Accès complet aux fonctionnalités"
+        ) {
+            confirmerAbonnement("PACK PREMIUM")
+        }
+    }
+
+    private fun confirmerAbonnement(pack: String) {
+
+        AlertDialog.Builder(this)
+            .setTitle(pack)
+            .setMessage(
+                "Voulez-vous souscrire à $pack ?"
+            )
+            .setNegativeButton("Annuler", null)
+            .setPositiveButton("Continuer") { _, _ ->
+
+                Toast.makeText(
+                    this,
+                    "Redirection vers le paiement",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+            .show()
+    }
+
+    // =========================================================
+    // STOCK
+    // =========================================================
+
+    private fun afficherStock() {
+
+        afficherPage("📊 Gestion du stock")
+
+        var total = 0
+
+        for (produit in produits) {
+
+            total += produit.stock
+
+            ajouterCarte(
+                "📦",
+                produit.nom,
+                "Stock disponible : ${produit.stock}"
+            ) {
+
+                AlertDialog.Builder(this)
+                    .setTitle(produit.nom)
+                    .setMessage(
+                        "Stock actuel : ${produit.stock}"
+                    )
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+        }
+
+        ajouterEspace(10)
+
+        val totalStock = TextView(this)
+
+        totalStock.text =
+            "TOTAL DES ARTICLES EN STOCK : $total"
+
+        totalStock.textSize = 19f
+        totalStock.gravity = Gravity.CENTER
+
+        contenu.addView(totalStock)
+    }
+
+    // =========================================================
+    // CLIENTS
+    // =========================================================
+
+    private fun afficherClients() {
+
+        afficherPage("👥 Clients")
+
+        ajouterCarte(
+            "👤",
+            "NOUVEAU CLIENT",
+            "Ajouter un client"
+        ) {
+            ajouterClient()
+        }
+
+        ajouterCarte(
+            "📋",
+            "LISTE DES CLIENTS",
+            "Voir vos clients"
+        ) {
             Toast.makeText(
                 this,
-                "Suivi de livraison.",
+                "La liste des clients sera disponible ici",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    private fun ajouterClient() {
+
+        val nom = EditText(this)
+        nom.hint = "Nom du client"
+
+        AlertDialog.Builder(this)
+            .setTitle("Ajouter un client")
+            .setView(nom)
+            .setNegativeButton("Annuler", null)
+            .setPositiveButton("Enregistrer") { _, _ ->
+
+                Toast.makeText(
+                    this,
+                    "Client enregistré",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .show()
+    }
+
+    // =========================================================
+    // PAIEMENTS
+    // =========================================================
+
+    private fun afficherPaiements() {
+
+        afficherPage("💳 Paiements")
+
+        ajouterCarte(
+            "📱",
+            "MOBILE MONEY",
+            "Gérer les paiements Mobile Money"
+        ) {
+            Toast.makeText(
+                this,
+                "Module Mobile Money",
                 Toast.LENGTH_SHORT
             ).show()
         }
 
-        layout.addView(suivie)
+        ajouterCarte(
+            "💵",
+            "ESPÈCES",
+            "Paiement à la livraison"
+        ) {
+            Toast.makeText(
+                this,
+                "Paiement en espèces",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
 
-        retour(layout)
-        setContentView(layout)
+        ajouterCarte(
+            "💳",
+            "PAIEMENT EN LIGNE",
+            "Paiement électronique"
+        ) {
+            Toast.makeText(
+                this,
+                "Module paiement en ligne",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
-    // =========================
+    // =========================================================
+    // LIVRAISON
+    // =========================================================
+
+    private fun afficherLivraison() {
+
+        afficherPage("🚚 Livraison")
+
+        ajouterCarte(
+            "📦",
+            "EN PRÉPARATION",
+            "Commandes en préparation"
+        ) {
+            Toast.makeText(
+                this,
+                "Commandes en préparation",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
+        ajouterCarte(
+            "🚚",
+            "EN LIVRAISON",
+            "Commandes actuellement livrées"
+        ) {
+            Toast.makeText(
+                this,
+                "Commandes en livraison",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
+        ajouterCarte(
+            "✅",
+            "LIVRÉES",
+            "Commandes terminées"
+        ) {
+            Toast.makeText(
+                this,
+                "Commandes livrées",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    // =========================================================
     // COMMISSIONS
-    // =========================
+    // =========================================================
 
     private fun afficherCommissions() {
 
-        val layout = baseLayout()
-        layout.addView(titre("💰 COMMISSIONS"))
+        afficherPage("💰 Commissions")
 
-        val montant = TextView(this)
-        montant.text =
-            "COMMISSION DISPONIBLE\n\n0 FCFA"
-        montant.textSize = 25f
-        montant.gravity = Gravity.CENTER
-        montant.setPadding(10, 40, 10, 40)
-
-        layout.addView(montant)
-
-        val historique = bouton("📊 HISTORIQUE DES COMMISSIONS")
-
-        historique.setOnClickListener {
-
-            AlertDialog.Builder(this)
-                .setTitle("Historique")
-                .setMessage("Aucune commission enregistrée.")
-                .setPositiveButton("OK", null)
-                .show()
+        ajouterCarte(
+            "💵",
+            "COMMISSIONS GAGNÉES",
+            "0 FCFA"
+        ) {
+            Toast.makeText(
+                this,
+                "Aucune commission enregistrée",
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
-        layout.addView(historique)
-
-        val retrait = bouton("💵 DEMANDER UN RETRAIT")
-
-        retrait.setOnClickListener {
-
-            AlertDialog.Builder(this)
-                .setTitle("Demande de retrait")
-                .setMessage(
-                    "Votre demande de retrait sera traitée par l'administration."
-                )
-                .setPositiveButton("CONFIRMER", null)
-                .setNegativeButton("ANNULER", null)
-                .show()
+        ajouterCarte(
+            "📈",
+            "VENTES",
+            "Voir les ventes générant des commissions"
+        ) {
+            afficherStatistiques()
         }
-
-        layout.addView(retrait)
-
-        retour(layout)
-        setContentView(layout)
     }
 
-    // =========================
-    // AIDE
-    // =========================
+    // =========================================================
+    // STATISTIQUES
+    // =========================================================
 
-    private fun afficherAide() {
+    private fun afficherStatistiques() {
 
-        val layout = baseLayout()
-        layout.addView(titre("🆘 AIDE / ASSISTANCE"))
+        afficherPage("📊 Tableau de bord")
 
-        val texte = TextView(this)
+        ajouterCarte(
+            "💰",
+            "CHIFFRE D'AFFAIRES",
+            "0 FCFA"
+        ) {}
 
-        texte.text =
-            """
-            Bienvenue dans Vie Espoir Marketing.
-            
-            Besoin d'aide ?
-            
-            • Problème avec votre abonnement
-            • Problème avec un produit
-            • Problème avec une commande
-            • Problème de paiement
-            • Problème de livraison
-            
-            Contactez l'administration pour obtenir de l'assistance.
-            """.trimIndent()
+        ajouterCarte(
+            "🛒",
+            "COMMANDES",
+            "${commandes.size} commande(s)"
+        ) {}
 
-        texte.textSize = 18f
-        texte.setPadding(15, 20, 15, 30)
+        ajouterCarte(
+            "📦",
+            "PRODUITS",
+            "${produits.size} produit(s)"
+        ) {}
 
-        layout.addView(texte)
+        ajouterCarte(
+            "👥",
+            "CLIENTS",
+            "0 client"
+        ) {}
 
-        val contact = bouton("📞 CONTACTER L'ADMINISTRATION")
+        ajouterCarte(
+            "💵",
+            "COMMISSIONS",
+            "0 FCFA"
+        ) {}
+    }
 
-        contact.setOnClickListener {
+    // =========================================================
+    // ADMINISTRATION
+    // =========================================================
 
-            AlertDialog.Builder(this)
-                .setTitle("Assistance")
-                .setMessage(
-                    "Service d'assistance Vie Espoir Marketing"
-                )
-                .setPositiveButton("OK", null)
-                .show()
+    private fun afficherAdministration() {
+
+        afficherPage("👑 Administration")
+
+        ajouterCarte(
+            "👥",
+            "VENDEURS",
+            "Gérer les vendeurs"
+        ) {
+            Toast.makeText(
+                this,
+                "Gestion des vendeurs",
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
-        layout.addView(contact)
+        ajouterCarte(
+            "🛍️",
+            "PRODUITS",
+            "Gérer tous les produits"
+        ) {
+            afficherProduits()
+        }
 
-        retour(layout)
-        setContentView(layout)
+        ajouterCarte(
+            "📦",
+            "COMMANDES",
+            "Gérer toutes les commandes"
+        ) {
+            afficherCommandes()
+        }
+
+        ajouterCarte(
+            "💳",
+            "ABONNEMENTS",
+            "Gérer les abonnements vendeurs"
+        ) {
+            afficherAbonnement()
+        }
+
+        ajouterCarte(
+            "📊",
+            "STATISTIQUES",
+            "Statistiques générales"
+        ) {
+            afficherStatistiques()
+        }
+    }
+
+    // =========================================================
+    // COMPTE
+    // =========================================================
+
+    private fun afficherCompte() {
+
+        afficherPage("👤 Mon compte")
+
+        ajouterCarte(
+            "👤",
+            "MON PROFIL",
+            "Yao Guillaume"
+        ) {
+            modifierProfil()
+        }
+
+        ajouterCarte(
+            "🏪",
+            "MON ESPACE VENDEUR",
+            "Gérer ma boutique"
+        ) {
+            afficherVendeur()
+        }
+
+        ajouterCarte(
+            "🔔",
+            "NOTIFICATIONS",
+            "Voir mes notifications"
+        ) {
+            Toast.makeText(
+                this,
+                "Aucune nouvelle notification",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
+        ajouterCarte(
+            "⚙️",
+            "PARAMÈTRES",
+            "Paramètres de l'application"
+        ) {
+            Toast.makeText(
+                this,
+                "Paramètres",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    private fun modifierProfil() {
+
+        val nom = EditText(this)
+        nom.setText("Yao Guillaume")
+
+        AlertDialog.Builder(this)
+            .setTitle("Mon profil")
+            .setView(nom)
+            .setNegativeButton("Fermer", null)
+            .setPositiveButton("Enregistrer") { _, _ ->
+                Toast.makeText(
+                    this,
+                    "Profil enregistré",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .show()
+    }
+
+    // =========================================================
+    // OUTILS D'AFFICHAGE
+    // =========================================================
+
+    private fun afficherPage(titrePage: String) {
+
+        contenu.removeAllViews()
+
+        val retour = boutonSecondaire("← Retour à l'accueil")
+
+        retour.setOnClickListener {
+            afficherAccueil()
+        }
+
+        contenu.addView(retour)
+
+        ajouterEspace(10)
+
+        ajouterTitre(titrePage)
+    }
+
+    private fun ajouterTitre(texte: String) {
+
+        val titre = TextView(this)
+
+        titre.text = texte
+        titre.textSize = 23f
+        titre.setTextColor(Color.rgb(0, 110, 75))
+        titre.setPadding(5, 15, 5, 20)
+
+        contenu.addView(titre)
+    }
+
+    private fun ajouterCarte(
+        icone: String,
+        titre: String,
+        description: String,
+        action: () -> Unit
+    ) {
+
+        val carte = LinearLayout(this)
+
+        carte.orientation = LinearLayout.VERTICAL
+        carte.setPadding(20, 18, 20, 18)
+        carte.setBackgroundColor(Color.rgb(242, 244, 244))
+
+        val titreView = TextView(this)
+
+        titreView.text = "$icone  $titre"
+        titreView.textSize = 19f
+        titreView.setTextColor(Color.rgb(0, 100, 70))
+
+        val descriptionView = TextView(this)
+
+        descriptionView.text = description
+        descriptionView.textSize = 15f
+        descriptionView.setTextColor(Color.DKGRAY)
+        descriptionView.setPadding(0, 8, 0, 5)
+
+        carte.addView(titreView)
+        carte.addView(descriptionView)
+
+        carte.setOnClickListener {
+            action()
+        }
+
+        val params = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+
+        params.setMargins(0, 0, 0, 12)
+
+        contenu.addView(carte, params)
+    }
+
+    private fun boutonPrincipal(texte: String): Button {
+
+        val bouton = Button(this)
+
+        bouton.text = texte
+        bouton.textSize = 16f
+        bouton.setTextColor(Color.WHITE)
+        bouton.setBackgroundColor(Color.rgb(0, 120, 80))
+        bouton.gravity = Gravity.CENTER
+
+        bouton.minHeight = 60
+        bouton.setPadding(15, 10, 15, 10)
+
+        return bouton
+    }
+
+    private fun boutonSecondaire(texte: String): Button {
+
+        val bouton = Button(this)
+
+        bouton.text = texte
+        bouton.textSize = 16f
+        bouton.gravity = Gravity.CENTER
+
+        bouton.minHeight = 55
+        bouton.setPadding(15, 10, 15, 10)
+
+        return bouton
+    }
+
+    private fun boutonBas(texte: String): Button {
+
+        val bouton = Button(this)
+
+        bouton.text = texte
+        bouton.textSize = 12f
+        bouton.gravity = Gravity.CENTER
+        bouton.setPadding(2, 2, 2, 2)
+
+        return bouton
+    }
+
+    private fun poidsNavigation(): LinearLayout.LayoutParams {
+
+        return LinearLayout.LayoutParams(
+            0,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+    }
+
+    private fun ajouterEspace(taille: Int) {
+
+        val espace = Space(this)
+
+        contenu.addView(
+            espace,
+            LinearLayout.LayoutParams(
+                1,
+                taille
+            )
+        )
     }
 }
