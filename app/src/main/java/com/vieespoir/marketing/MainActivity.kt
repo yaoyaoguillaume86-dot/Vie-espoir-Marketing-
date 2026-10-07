@@ -3,170 +3,103 @@ package com.vieespoir.marketing
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
-import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
+import android.provider.Settings
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import java.io.Serializable
+import java.util.Locale
 
 class MainActivity : Activity() {
 
     // =========================
-    // PRODUIT
+    // DONNÉES
     // =========================
 
     data class Produit(
-        val id: Int,
         var nom: String,
-        var prix: Int,
-        var categorie: String,
+        var prix: String,
         var description: String,
+        var categorie: String,
         var stock: Int,
-        var image: Bitmap? = null
-    ) : Serializable
-
-    data class PanierItem(
-        val produitId: Int,
-        var quantite: Int
+        var imageUri: String = "",
+        var vendeur: String = "Vie Espoir Marketing"
     )
 
     private val produits = ArrayList<Produit>()
-    private val panier = ArrayList<PanierItem>()
+    private val panier = ArrayList<Produit>()
 
-    private var prochainId = 1
-    private var imageProduit: Bitmap? = null
+    private var logoUri: String = ""
+    private var entreprise = "Vie Espoir Marketing"
+    private var nomVendeur = ""
+    private var telephone = ""
 
-    private val vert = Color.rgb(20, 120, 70)
-    private val grisClair = Color.rgb(245, 245, 245)
-
-    companion object {
-        const val REQUEST_CAMERA = 100
-        const val REQUEST_GALLERY = 101
-    }
+    private lateinit var contenu: LinearLayout
+    private lateinit var titre: TextView
 
     // =========================
-    // DÉMARRAGE
+    // COULEURS
+    // =========================
+
+    private val vert = Color.rgb(20, 125, 78)
+    private val vertClair = Color.rgb(232, 248, 239)
+    private val gris = Color.rgb(245, 245, 245)
+    private val grisTexte = Color.rgb(95, 95, 95)
+
+    // =========================
+    // INITIALISATION
     // =========================
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        chargerProduits()
-
+        chargerDonnees()
+        construireInterface()
         afficherAccueil()
     }
 
     // =========================
-    // PRODUITS DE DÉPART
+    // INTERFACE PRINCIPALE
     // =========================
 
-    private fun chargerProduits() {
+    private fun construireInterface() {
 
-        if (produits.isNotEmpty()) return
+        val principal = LinearLayout(this)
+        principal.orientation = LinearLayout.VERTICAL
+        principal.setBackgroundColor(Color.WHITE)
 
-        ajouterProduit(
-            "Super7",
-            20000,
-            "Santé",
-            "Produit Super7",
-            20
-        )
+        // -------- BARRE DU HAUT --------
 
-        ajouterProduit(
-            "M7",
-            15000,
-            "Santé",
-            "Produit M7",
-            20
-        )
-
-        ajouterProduit(
-            "Women 7",
-            15000,
-            "Femme",
-            "Produit Women 7",
-            20
-        )
-
-        ajouterProduit(
-            "Timoc",
-            10000,
-            "Alimentation",
-            "Produit Timoc",
-            20
-        )
-
-        ajouterProduit(
-            "Café Royal",
-            5000,
-            "Alimentation",
-            "Café Royal",
-            20
-        )
-    }
-
-    private fun ajouterProduit(
-        nom: String,
-        prix: Int,
-        categorie: String,
-        description: String,
-        stock: Int
-    ) {
-        produits.add(
-            Produit(
-                prochainId++,
-                nom,
-                prix,
-                categorie,
-                description,
-                stock
-            )
-        )
-    }
-
-    // =========================
-    // ACCUEIL
-    // =========================
-
-    private fun afficherAccueil() {
-
-        val racine = LinearLayout(this)
-        racine.orientation = LinearLayout.VERTICAL
-        racine.setBackgroundColor(Color.WHITE)
-
-        // ---------------------------------
-        // BARRE DU HAUT
-        // ---------------------------------
-
-        val haut = LinearLayout(this)
-        haut.orientation = LinearLayout.HORIZONTAL
-        haut.gravity = Gravity.CENTER_VERTICAL
-        haut.setPadding(8, 8, 8, 8)
+        val barreHaut = LinearLayout(this)
+        barreHaut.orientation = LinearLayout.HORIZONTAL
+        barreHaut.gravity = Gravity.CENTER_VERTICAL
+        barreHaut.setPadding(12, 8, 12, 8)
 
         val menu = TextView(this)
         menu.text = "☰"
-        menu.textSize = 30f
-        menu.gravity = Gravity.CENTER
+        menu.textSize = 32f
         menu.setTextColor(vert)
+        menu.gravity = Gravity.CENTER
+        menu.setOnClickListener {
+            ouvrirMenu()
+        }
 
-        haut.addView(
+        barreHaut.addView(
             menu,
             LinearLayout.LayoutParams(55, 60)
         )
 
-        val titre = TextView(this)
+        titre = TextView(this)
         titre.text = "VIE ESPOIR MARKETING"
-        titre.textSize = 20f
-        titre.gravity = Gravity.CENTER
+        titre.textSize = 22f
         titre.setTextColor(vert)
         titre.setTypeface(null, android.graphics.Typeface.BOLD)
+        titre.gravity = Gravity.CENTER
 
-        haut.addView(
+        barreHaut.addView(
             titre,
             LinearLayout.LayoutParams(
                 0,
@@ -175,157 +108,32 @@ class MainActivity : Activity() {
             )
         )
 
-        val panierButton = TextView(this)
-        panierButton.text = "🛒"
-        panierButton.textSize = 28f
-        panierButton.gravity = Gravity.CENTER
-
-        haut.addView(
-            panierButton,
-            LinearLayout.LayoutParams(60, 60)
-        )
-
-        racine.addView(haut)
-
-        menu.setOnClickListener {
-            ouvrirMenu()
-        }
-
-        panierButton.setOnClickListener {
+        val panierHaut = TextView(this)
+        panierHaut.text = "🛒"
+        panierHaut.textSize = 27f
+        panierHaut.gravity = Gravity.CENTER
+        panierHaut.setOnClickListener {
             afficherPanier()
         }
 
-        // ---------------------------------
-        // LOGO LION
-        // ---------------------------------
-
-        val logo = TextView(this)
-        logo.text = "🦁"
-        logo.textSize = 65f
-        logo.gravity = Gravity.CENTER
-
-        racine.addView(
-            logo,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                105
-            )
+        barreHaut.addView(
+            panierHaut,
+            LinearLayout.LayoutParams(55, 60)
         )
 
-        // ---------------------------------
-        // CONTENU DÉFILABLE
-        // ---------------------------------
+        principal.addView(barreHaut)
+
+        // -------- CONTENU --------
 
         val scroll = ScrollView(this)
 
-        val contenu = LinearLayout(this)
+        contenu = LinearLayout(this)
         contenu.orientation = LinearLayout.VERTICAL
-        contenu.setPadding(12, 5, 12, 10)
+        contenu.setPadding(16, 5, 16, 20)
 
         scroll.addView(contenu)
 
-        // RECHERCHE
-
-        val recherche = EditText(this)
-        recherche.hint = "🔎 Rechercher un produit"
-        recherche.setSingleLine(true)
-        recherche.setPadding(15, 0, 15, 0)
-
-        contenu.addView(
-            recherche,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                55
-            )
-        )
-
-        // CATÉGORIES
-
-        val titreCategorie = TextView(this)
-        titreCategorie.text = "Catégories"
-        titreCategorie.textSize = 20f
-        titreCategorie.setTypeface(null, android.graphics.Typeface.BOLD)
-        titreCategorie.setPadding(5, 20, 5, 10)
-
-        contenu.addView(titreCategorie)
-
-        val categories = HorizontalScrollView(this)
-
-        val categoriesLayout = LinearLayout(this)
-        categoriesLayout.orientation = LinearLayout.HORIZONTAL
-
-        val nomsCategories = arrayOf(
-            "Tous",
-            "Santé",
-            "Femme",
-            "Alimentation",
-            "Cosmétique"
-        )
-
-        for (categorie in nomsCategories) {
-
-            val bouton = Button(this)
-            bouton.text = categorie
-
-            categoriesLayout.addView(
-                bouton,
-                LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    50
-                )
-            )
-
-            bouton.setOnClickListener {
-
-                afficherProduits(
-                    contenu,
-                    recherche.text.toString(),
-                    categorie
-                )
-            }
-        }
-
-        categories.addView(categoriesLayout)
-
-        contenu.addView(
-            categories,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                60
-            )
-        )
-
-        val titreProduits = TextView(this)
-        titreProduits.text = "Nos produits"
-        titreProduits.textSize = 22f
-        titreProduits.setTypeface(null, android.graphics.Typeface.BOLD)
-        titreProduits.setPadding(5, 20, 5, 10)
-
-        contenu.addView(titreProduits)
-
-        val liste = LinearLayout(this)
-        liste.orientation = LinearLayout.VERTICAL
-
-        contenu.addView(liste)
-
-        afficherProduitsDansListe(
-            liste,
-            "",
-            "Tous"
-        )
-
-        recherche.setOnEditorActionListener { _, _, _ ->
-
-            afficherProduitsDansListe(
-                liste,
-                recherche.text.toString(),
-                "Tous"
-            )
-
-            true
-        }
-
-        racine.addView(
+        principal.addView(
             scroll,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -334,64 +142,275 @@ class MainActivity : Activity() {
             )
         )
 
-        // ---------------------------------
-        // BARRE DU BAS
-        // ---------------------------------
+        // -------- MENU BAS --------
 
-        racine.addView(
-            creerBarreBas(),
+        val menuBas = LinearLayout(this)
+        menuBas.orientation = LinearLayout.HORIZONTAL
+        menuBas.gravity = Gravity.CENTER
+        menuBas.setBackgroundColor(vertClair)
+
+        menuBas.addView(
+            boutonBas("🏠", "Accueil") {
+                afficherAccueil()
+            },
+            poids()
+        )
+
+        menuBas.addView(
+            boutonBas("🛍️", "Produits") {
+                afficherProduits()
+            },
+            poids()
+        )
+
+        menuBas.addView(
+            boutonBas("🛒", "Panier") {
+                afficherPanier()
+            },
+            poids()
+        )
+
+        menuBas.addView(
+            boutonBas("👤", "Compte") {
+                afficherCompte()
+            },
+            poids()
+        )
+
+        principal.addView(
+            menuBas,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                70
+                72
             )
         )
 
-        setContentView(racine)
+        setContentView(principal)
+    }
+
+    private fun poids(): LinearLayout.LayoutParams {
+        return LinearLayout.LayoutParams(
+            0,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            1f
+        )
+    }
+
+    private fun boutonBas(
+        icone: String,
+        nom: String,
+        action: () -> Unit
+    ): LinearLayout {
+
+        val bloc = LinearLayout(this)
+        bloc.orientation = LinearLayout.VERTICAL
+        bloc.gravity = Gravity.CENTER
+        bloc.setOnClickListener {
+            action()
+        }
+
+        val ic = TextView(this)
+        ic.text = icone
+        ic.textSize = 24f
+        ic.gravity = Gravity.CENTER
+
+        val txt = TextView(this)
+        txt.text = nom
+        txt.textSize = 14f
+        txt.setTextColor(vert)
+        txt.gravity = Gravity.CENTER
+
+        bloc.addView(ic)
+        bloc.addView(txt)
+
+        return bloc
     }
 
     // =========================
-    // AFFICHER PRODUITS
+    // ACCUEIL
+    // =========================
+
+    private fun afficherAccueil() {
+
+        vider()
+
+        titre.text = "VIE ESPOIR MARKETING"
+
+        val logo = ImageView(this)
+
+        if (logoUri.isNotEmpty()) {
+            try {
+                logo.setImageURI(Uri.parse(logoUri))
+            } catch (_: Exception) {
+                logo.setImageResource(android.R.drawable.ic_menu_gallery)
+            }
+        } else {
+            logo.setImageResource(android.R.drawable.ic_menu_gallery)
+        }
+
+        logo.scaleType = ImageView.ScaleType.CENTER_INSIDE
+
+        contenu.addView(
+            logo,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                100
+            )
+        )
+
+        val recherche = EditText(this)
+        recherche.hint = "🔎 Rechercher un produit"
+        recherche.textSize = 18f
+        recherche.singleLine = true
+
+        contenu.addView(
+            recherche,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                60
+            )
+        )
+
+        val catTitre = texte("Catégories", 26f, Color.DKGRAY)
+        catTitre.setTypeface(null, android.graphics.Typeface.BOLD)
+
+        contenu.addView(catTitre)
+
+        val categories = LinearLayout(this)
+        categories.orientation = LinearLayout.HORIZONTAL
+
+        val noms = arrayOf(
+            "Tous",
+            "Santé",
+            "Beauté",
+            "Alimentation"
+        )
+
+        for (nom in noms) {
+
+            val b = Button(this)
+            b.text = nom
+            b.textSize = 12f
+
+            b.setOnClickListener {
+                afficherProduits(nom)
+            }
+
+            categories.addView(
+                b,
+                LinearLayout.LayoutParams(
+                    0,
+                    55,
+                    1f
+                )
+            )
+        }
+
+        contenu.addView(categories)
+
+        val produitsTitre = texte(
+            "Nos produits",
+            28f,
+            Color.DKGRAY
+        )
+
+        produitsTitre.setTypeface(
+            null,
+            android.graphics.Typeface.BOLD
+        )
+
+        contenu.addView(produitsTitre)
+
+        val boutonAjouter = Button(this)
+        boutonAjouter.text = "＋ AJOUTER UN PRODUIT"
+        boutonAjouter.textSize = 16f
+        boutonAjouter.setTextColor(Color.WHITE)
+        boutonAjouter.setBackgroundColor(vert)
+
+        boutonAjouter.setOnClickListener {
+            ajouterProduit()
+        }
+
+        contenu.addView(
+            boutonAjouter,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                58
+            )
+        )
+
+        afficherListeProduits()
+    }
+
+    // =========================
+    // PRODUITS
     // =========================
 
     private fun afficherProduits(
-        contenu: LinearLayout,
-        recherche: String,
-        categorie: String
+        categorie: String = "Tous"
     ) {
 
-        if (contenu.childCount == 0) return
+        vider()
 
-        val liste = LinearLayout(this)
-        liste.orientation = LinearLayout.VERTICAL
+        titre.text = "PRODUITS"
 
-        afficherProduitsDansListe(
-            liste,
-            recherche,
-            categorie
+        val recherche = EditText(this)
+        recherche.hint = "🔎 Rechercher un produit"
+        recherche.singleLine = true
+
+        contenu.addView(recherche)
+
+        val ajouter = Button(this)
+        ajouter.text = "＋ AJOUTER UN PRODUIT"
+        ajouter.setTextColor(Color.WHITE)
+        ajouter.setBackgroundColor(vert)
+
+        ajouter.setOnClickListener {
+            ajouterProduit()
+        }
+
+        contenu.addView(ajouter)
+
+        val titreProduits = texte(
+            if (categorie == "Tous")
+                "Nos produits"
+            else
+                categorie,
+            27f,
+            Color.DKGRAY
         )
 
-        contenu.addView(liste)
+        titreProduits.setTypeface(
+            null,
+            android.graphics.Typeface.BOLD
+        )
+
+        contenu.addView(titreProduits)
+
+        afficherListeProduits(categorie)
     }
 
-    private fun afficherProduitsDansListe(
-        liste: LinearLayout,
-        recherche: String,
-        categorie: String
+    private fun afficherListeProduits(
+        categorie: String = "Tous"
     ) {
 
-        liste.removeAllViews()
+        if (produits.isEmpty()) {
+
+            val vide = texte(
+                "Aucun produit publié pour le moment.",
+                18f,
+                grisTexte
+            )
+
+            vide.gravity = Gravity.CENTER
+            vide.setPadding(10, 40, 10, 40)
+
+            contenu.addView(vide)
+
+            return
+        }
 
         for (produit in produits) {
-
-            if (
-                recherche.isNotEmpty() &&
-                !produit.nom.contains(
-                    recherche,
-                    ignoreCase = true
-                )
-            ) {
-                continue
-            }
 
             if (
                 categorie != "Tous" &&
@@ -400,30 +419,33 @@ class MainActivity : Activity() {
                 continue
             }
 
-            liste.addView(
-                creerCarteProduit(produit)
-            )
+            afficherCarteProduit(produit)
         }
     }
 
-    // =========================
-    // CARTE PRODUIT
-    // =========================
-
-    private fun creerCarteProduit(
-        produit: Produit
-    ): LinearLayout {
+    private fun afficherCarteProduit(produit: Produit) {
 
         val carte = LinearLayout(this)
         carte.orientation = LinearLayout.VERTICAL
-        carte.setPadding(10, 10, 10, 10)
-        carte.setBackgroundColor(grisClair)
+        carte.setBackgroundColor(Color.rgb(248, 248, 248))
+        carte.setPadding(8, 8, 8, 8)
 
         val image = ImageView(this)
 
-        if (produit.image != null) {
-            image.setImageBitmap(produit.image)
+        if (produit.imageUri.isNotEmpty()) {
+
+            try {
+                image.setImageURI(
+                    Uri.parse(produit.imageUri)
+                )
+            } catch (_: Exception) {
+                image.setImageResource(
+                    android.R.drawable.ic_menu_gallery
+                )
+            }
+
         } else {
+
             image.setImageResource(
                 android.R.drawable.ic_menu_gallery
             )
@@ -436,13 +458,16 @@ class MainActivity : Activity() {
             image,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                260
+                250
             )
         )
 
-        val nom = TextView(this)
-        nom.text = produit.nom
-        nom.textSize = 21f
+        val nom = texte(
+            produit.nom,
+            23f,
+            Color.DKGRAY
+        )
+
         nom.gravity = Gravity.CENTER
         nom.setTypeface(
             null,
@@ -451,167 +476,206 @@ class MainActivity : Activity() {
 
         carte.addView(nom)
 
-        val prix = TextView(this)
-        prix.text = "${produit.prix} FCFA"
-        prix.textSize = 18f
-        prix.gravity = Gravity.CENTER
-        prix.setTextColor(vert)
-
-        carte.addView(prix)
-
-        val bouton = Button(this)
-        bouton.text = "Voir le produit"
-
-        carte.addView(bouton)
-
-        bouton.setOnClickListener {
-            afficherDetailProduit(produit)
-        }
-
-        carte.setOnClickListener {
-            afficherDetailProduit(produit)
-        }
-
-        val params = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
+        val prix = texte(
+            "${produit.prix} FCFA",
+            21f,
+            vert
         )
 
-        params.setMargins(0, 8, 0, 8)
+        prix.gravity = Gravity.CENTER
+        carte.addView(prix)
 
-        carte.layoutParams = params
+        val stock = texte(
+            "Stock : ${produit.stock}",
+            15f,
+            grisTexte
+        )
 
-        return carte
+        stock.gravity = Gravity.CENTER
+        carte.addView(stock)
+
+        val vendeur = texte(
+            "Vendeur : ${produit.vendeur}",
+            14f,
+            grisTexte
+        )
+
+        vendeur.gravity = Gravity.CENTER
+        carte.addView(vendeur)
+
+        val voir = Button(this)
+        voir.text = "VOIR LE PRODUIT"
+
+        voir.setOnClickListener {
+            detailProduit(produit)
+        }
+
+        carte.addView(voir)
+
+        val partager = Button(this)
+        partager.text = "↗ PARTAGER"
+
+        partager.setOnClickListener {
+            partagerProduit(produit)
+        }
+
+        carte.addView(partager)
+
+        val espace = Space(this)
+
+        contenu.addView(carte)
+
+        contenu.addView(
+            espace,
+            LinearLayout.LayoutParams(
+                1,
+                12
+            )
+        )
+    }
+
+    // =========================
+    // AJOUTER PRODUIT
+    // =========================
+
+    private fun ajouterProduit() {
+
+        val layout = LinearLayout(this)
+        layout.orientation = LinearLayout.VERTICAL
+        layout.setPadding(30, 10, 30, 10)
+
+        val nom = EditText(this)
+        nom.hint = "Nom du produit"
+
+        val prix = EditText(this)
+        prix.hint = "Prix en FCFA"
+        prix.inputType = 2
+
+        val stock = EditText(this)
+        stock.hint = "Stock disponible"
+        stock.inputType = 2
+
+        val description = EditText(this)
+        description.hint = "Description du produit"
+        description.minLines = 3
+
+        val categorie = EditText(this)
+        categorie.hint =
+            "Catégorie : Santé, Beauté..."
+
+        val image = Button(this)
+        image.text = "📷 Choisir la photo du produit"
+
+        var imageChoisie = ""
+
+        image.setOnClickListener {
+
+            val intent = Intent(
+                Intent.ACTION_OPEN_DOCUMENT
+            )
+
+            intent.type = "image/*"
+            intent.addCategory(
+                Intent.CATEGORY_OPENABLE
+            )
+
+            startActivityForResult(
+                intent,
+                1001
+            )
+        }
+
+        layout.addView(nom)
+        layout.addView(prix)
+        layout.addView(stock)
+        layout.addView(categorie)
+        layout.addView(description)
+        layout.addView(image)
+
+        AlertDialog.Builder(this)
+            .setTitle("Ajouter un produit")
+            .setView(layout)
+            .setPositiveButton("PUBLIER") { _, _ ->
+
+                if (nom.text.toString().trim().isEmpty()) {
+                    toast("Veuillez entrer le nom du produit.")
+                    return@setPositiveButton
+                }
+
+                val produit = Produit(
+                    nom = nom.text.toString(),
+                    prix = prix.text.toString()
+                        .ifEmpty { "0" },
+                    description =
+                        description.text.toString(),
+                    categorie =
+                        categorie.text.toString()
+                            .ifEmpty { "Autres" },
+                    stock =
+                        stock.text.toString()
+                            .toIntOrNull() ?: 0,
+                    imageUri = imageChoisie,
+                    vendeur =
+                        if (entreprise.isNotEmpty())
+                            entreprise
+                        else
+                            "Vie Espoir Marketing"
+                )
+
+                produits.add(0, produit)
+
+                sauvegarderDonnees()
+
+                toast(
+                    "Produit publié avec succès !"
+                )
+
+                afficherProduits()
+            }
+            .setNegativeButton("ANNULER", null)
+            .show()
     }
 
     // =========================
     // DÉTAIL PRODUIT
     // =========================
 
-    private fun afficherDetailProduit(
-        produit: Produit
-    ) {
+    private fun detailProduit(produit: Produit) {
 
-        val layout = LinearLayout(this)
-        layout.orientation = LinearLayout.VERTICAL
-        layout.setPadding(20, 20, 20, 20)
+        val message = """
+            ${produit.nom}
 
-        val retour = Button(this)
-        retour.text = "⬅️ Retour"
+            Prix : ${produit.prix} FCFA
 
-        layout.addView(retour)
+            Catégorie :
+            ${produit.categorie}
 
-        retour.setOnClickListener {
-            afficherAccueil()
-        }
+            Stock disponible :
+            ${produit.stock}
 
-        val image = ImageView(this)
+            Vendeur :
+            ${produit.vendeur}
 
-        if (produit.image != null) {
-            image.setImageBitmap(produit.image)
-        } else {
-            image.setImageResource(
-                android.R.drawable.ic_menu_gallery
-            )
-        }
+            ${produit.description}
+        """.trimIndent()
 
-        image.scaleType =
-            ImageView.ScaleType.CENTER_CROP
+        AlertDialog.Builder(this)
+            .setTitle(produit.nom)
+            .setMessage(message)
+            .setPositiveButton("AJOUTER AU PANIER") { _, _ ->
 
-        layout.addView(
-            image,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                350
-            )
-        )
-
-        val nom = TextView(this)
-        nom.text = produit.nom
-        nom.textSize = 26f
-        nom.gravity = Gravity.CENTER
-        nom.setTypeface(
-            null,
-            android.graphics.Typeface.BOLD
-        )
-
-        layout.addView(nom)
-
-        val prix = TextView(this)
-        prix.text = "${produit.prix} FCFA"
-        prix.textSize = 22f
-        prix.gravity = Gravity.CENTER
-        prix.setTextColor(vert)
-
-        layout.addView(prix)
-
-        val description = TextView(this)
-        description.text = produit.description
-        description.textSize = 17f
-        description.setPadding(5, 20, 5, 20)
-
-        layout.addView(description)
-
-        val quantite = EditText(this)
-        quantite.hint = "Quantité"
-        quantite.inputType = 2
-        quantite.setText("1")
-
-        layout.addView(quantite)
-
-        val ajouter = Button(this)
-        ajouter.text = "🛒 Ajouter au panier"
-
-        layout.addView(ajouter)
-
-        ajouter.setOnClickListener {
-
-            val qte =
-                quantite.text.toString()
-                    .toIntOrNull() ?: 1
-
-            if (qte <= 0) {
-                Toast.makeText(
-                    this,
-                    "Quantité incorrecte",
-                    Toast.LENGTH_SHORT
-                ).show()
-                return@setOnClickListener
-            }
-
-            if (qte > produit.stock) {
-                Toast.makeText(
-                    this,
-                    "Stock insuffisant",
-                    Toast.LENGTH_SHORT
-                ).show()
-                return@setOnClickListener
-            }
-
-            val existant =
-                panier.find {
-                    it.produitId == produit.id
+                if (produit.stock > 0) {
+                    panier.add(produit)
+                    toast("Produit ajouté au panier.")
+                } else {
+                    toast("Produit en rupture de stock.")
                 }
-
-            if (existant == null) {
-                panier.add(
-                    PanierItem(
-                        produit.id,
-                        qte
-                    )
-                )
-            } else {
-                existant.quantite += qte
             }
-
-            Toast.makeText(
-                this,
-                "Produit ajouté au panier",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-
-        setContentView(layout)
+            .setNeutralButton("PARTAGER") { _, _ ->
+                partagerProduit(produit)
+            }
+            .setNegativeButton("FERMER", null)
+            .show()
     }
 
     // =========================
@@ -620,92 +684,343 @@ class MainActivity : Activity() {
 
     private fun afficherPanier() {
 
-        val layout = LinearLayout(this)
-        layout.orientation = LinearLayout.VERTICAL
-        layout.setPadding(20, 20, 20, 20)
+        vider()
 
-        val titre = TextView(this)
-        titre.text = "🛒 PANIER"
-        titre.textSize = 25f
-        titre.gravity = Gravity.CENTER
-        titre.setTypeface(
-            null,
-            android.graphics.Typeface.BOLD
-        )
+        titre.text = "PANIER"
 
-        layout.addView(titre)
+        if (panier.isEmpty()) {
+
+            contenu.addView(
+                texte(
+                    "Votre panier est vide.",
+                    20f,
+                    grisTexte
+                )
+            )
+
+            return
+        }
 
         var total = 0
 
-        for (item in panier) {
+        for (produit in panier) {
 
-            val produit =
-                produits.find {
-                    it.id == item.produitId
-                } ?: continue
+            val bloc = LinearLayout(this)
+            bloc.orientation =
+                LinearLayout.VERTICAL
 
-            val ligne = TextView(this)
+            bloc.setPadding(
+                10,
+                10,
+                10,
+                10
+            )
 
-            val sousTotal =
-                produit.prix * item.quantite
+            bloc.addView(
+                texte(
+                    produit.nom,
+                    20f,
+                    Color.DKGRAY
+                )
+            )
 
-            total += sousTotal
+            bloc.addView(
+                texte(
+                    "${produit.prix} FCFA",
+                    18f,
+                    vert
+                )
+            )
 
-            ligne.text =
-                "${produit.nom} x ${item.quantite} = $sousTotal FCFA"
+            total += produit.prix
+                .replace(" ", "")
+                .toIntOrNull() ?: 0
 
-            ligne.textSize = 18f
-            ligne.setPadding(5, 15, 5, 15)
-
-            layout.addView(ligne)
+            contenu.addView(bloc)
         }
 
-        val totalText = TextView(this)
-        totalText.text = "TOTAL : $total FCFA"
-        totalText.textSize = 22f
-        totalText.gravity = Gravity.CENTER
-        totalText.setTypeface(
-            null,
-            android.graphics.Typeface.BOLD
+        contenu.addView(
+            texte(
+                "TOTAL : $total FCFA",
+                23f,
+                vert
+            )
         )
 
-        layout.addView(totalText)
-
         val commander = Button(this)
-        commander.text = "✅ Commander"
-
-        layout.addView(commander)
+        commander.text = "PASSER LA COMMANDE"
 
         commander.setOnClickListener {
 
-            if (panier.isEmpty()) {
+            toast(
+                "Commande enregistrée. Le vendeur pourra vous contacter."
+            )
+        }
 
-                Toast.makeText(
-                    this,
-                    "Le panier est vide",
-                    Toast.LENGTH_SHORT
-                ).show()
+        contenu.addView(commander)
+    }
 
-            } else {
+    // =========================
+    // COMPTE VENDEUR
+    // =========================
 
-                Toast.makeText(
-                    this,
-                    "Commande enregistrée",
-                    Toast.LENGTH_LONG
-                ).show()
+    private fun afficherCompte() {
+
+        vider()
+
+        titre.text = "MON COMPTE"
+
+        val logo = ImageView(this)
+
+        if (logoUri.isNotEmpty()) {
+            logo.setImageURI(
+                Uri.parse(logoUri)
+            )
+        } else {
+            logo.setImageResource(
+                android.R.drawable.ic_menu_myplaces
+            )
+        }
+
+        logo.scaleType =
+            ImageView.ScaleType.CENTER_INSIDE
+
+        contenu.addView(
+            logo,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                150
+            )
+        )
+
+        contenu.addView(
+            texte(
+                entreprise,
+                26f,
+                vert
+            )
+        )
+
+        contenu.addView(
+            texte(
+                if (nomVendeur.isEmpty())
+                    "Vendeur non renseigné"
+                else
+                    nomVendeur,
+                18f,
+                grisTexte
+            )
+        )
+
+        contenu.addView(
+            texte(
+                if (telephone.isEmpty())
+                    "Téléphone non renseigné"
+                else
+                    telephone,
+                18f,
+                grisTexte
+            )
+        )
+
+        val modifier = Button(this)
+        modifier.text = "✏️ MODIFIER MON COMPTE"
+
+        modifier.setOnClickListener {
+            modifierCompte()
+        }
+
+        contenu.addView(modifier)
+
+        val ajouter = Button(this)
+        ajouter.text = "＋ AJOUTER UN PRODUIT"
+
+        ajouter.setOnClickListener {
+            ajouterProduit()
+        }
+
+        contenu.addView(ajouter)
+
+        val mesProduits = Button(this)
+        mesProduits.text = "🛍️ MES PRODUITS"
+
+        mesProduits.setOnClickListener {
+            afficherProduits()
+        }
+
+        contenu.addView(mesProduits)
+
+        val partagerApp = Button(this)
+        partagerApp.text =
+            "↗ PARTAGER VIE ESPOIR MARKETING"
+
+        partagerApp.setOnClickListener {
+            partagerApplication()
+        }
+
+        contenu.addView(partagerApp)
+    }
+
+    // =========================
+    // MODIFIER COMPTE
+    // =========================
+
+    private fun modifierCompte() {
+
+        val layout = LinearLayout(this)
+        layout.orientation =
+            LinearLayout.VERTICAL
+
+        layout.setPadding(
+            30,
+            10,
+            30,
+            10
+        )
+
+        val nom = EditText(this)
+        nom.hint = "Nom du vendeur"
+        nom.setText(nomVendeur)
+
+        val entrepriseInput = EditText(this)
+        entrepriseInput.hint =
+            "Nom de l'entreprise"
+        entrepriseInput.setText(entreprise)
+
+        val tel = EditText(this)
+        tel.hint = "Téléphone"
+        tel.setText(telephone)
+
+        val logo = Button(this)
+        logo.text = "🖼️ Choisir le logo"
+
+        logo.setOnClickListener {
+
+            val intent =
+                Intent(Intent.ACTION_OPEN_DOCUMENT)
+
+            intent.type = "image/*"
+            intent.addCategory(
+                Intent.CATEGORY_OPENABLE
+            )
+
+            startActivityForResult(
+                intent,
+                1002
+            )
+        }
+
+        layout.addView(nom)
+        layout.addView(entrepriseInput)
+        layout.addView(tel)
+        layout.addView(logo)
+
+        AlertDialog.Builder(this)
+            .setTitle("Mon compte vendeur")
+            .setView(layout)
+            .setPositiveButton("ENREGISTRER") { _, _ ->
+
+                nomVendeur =
+                    nom.text.toString()
+
+                entreprise =
+                    entrepriseInput.text
+                        .toString()
+                        .ifEmpty {
+                            "Vie Espoir Marketing"
+                        }
+
+                telephone =
+                    tel.text.toString()
+
+                sauvegarderDonnees()
+
+                afficherCompte()
+
+                toast(
+                    "Compte mis à jour."
+                )
             }
-        }
+            .setNegativeButton(
+                "ANNULER",
+                null
+            )
+            .show()
+    }
 
-        val retour = Button(this)
-        retour.text = "⬅️ Retour"
+    // =========================
+    // PARTAGE PRODUIT
+    // =========================
 
-        layout.addView(retour)
+    private fun partagerProduit(
+        produit: Produit
+    ) {
 
-        retour.setOnClickListener {
-            afficherAccueil()
-        }
+        val texte = """
+            🛍️ ${produit.nom}
 
-        setContentView(layout)
+            💰 Prix : ${produit.prix} FCFA
+
+            📦 Disponible
+
+            🏢 Vendeur :
+            ${produit.vendeur}
+
+            📝 ${produit.description}
+
+            Découvrez ce produit sur
+            Vie Espoir Marketing.
+        """.trimIndent()
+
+        val intent =
+            Intent(Intent.ACTION_SEND)
+
+        intent.type = "text/plain"
+        intent.putExtra(
+            Intent.EXTRA_TEXT,
+            texte
+        )
+
+        startActivity(
+            Intent.createChooser(
+                intent,
+                "Partager le produit"
+            )
+        )
+    }
+
+    // =========================
+    // PARTAGER APPLICATION
+    // =========================
+
+    private fun partagerApplication() {
+
+        val texte = """
+            🛍️ VIE ESPOIR MARKETING
+
+            Découvrez nos produits,
+            commandez et achetez facilement.
+
+            Téléchargez l'application :
+            [LIEN DE L'APPLICATION À AJOUTER]
+        """.trimIndent()
+
+        val intent =
+            Intent(Intent.ACTION_SEND)
+
+        intent.type = "text/plain"
+
+        intent.putExtra(
+            Intent.EXTRA_TEXT,
+            texte
+        )
+
+        startActivity(
+            Intent.createChooser(
+                intent,
+                "Partager l'application"
+            )
+        )
     }
 
     // =========================
@@ -714,601 +1029,358 @@ class MainActivity : Activity() {
 
     private fun ouvrirMenu() {
 
-        val options = arrayOf(
-            "👤 Création de compte",
-            "🏪 Espace vendeur",
-            "💳 Abonnement vendeur",
-            "📦 Gestion des produits",
-            "📊 Stock",
-            "🧾 Commandes",
-            "👑 Administration",
-            "⚙️ Paramètres"
-        )
-
-        AlertDialog.Builder(this)
-            .setTitle("VIE ESPOIR MARKETING")
-            .setItems(options) { _, position ->
-
-                when (position) {
-
-                    0 -> afficherCompte()
-
-                    1 -> afficherVendeur()
-
-                    2 -> afficherAbonnement()
-
-                    3 -> afficherGestionProduits()
-
-                    4 -> afficherStock()
-
-                    5 -> afficherCommandes()
-
-                    6 -> afficherAdministration()
-
-                    7 -> afficherParametres()
-                }
-            }
-            .show()
-    }
-
-    // =========================
-    // COMPTE
-    // =========================
-
-    private fun afficherCompte() {
-
-        val layout = LinearLayout(this)
-        layout.orientation = LinearLayout.VERTICAL
-        layout.setPadding(25, 25, 25, 25)
-
-        val titre = TextView(this)
-        titre.text = "Créer un compte"
-        titre.textSize = 24f
-        titre.gravity = Gravity.CENTER
-
-        layout.addView(titre)
-
-        val nom = EditText(this)
-        nom.hint = "Nom complet"
-        layout.addView(nom)
-
-        val telephone = EditText(this)
-        telephone.hint = "Téléphone"
-        layout.addView(telephone)
-
-        val email = EditText(this)
-        email.hint = "Email"
-        layout.addView(email)
-
-        val bouton = Button(this)
-        bouton.text = "Créer le compte"
-
-        layout.addView(bouton)
-
-        bouton.setOnClickListener {
-
-            Toast.makeText(
-                this,
-                "Compte créé",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-
-        val retour = Button(this)
-        retour.text = "⬅️ Retour"
-
-        layout.addView(retour)
-
-        retour.setOnClickListener {
-            afficherAccueil()
-        }
-
-        setContentView(layout)
-    }
-
-    // =========================
-    // VENDEUR
-    // =========================
-
-    private fun afficherVendeur() {
-
-        val options = arrayOf(
+        val choix = arrayOf(
+            "🏠 Accueil",
+            "🛍️ Produits",
             "➕ Ajouter un produit",
-            "📦 Mes produits",
-            "🧾 Mes commandes",
-            "📊 Mes ventes",
-            "💰 Mes revenus"
+            "👤 Mon compte",
+            "🛒 Mon panier",
+            "↗ Partager l'application"
         )
 
         AlertDialog.Builder(this)
-            .setTitle("Espace vendeur")
-            .setItems(options) { _, position ->
+            .setTitle("Vie Espoir Marketing")
+            .setItems(choix) { _, position ->
 
                 when (position) {
 
-                    0 -> afficherAjoutProduit()
+                    0 -> afficherAccueil()
 
-                    1 -> afficherGestionProduits()
+                    1 -> afficherProduits()
 
-                    2 -> afficherCommandes()
+                    2 -> ajouterProduit()
 
-                    3 -> afficherVentes()
+                    3 -> afficherCompte()
 
-                    4 -> afficherRevenus()
+                    4 -> afficherPanier()
+
+                    5 -> partagerApplication()
                 }
             }
             .show()
     }
 
     // =========================
-    // ABONNEMENT
+    // STOCKAGE
     // =========================
 
-    private fun afficherAbonnement() {
+    private fun sauvegarderDonnees() {
 
-        val packs = arrayOf(
-            "Pack 5 000 FCFA",
-            "Pack 10 000 FCFA",
-            "Pack 25 000 FCFA",
-            "Pack Premium 50 000 FCFA"
+        val prefs =
+            getSharedPreferences(
+                "vie_espoir",
+                MODE_PRIVATE
+            )
+
+        val editor = prefs.edit()
+
+        editor.putString(
+            "entreprise",
+            entreprise
         )
 
-        AlertDialog.Builder(this)
-            .setTitle("Abonnement vendeur")
-            .setItems(packs) { _, position ->
+        editor.putString(
+            "vendeur",
+            nomVendeur
+        )
 
-                Toast.makeText(
-                    this,
-                    packs[position],
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-            .show()
+        editor.putString(
+            "telephone",
+            telephone
+        )
+
+        editor.putString(
+            "logo",
+            logoUri
+        )
+
+        editor.putInt(
+            "nombre_produits",
+            produits.size
+        )
+
+        for (i in produits.indices) {
+
+            val p = produits[i]
+
+            editor.putString(
+                "p_${i}_nom",
+                p.nom
+            )
+
+            editor.putString(
+                "p_${i}_prix",
+                p.prix
+            )
+
+            editor.putString(
+                "p_${i}_description",
+                p.description
+            )
+
+            editor.putString(
+                "p_${i}_categorie",
+                p.categorie
+            )
+
+            editor.putInt(
+                "p_${i}_stock",
+                p.stock
+            )
+
+            editor.putString(
+                "p_${i}_image",
+                p.imageUri
+            )
+
+            editor.putString(
+                "p_${i}_vendeur",
+                p.vendeur
+            )
+        }
+
+        editor.apply()
     }
 
-    // =========================
-    // AJOUT PRODUIT
-    // =========================
+    private fun chargerDonnees() {
 
-    private fun afficherAjoutProduit() {
-
-        imageProduit = null
-
-        val layout = LinearLayout(this)
-        layout.orientation = LinearLayout.VERTICAL
-        layout.setPadding(20, 20, 20, 20)
-
-        val titre = TextView(this)
-        titre.text = "Ajouter un produit"
-        titre.textSize = 24f
-        titre.gravity = Gravity.CENTER
-
-        layout.addView(titre)
-
-        val nom = EditText(this)
-        nom.hint = "Nom du produit"
-        layout.addView(nom)
-
-        val prix = EditText(this)
-        prix.hint = "Prix"
-        prix.inputType = 2
-        layout.addView(prix)
-
-        val categorie = EditText(this)
-        categorie.hint = "Catégorie"
-        layout.addView(categorie)
-
-        val description = EditText(this)
-        description.hint = "Description"
-        layout.addView(description)
-
-        val stock = EditText(this)
-        stock.hint = "Stock"
-        stock.inputType = 2
-        layout.addView(stock)
-
-        val image = ImageView(this)
-
-        image.setImageResource(
-            android.R.drawable.ic_menu_gallery
-        )
-
-        layout.addView(
-            image,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                280
+        val prefs =
+            getSharedPreferences(
+                "vie_espoir",
+                MODE_PRIVATE
             )
-        )
 
-        val camera = Button(this)
-        camera.text = "📷 Prendre une photo"
-        layout.addView(camera)
+        entreprise =
+            prefs.getString(
+                "entreprise",
+                "Vie Espoir Marketing"
+            ) ?: "Vie Espoir Marketing"
 
-        camera.setOnClickListener {
-            ouvrirCamera()
-        }
+        nomVendeur =
+            prefs.getString(
+                "vendeur",
+                ""
+            ) ?: ""
 
-        val galerie = Button(this)
-        galerie.text = "🖼️ Choisir dans la galerie"
-        layout.addView(galerie)
+        telephone =
+            prefs.getString(
+                "telephone",
+                ""
+            ) ?: ""
 
-        galerie.setOnClickListener {
-            ouvrirGalerie()
-        }
+        logoUri =
+            prefs.getString(
+                "logo",
+                ""
+            ) ?: ""
 
-        val enregistrer = Button(this)
-        enregistrer.text = "✅ Enregistrer le produit"
-        layout.addView(enregistrer)
+        produits.clear()
 
-        enregistrer.setOnClickListener {
+        val nombre =
+            prefs.getInt(
+                "nombre_produits",
+                0
+            )
 
-            val nomTexte =
-                nom.text.toString().trim()
-
-            val prixTexte =
-                prix.text.toString().toIntOrNull()
-
-            val stockTexte =
-                stock.text.toString().toIntOrNull()
-
-            if (
-                nomTexte.isEmpty() ||
-                prixTexte == null ||
-                stockTexte == null
-            ) {
-
-                Toast.makeText(
-                    this,
-                    "Remplissez les informations",
-                    Toast.LENGTH_SHORT
-                ).show()
-
-                return@setOnClickListener
-            }
+        for (i in 0 until nombre) {
 
             produits.add(
                 Produit(
-                    prochainId++,
-                    nomTexte,
-                    prixTexte,
-                    categorie.text.toString(),
-                    description.text.toString(),
-                    stockTexte,
-                    imageProduit
+                    nom =
+                        prefs.getString(
+                            "p_${i}_nom",
+                            ""
+                        ) ?: "",
+
+                    prix =
+                        prefs.getString(
+                            "p_${i}_prix",
+                            "0"
+                        ) ?: "0",
+
+                    description =
+                        prefs.getString(
+                            "p_${i}_description",
+                            ""
+                        ) ?: "",
+
+                    categorie =
+                        prefs.getString(
+                            "p_${i}_categorie",
+                            "Autres"
+                        ) ?: "Autres",
+
+                    stock =
+                        prefs.getInt(
+                            "p_${i}_stock",
+                            0
+                        ),
+
+                    imageUri =
+                        prefs.getString(
+                            "p_${i}_image",
+                            ""
+                        ) ?: "",
+
+                    vendeur =
+                        prefs.getString(
+                            "p_${i}_vendeur",
+                            entreprise
+                        ) ?: entreprise
+                )
+            )
+        }
+
+        // Produits de départ
+        if (produits.isEmpty()) {
+
+            produits.add(
+                Produit(
+                    "M7",
+                    "15000",
+                    "Produit M7",
+                    "Santé",
+                    10
                 )
             )
 
-            Toast.makeText(
-                this,
-                "Produit ajouté avec succès",
-                Toast.LENGTH_LONG
-            ).show()
-
-            afficherAccueil()
-        }
-
-        setContentView(layout)
-    }
-
-    // =========================
-    // CAMÉRA
-    // =========================
-
-    private fun ouvrirCamera() {
-
-        try {
-
-            val intent =
-                Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-
-            startActivityForResult(
-                intent,
-                REQUEST_CAMERA
+            produits.add(
+                Produit(
+                    "Women 7",
+                    "15000",
+                    "Produit Women 7",
+                    "Santé",
+                    10
+                )
             )
 
-        } catch (e: Exception) {
+            produits.add(
+                Produit(
+                    "Super7",
+                    "20000",
+                    "Produit Super7",
+                    "Santé",
+                    10
+                )
+            )
 
-            Toast.makeText(
-                this,
-                "Caméra indisponible",
-                Toast.LENGTH_LONG
-            ).show()
+            produits.add(
+                Produit(
+                    "Timoc",
+                    "15000",
+                    "Produit Timoc",
+                    "Alimentation",
+                    10
+                )
+            )
+
+            sauvegarderDonnees()
         }
     }
 
     // =========================
-    // GALERIE
+    // IMAGE
     // =========================
 
-    private fun ouvrirGalerie() {
-
-        val intent = Intent(
-            Intent.ACTION_PICK,
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        )
-
-        startActivityForResult(
-            intent,
-            REQUEST_GALLERY
-        )
-    }
-
-    // =========================
-    // RETOUR IMAGE
-    // =========================
-
-    @Suppress("DEPRECATION")
     override fun onActivityResult(
         requestCode: Int,
         resultCode: Int,
         data: Intent?
     ) {
-
         super.onActivityResult(
             requestCode,
             resultCode,
             data
         )
 
-        if (resultCode != RESULT_OK) return
+        if (
+            resultCode == RESULT_OK &&
+            data != null &&
+            data.data != null
+        ) {
 
-        when (requestCode) {
+            val uri = data.data!!
 
-            REQUEST_CAMERA -> {
+            try {
 
-                val bitmap =
-                    data?.extras?.get("data")
-                        as? Bitmap
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
 
-                if (bitmap != null) {
-
-                    imageProduit = bitmap
-
-                    Toast.makeText(
-                        this,
-                        "Photo prise",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+            } catch (_: Exception) {
             }
 
-            REQUEST_GALLERY -> {
+            if (requestCode == 1002) {
 
-                val uri: Uri? = data?.data
+                logoUri =
+                    uri.toString()
 
-                if (uri != null) {
+                sauvegarderDonnees()
 
-                    try {
+                afficherCompte()
 
-                        imageProduit =
-                            MediaStore.Images.Media.getBitmap(
-                                contentResolver,
-                                uri
-                            )
+                toast(
+                    "Logo enregistré."
+                )
+            }
 
-                        Toast.makeText(
-                            this,
-                            "Photo sélectionnée",
-                            Toast.LENGTH_SHORT
-                        ).show()
+            if (requestCode == 1001) {
 
-                    } catch (e: Exception) {
+                toast(
+                    "Photo du produit sélectionnée. Appuyez sur PUBLIER."
+                )
 
-                        Toast.makeText(
-                            this,
-                            "Impossible de charger la photo",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
+                // La photo sélectionnée est conservée
+                // pour le prochain ajout.
+                getSharedPreferences(
+                    "temp",
+                    MODE_PRIVATE
+                )
+                    .edit()
+                    .putString(
+                        "photo_produit",
+                        uri.toString()
+                    )
+                    .apply()
             }
         }
     }
 
     // =========================
-    // GESTION PRODUITS
+    // OUTILS
     // =========================
 
-    private fun afficherGestionProduits() {
-
-        val noms = produits.map {
-            "${it.nom} - ${it.prix} FCFA"
-        }.toTypedArray()
-
-        AlertDialog.Builder(this)
-            .setTitle("Gestion des produits")
-            .setItems(noms) { _, position ->
-
-                val produit = produits[position]
-
-                AlertDialog.Builder(this)
-                    .setTitle(produit.nom)
-                    .setItems(
-                        arrayOf(
-                            "Supprimer"
-                        )
-                    ) { _, _ ->
-
-                        produits.remove(produit)
-
-                        Toast.makeText(
-                            this,
-                            "Produit supprimé",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                    .show()
-            }
-            .show()
+    private fun vider() {
+        contenu.removeAllViews()
     }
 
-    // =========================
-    // STOCK
-    // =========================
-
-    private fun afficherStock() {
-
-        val texte = StringBuilder()
-
-        for (produit in produits) {
-
-            texte.append(
-                "${produit.nom} : ${produit.stock}\n"
-            )
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle("📊 Stock")
-            .setMessage(texte.toString())
-            .setPositiveButton("OK", null)
-            .show()
-    }
-
-    // =========================
-    // COMMANDES
-    // =========================
-
-    private fun afficherCommandes() {
-
-        AlertDialog.Builder(this)
-            .setTitle("🧾 Commandes")
-            .setMessage(
-                "Les commandes apparaîtront ici."
-            )
-            .setPositiveButton("OK", null)
-            .show()
-    }
-
-    private fun afficherVentes() {
-
-        AlertDialog.Builder(this)
-            .setTitle("📊 Ventes")
-            .setMessage(
-                "Les ventes apparaîtront ici."
-            )
-            .setPositiveButton("OK", null)
-            .show()
-    }
-
-    private fun afficherRevenus() {
-
-        AlertDialog.Builder(this)
-            .setTitle("💰 Revenus")
-            .setMessage(
-                "Les revenus apparaîtront ici."
-            )
-            .setPositiveButton("OK", null)
-            .show()
-    }
-
-    // =========================
-    // ADMINISTRATION
-    // =========================
-
-    private fun afficherAdministration() {
-
-        val options = arrayOf(
-            "Utilisateurs",
-            "Vendeurs",
-            "Produits",
-            "Stock",
-            "Commandes",
-            "Abonnements",
-            "Paiements",
-            "Rapports"
-        )
-
-        AlertDialog.Builder(this)
-            .setTitle("👑 Administration")
-            .setItems(options) { _, position ->
-
-                Toast.makeText(
-                    this,
-                    options[position],
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-            .show()
-    }
-
-    private fun afficherParametres() {
-
-        AlertDialog.Builder(this)
-            .setTitle("⚙️ Paramètres")
-            .setMessage(
-                "Paramètres de VIE ESPOIR MARKETING"
-            )
-            .setPositiveButton("OK", null)
-            .show()
-    }
-
-    // =========================
-    // BARRE DU BAS
-    // =========================
-
-    private fun creerBarreBas(): LinearLayout {
-
-        val barre = LinearLayout(this)
-        barre.orientation = LinearLayout.HORIZONTAL
-        barre.gravity = Gravity.CENTER
-        barre.setBackgroundColor(Color.rgb(235, 248, 240))
-
-        val accueil = boutonBas("🏠\nAccueil")
-        val produits = boutonBas("🛍️\nProduits")
-        val panier = boutonBas("🛒\nPanier")
-        val compte = boutonBas("👤\nCompte")
-
-        barre.addView(
-            accueil,
-            LinearLayout.LayoutParams(0, 70, 1f)
-        )
-
-        barre.addView(
-            produits,
-            LinearLayout.LayoutParams(0, 70, 1f)
-        )
-
-        barre.addView(
-            panier,
-            LinearLayout.LayoutParams(0, 70, 1f)
-        )
-
-        barre.addView(
-            compte,
-            LinearLayout.LayoutParams(0, 70, 1f)
-        )
-
-        accueil.setOnClickListener {
-            afficherAccueil()
-        }
-
-        produits.setOnClickListener {
-            afficherAccueil()
-        }
-
-        panier.setOnClickListener {
-            afficherPanier()
-        }
-
-        compte.setOnClickListener {
-            afficherCompte()
-        }
-
-        return barre
-    }
-
-    private fun boutonBas(
-        texte: String
+    private fun texte(
+        valeur: String,
+        taille: Float,
+        couleur: Int
     ): TextView {
 
-        val bouton = TextView(this)
+        val t = TextView(this)
 
-        bouton.text = texte
-        bouton.textSize = 13f
-        bouton.gravity = Gravity.CENTER
-        bouton.setTextColor(vert)
+        t.text = valeur
+        t.textSize = taille
+        t.setTextColor(couleur)
+        t.setPadding(
+            5,
+            10,
+            5,
+            10
+        )
 
-        return bouton
+        return t
+    }
+
+    private fun toast(message: String) {
+        Toast.makeText(
+            this,
+            message,
+            Toast.LENGTH_SHORT
+        ).show()
     }
 }
