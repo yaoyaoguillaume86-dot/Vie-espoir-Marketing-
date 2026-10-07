@@ -1,6 +1,7 @@
 package com.vieespoir.marketing
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
@@ -15,14 +16,11 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Produits de départ
-        if (produits.isEmpty()) {
-            produits.add("Super7")
-            produits.add("M7")
-            produits.add("Women 7")
-            produits.add("Timoc")
-            produits.add("Café Royal")
-        }
+        produits.add("Super7")
+        produits.add("M7")
+        produits.add("Women 7")
+        produits.add("Timoc")
+        produits.add("Café Royal")
 
         afficherAccueil()
     }
@@ -65,7 +63,9 @@ class MainActivity : Activity() {
         layout.orientation = LinearLayout.VERTICAL
         layout.setPadding(20, 20, 20, 20)
 
-        layout.addView(creerTitre("VIE ESPOIR MARKETING"))
+        layout.addView(
+            creerTitre("VIE ESPOIR MARKETING")
+        )
 
         val bienvenue = TextView(this).apply {
             text = "Bienvenue dans votre application"
@@ -109,7 +109,9 @@ class MainActivity : Activity() {
         layout.orientation = LinearLayout.VERTICAL
         layout.setPadding(20, 20, 20, 20)
 
-        layout.addView(creerTitre("LISTE DES PRODUITS"))
+        layout.addView(
+            creerTitre("LISTE DES PRODUITS")
+        )
 
         if (produits.isEmpty()) {
 
@@ -181,7 +183,9 @@ class MainActivity : Activity() {
         layout.orientation = LinearLayout.VERTICAL
         layout.setPadding(20, 20, 20, 20)
 
-        layout.addView(creerTitre("LISTE DES CLIENTS"))
+        layout.addView(
+            creerTitre("LISTE DES CLIENTS")
+        )
 
         if (clients.isEmpty()) {
 
