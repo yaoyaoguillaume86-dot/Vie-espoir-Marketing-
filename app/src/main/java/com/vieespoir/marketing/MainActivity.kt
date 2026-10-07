@@ -13,6 +13,11 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        afficherAccueil()
+    }
+
+    private fun afficherAccueil() {
+
         val layout = LinearLayout(this)
         layout.orientation = LinearLayout.VERTICAL
         layout.gravity = Gravity.CENTER
@@ -34,29 +39,48 @@ class MainActivity : Activity() {
         val button = Button(this)
         button.text = "COMMENCER"
 
-        layout.addView(
-            title,
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        )
+        button.setOnClickListener {
+            afficherMenu()
+        }
 
-        layout.addView(
-            subtitle,
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        )
+        layout.addView(title)
+        layout.addView(subtitle)
+        layout.addView(button)
 
-        layout.addView(
-            button,
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        )
+        setContentView(layout)
+    }
+
+    private fun afficherMenu() {
+
+        val layout = LinearLayout(this)
+        layout.orientation = LinearLayout.VERTICAL
+        layout.gravity = Gravity.CENTER
+        layout.setPadding(30, 30, 30, 30)
+        layout.setBackgroundColor(Color.WHITE)
+
+        val title = TextView(this)
+        title.text = "ESPACE VIE ESPOIR MARKETING"
+        title.textSize = 24f
+        title.setTextColor(Color.BLACK)
+        title.gravity = Gravity.CENTER
+
+        val produits = Button(this)
+        produits.text = "NOS PRODUITS"
+
+        val commandes = Button(this)
+        commandes.text = "COMMANDES"
+
+        val stock = Button(this)
+        stock.text = "GESTION DU STOCK"
+
+        val ventes = Button(this)
+        ventes.text = "MES VENTES"
+
+        layout.addView(title)
+        layout.addView(produits)
+        layout.addView(commandes)
+        layout.addView(stock)
+        layout.addView(ventes)
 
         setContentView(layout)
     }
