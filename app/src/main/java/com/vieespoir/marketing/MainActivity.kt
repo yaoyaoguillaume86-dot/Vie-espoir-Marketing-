@@ -1,14 +1,14 @@
 package com.vieespoir.marketing
 
-import android.graphics.Color
+import android.app.Activity
 import android.os.Bundle
+import android.graphics.Color
 import android.view.Gravity
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -16,7 +16,7 @@ class MainActivity : AppCompatActivity() {
         val layout = LinearLayout(this)
         layout.orientation = LinearLayout.VERTICAL
         layout.gravity = Gravity.CENTER
-        layout.setPadding(30, 30, 30, 30)
+        layout.setPadding(40, 40, 40, 40)
         layout.setBackgroundColor(Color.WHITE)
 
         val title = TextView(this)
@@ -25,43 +25,38 @@ class MainActivity : AppCompatActivity() {
         title.setTextColor(Color.BLACK)
         title.gravity = Gravity.CENTER
 
-        layout.addView(title)
-
         val subtitle = TextView(this)
         subtitle.text = "Bienvenue dans votre espace"
         subtitle.textSize = 18f
         subtitle.setTextColor(Color.DKGRAY)
         subtitle.gravity = Gravity.CENTER
 
-        layout.addView(subtitle)
+        val button = Button(this)
+        button.text = "COMMENCER"
 
-        val produits = Button(this)
-        produits.text = "🛒 Produits"
-        layout.addView(produits)
+        layout.addView(
+            title,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        )
 
-        val stock = Button(this)
-        stock.text = "📦 Stock"
-        layout.addView(stock)
+        layout.addView(
+            subtitle,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        )
 
-        val clients = Button(this)
-        clients.text = "👥 Clients"
-        layout.addView(clients)
-
-        val ventes = Button(this)
-        ventes.text = "💰 Ventes"
-        layout.addView(ventes)
-
-        val finances = Button(this)
-        finances.text = "📊 Finances"
-        layout.addView(finances)
-
-        val notifications = Button(this)
-        notifications.text = "🔔 Notifications"
-        layout.addView(notifications)
-
-        val administration = Button(this)
-        administration.text = "⚙️ Administration"
-        layout.addView(administration)
+        layout.addView(
+            button,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        )
 
         setContentView(layout)
     }
