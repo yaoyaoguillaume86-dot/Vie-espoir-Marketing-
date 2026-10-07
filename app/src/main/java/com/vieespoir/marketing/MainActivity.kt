@@ -17,7 +17,7 @@ import java.io.Serializable
 class MainActivity : Activity() {
 
     // =========================
-    // DONNÉES
+    // PRODUIT
     // =========================
 
     data class Produit(
@@ -25,13 +25,13 @@ class MainActivity : Activity() {
         var nom: String,
         var prix: Int,
         var categorie: String,
-        var description: String = "",
-        var stock: Int = 0,
+        var description: String,
+        var stock: Int,
         var image: Bitmap? = null
     ) : Serializable
 
     data class PanierItem(
-        val produit: Produit,
+        val produitId: Int,
         var quantite: Int
     )
 
@@ -41,8 +41,8 @@ class MainActivity : Activity() {
     private var prochainId = 1
     private var imageProduit: Bitmap? = null
 
-    private var recherche = ""
-    private var categorieSelectionnee = "Tous"
+    private val vert = Color.rgb(20, 120, 70)
+    private val grisClair = Color.rgb(245, 245, 245)
 
     companion object {
         const val REQUEST_CAMERA = 100
@@ -50,30 +50,26 @@ class MainActivity : Activity() {
     }
 
     // =========================
-    // COULEURS
-    // =========================
-
-    private val vert = Color.rgb(20, 120, 70)
-    private val vertClair = Color.rgb(235, 248, 240)
-    private val gris = Color.rgb(245, 245, 245)
-    private val noir = Color.rgb(30, 30, 30)
-
-    // =========================
-    // INITIALISATION
+    // DÉMARRAGE
     // =========================
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        chargerProduitsDepart()
+        chargerProduits()
+
         afficherAccueil()
     }
 
-    private fun chargerProduitsDepart() {
+    // =========================
+    // PRODUITS DE DÉPART
+    // =========================
+
+    private fun chargerProduits() {
 
         if (produits.isNotEmpty()) return
 
-        ajouterProduitDepart(
+        ajouterProduit(
             "Super7",
             20000,
             "Santé",
@@ -81,7 +77,7 @@ class MainActivity : Activity() {
             20
         )
 
-        ajouterProduitDepart(
+        ajouterProduit(
             "M7",
             15000,
             "Santé",
@@ -89,7 +85,7 @@ class MainActivity : Activity() {
             20
         )
 
-        ajouterProduitDepart(
+        ajouterProduit(
             "Women 7",
             15000,
             "Femme",
@@ -97,7 +93,7 @@ class MainActivity : Activity() {
             20
         )
 
-        ajouterProduitDepart(
+        ajouterProduit(
             "Timoc",
             10000,
             "Alimentation",
@@ -105,7 +101,7 @@ class MainActivity : Activity() {
             20
         )
 
-        ajouterProduitDepart(
+        ajouterProduit(
             "Café Royal",
             5000,
             "Alimentation",
@@ -114,7 +110,7 @@ class MainActivity : Activity() {
         )
     }
 
-    private fun ajouterProduitDepart(
+    private fun ajouterProduit(
         nom: String,
         prix: Int,
         categorie: String,
@@ -139,13 +135,18 @@ class MainActivity : Activity() {
 
     private fun afficherAccueil() {
 
-        val principal = creerEcranPrincipal()
+        val racine = LinearLayout(this)
+        racine.orientation = LinearLayout.VERTICAL
+        racine.setBackgroundColor(Color.WHITE)
 
-        // EN-TÊTE
-        val header = LinearLayout(this)
-        header.orientation = LinearLayout.HORIZONTAL
-        header.gravity = Gravity.CENTER_VERTICAL
-        header.setPadding(10, 10, 10, 10)
+        // ---------------------------------
+        // BARRE DU HAUT
+        // ---------------------------------
+
+        val haut = LinearLayout(this)
+        haut.orientation = LinearLayout.HORIZONTAL
+        haut.gravity = Gravity.CENTER_VERTICAL
+        haut.setPadding(8, 8, 8, 8)
 
         val menu = TextView(this)
         menu.text = "☰"
@@ -153,107 +154,107 @@ class MainActivity : Activity() {
         menu.gravity = Gravity.CENTER
         menu.setTextColor(vert)
 
-        header.addView(
+        haut.addView(
             menu,
-            LinearLayout.LayoutParams(55, 65)
+            LinearLayout.LayoutParams(55, 60)
         )
 
         val titre = TextView(this)
         titre.text = "VIE ESPOIR MARKETING"
-        titre.textSize = 21f
+        titre.textSize = 20f
+        titre.gravity = Gravity.CENTER
         titre.setTextColor(vert)
         titre.setTypeface(null, android.graphics.Typeface.BOLD)
-        titre.gravity = Gravity.CENTER
 
-        header.addView(
+        haut.addView(
             titre,
             LinearLayout.LayoutParams(
                 0,
-                65,
+                60,
                 1f
             )
         )
 
-        val panier = TextView(this)
-        panier.text = "🛒"
-        panier.textSize = 27f
-        panier.gravity = Gravity.CENTER
+        val panierButton = TextView(this)
+        panierButton.text = "🛒"
+        panierButton.textSize = 28f
+        panierButton.gravity = Gravity.CENTER
 
-        header.addView(
-            panier,
-            LinearLayout.LayoutParams(60, 65)
+        haut.addView(
+            panierButton,
+            LinearLayout.LayoutParams(60, 60)
         )
 
-        principal.addView(header)
+        racine.addView(haut)
 
         menu.setOnClickListener {
             ouvrirMenu()
         }
 
-        panier.setOnClickListener {
+        panierButton.setOnClickListener {
             afficherPanier()
         }
 
-        // =========================
+        // ---------------------------------
         // LOGO LION
-        // =========================
+        // ---------------------------------
 
         val logo = TextView(this)
         logo.text = "🦁"
         logo.textSize = 65f
         logo.gravity = Gravity.CENTER
 
-        principal.addView(
+        racine.addView(
             logo,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                100
+                105
             )
         )
 
-        // =========================
+        // ---------------------------------
+        // CONTENU DÉFILABLE
+        // ---------------------------------
+
+        val scroll = ScrollView(this)
+
+        val contenu = LinearLayout(this)
+        contenu.orientation = LinearLayout.VERTICAL
+        contenu.setPadding(12, 5, 12, 10)
+
+        scroll.addView(contenu)
+
         // RECHERCHE
-        // =========================
 
-        val rechercheBox = EditText(this)
-        rechercheBox.hint = "🔎 Rechercher un produit..."
-        rechercheBox.setSingleLine(true)
-        rechercheBox.setPadding(20, 5, 20, 5)
+        val recherche = EditText(this)
+        recherche.hint = "🔎 Rechercher un produit"
+        recherche.setSingleLine(true)
+        recherche.setPadding(15, 0, 15, 0)
 
-        principal.addView(
-            rechercheBox,
+        contenu.addView(
+            recherche,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 55
             )
         )
 
-        rechercheBox.setText(recherche)
-
-        rechercheBox.setOnEditorActionListener { _, _, _ ->
-            recherche = rechercheBox.text.toString()
-            afficherProduitsAccueil(principal)
-            true
-        }
-
-        // =========================
         // CATÉGORIES
-        // =========================
 
         val titreCategorie = TextView(this)
         titreCategorie.text = "Catégories"
         titreCategorie.textSize = 20f
         titreCategorie.setTypeface(null, android.graphics.Typeface.BOLD)
-        titreCategorie.setPadding(10, 20, 10, 10)
+        titreCategorie.setPadding(5, 20, 5, 10)
 
-        principal.addView(titreCategorie)
+        contenu.addView(titreCategorie)
 
         val categories = HorizontalScrollView(this)
 
         val categoriesLayout = LinearLayout(this)
         categoriesLayout.orientation = LinearLayout.HORIZONTAL
 
-        val listeCategories = arrayOf(
+        val nomsCategories = arrayOf(
             "Tous",
             "Santé",
             "Femme",
@@ -261,15 +262,10 @@ class MainActivity : Activity() {
             "Cosmétique"
         )
 
-        for (cat in listeCategories) {
+        for (categorie in nomsCategories) {
 
             val bouton = Button(this)
-            bouton.text = cat
-
-            if (cat == categorieSelectionnee) {
-                bouton.setTextColor(Color.WHITE)
-                bouton.setBackgroundColor(vert)
-            }
+            bouton.text = categorie
 
             categoriesLayout.addView(
                 bouton,
@@ -280,56 +276,115 @@ class MainActivity : Activity() {
             )
 
             bouton.setOnClickListener {
-                categorieSelectionnee = cat
-                afficherAccueil()
+
+                afficherProduits(
+                    contenu,
+                    recherche.text.toString(),
+                    categorie
+                )
             }
         }
 
         categories.addView(categoriesLayout)
 
-        principal.addView(
+        contenu.addView(
             categories,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                65
+                60
             )
         )
 
-        // =========================
-        // PRODUITS
-        // =========================
+        val titreProduits = TextView(this)
+        titreProduits.text = "Nos produits"
+        titreProduits.textSize = 22f
+        titreProduits.setTypeface(null, android.graphics.Typeface.BOLD)
+        titreProduits.setPadding(5, 20, 5, 10)
 
-        afficherProduitsAccueil(principal)
+        contenu.addView(titreProduits)
 
-        // =========================
+        val liste = LinearLayout(this)
+        liste.orientation = LinearLayout.VERTICAL
+
+        contenu.addView(liste)
+
+        afficherProduitsDansListe(
+            liste,
+            "",
+            "Tous"
+        )
+
+        recherche.setOnEditorActionListener { _, _, _ ->
+
+            afficherProduitsDansListe(
+                liste,
+                recherche.text.toString(),
+                "Tous"
+            )
+
+            true
+        }
+
+        racine.addView(
+            scroll,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
+        )
+
+        // ---------------------------------
         // BARRE DU BAS
-        // =========================
+        // ---------------------------------
 
-        ajouterBarreNavigation(principal)
+        racine.addView(
+            creerBarreBas(),
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                70
+            )
+        )
 
-        setContentView(principal)
+        setContentView(racine)
     }
 
     // =========================
-    // AFFICHAGE PRODUITS
+    // AFFICHER PRODUITS
     // =========================
 
-    private fun afficherProduitsAccueil(principal: LinearLayout) {
+    private fun afficherProduits(
+        contenu: LinearLayout,
+        recherche: String,
+        categorie: String
+    ) {
 
-        val titre = TextView(this)
-        titre.text = "Produits"
-        titre.textSize = 22f
-        titre.setTypeface(null, android.graphics.Typeface.BOLD)
-        titre.setPadding(10, 20, 10, 10)
+        if (contenu.childCount == 0) return
 
-        principal.addView(titre)
+        val liste = LinearLayout(this)
+        liste.orientation = LinearLayout.VERTICAL
 
-        val conteneur = LinearLayout(this)
-        conteneur.orientation = LinearLayout.VERTICAL
+        afficherProduitsDansListe(
+            liste,
+            recherche,
+            categorie
+        )
+
+        contenu.addView(liste)
+    }
+
+    private fun afficherProduitsDansListe(
+        liste: LinearLayout,
+        recherche: String,
+        categorie: String
+    ) {
+
+        liste.removeAllViews()
 
         for (produit in produits) {
 
-            if (recherche.isNotBlank() &&
+            if (
+                recherche.isNotEmpty() &&
                 !produit.nom.contains(
                     recherche,
                     ignoreCase = true
@@ -338,33 +393,32 @@ class MainActivity : Activity() {
                 continue
             }
 
-            if (categorieSelectionnee != "Tous" &&
-                produit.categorie != categorieSelectionnee
+            if (
+                categorie != "Tous" &&
+                produit.categorie != categorie
             ) {
                 continue
             }
 
-            conteneur.addView(creerCarteProduit(produit))
-        }
-
-        principal.addView(
-            conteneur,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                0,
-                1f
+            liste.addView(
+                creerCarteProduit(produit)
             )
-        )
+        }
     }
 
-    private fun creerCarteProduit(produit: Produit): LinearLayout {
+    // =========================
+    // CARTE PRODUIT
+    // =========================
+
+    private fun creerCarteProduit(
+        produit: Produit
+    ): LinearLayout {
 
         val carte = LinearLayout(this)
         carte.orientation = LinearLayout.VERTICAL
-        carte.setPadding(12, 12, 12, 12)
-        carte.setBackgroundColor(Color.WHITE)
+        carte.setPadding(10, 10, 10, 10)
+        carte.setBackgroundColor(grisClair)
 
-        // IMAGE
         val image = ImageView(this)
 
         if (produit.image != null) {
@@ -375,7 +429,8 @@ class MainActivity : Activity() {
             )
         }
 
-        image.scaleType = ImageView.ScaleType.CENTER_CROP
+        image.scaleType =
+            ImageView.ScaleType.CENTER_CROP
 
         carte.addView(
             image,
@@ -385,17 +440,17 @@ class MainActivity : Activity() {
             )
         )
 
-        // NOM
         val nom = TextView(this)
         nom.text = produit.nom
-        nom.textSize = 20f
-        nom.setTypeface(null, android.graphics.Typeface.BOLD)
+        nom.textSize = 21f
         nom.gravity = Gravity.CENTER
-        nom.setTextColor(noir)
+        nom.setTypeface(
+            null,
+            android.graphics.Typeface.BOLD
+        )
 
         carte.addView(nom)
 
-        // PRIX
         val prix = TextView(this)
         prix.text = "${produit.prix} FCFA"
         prix.textSize = 18f
@@ -404,20 +459,6 @@ class MainActivity : Activity() {
 
         carte.addView(prix)
 
-        // STOCK
-        val stock = TextView(this)
-
-        stock.text =
-            if (produit.stock > 0)
-                "Disponible : ${produit.stock}"
-            else
-                "Rupture de stock"
-
-        stock.gravity = Gravity.CENTER
-
-        carte.addView(stock)
-
-        // BOUTON
         val bouton = Button(this)
         bouton.text = "Voir le produit"
 
@@ -431,36 +472,25 @@ class MainActivity : Activity() {
             afficherDetailProduit(produit)
         }
 
-        val separation = View(this)
-        separation.setBackgroundColor(Color.LTGRAY)
-
-        val bloc = LinearLayout(this)
-        bloc.orientation = LinearLayout.VERTICAL
-
-        bloc.addView(
-            carte,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
+        val params = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
         )
 
-        bloc.addView(
-            separation,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                2
-            )
-        )
+        params.setMargins(0, 8, 0, 8)
 
-        return bloc
+        carte.layoutParams = params
+
+        return carte
     }
 
     // =========================
     // DÉTAIL PRODUIT
     // =========================
 
-    private fun afficherDetailProduit(produit: Produit) {
+    private fun afficherDetailProduit(
+        produit: Produit
+    ) {
 
         val layout = LinearLayout(this)
         layout.orientation = LinearLayout.VERTICAL
@@ -468,6 +498,7 @@ class MainActivity : Activity() {
 
         val retour = Button(this)
         retour.text = "⬅️ Retour"
+
         layout.addView(retour)
 
         retour.setOnClickListener {
@@ -484,7 +515,8 @@ class MainActivity : Activity() {
             )
         }
 
-        image.scaleType = ImageView.ScaleType.CENTER_CROP
+        image.scaleType =
+            ImageView.ScaleType.CENTER_CROP
 
         layout.addView(
             image,
@@ -497,8 +529,11 @@ class MainActivity : Activity() {
         val nom = TextView(this)
         nom.text = produit.nom
         nom.textSize = 26f
-        nom.setTypeface(null, android.graphics.Typeface.BOLD)
         nom.gravity = Gravity.CENTER
+        nom.setTypeface(
+            null,
+            android.graphics.Typeface.BOLD
+        )
 
         layout.addView(nom)
 
@@ -513,7 +548,7 @@ class MainActivity : Activity() {
         val description = TextView(this)
         description.text = produit.description
         description.textSize = 17f
-        description.setPadding(10, 20, 10, 20)
+        description.setPadding(5, 20, 5, 20)
 
         layout.addView(description)
 
@@ -532,7 +567,8 @@ class MainActivity : Activity() {
         ajouter.setOnClickListener {
 
             val qte =
-                quantite.text.toString().toIntOrNull() ?: 1
+                quantite.text.toString()
+                    .toIntOrNull() ?: 1
 
             if (qte <= 0) {
                 Toast.makeText(
@@ -543,7 +579,7 @@ class MainActivity : Activity() {
                 return@setOnClickListener
             }
 
-            if (produit.stock < qte) {
+            if (qte > produit.stock) {
                 Toast.makeText(
                     this,
                     "Stock insuffisant",
@@ -552,7 +588,21 @@ class MainActivity : Activity() {
                 return@setOnClickListener
             }
 
-            ajouterAuPanier(produit, qte)
+            val existant =
+                panier.find {
+                    it.produitId == produit.id
+                }
+
+            if (existant == null) {
+                panier.add(
+                    PanierItem(
+                        produit.id,
+                        qte
+                    )
+                )
+            } else {
+                existant.quantite += qte
+            }
 
             Toast.makeText(
                 this,
@@ -568,26 +618,6 @@ class MainActivity : Activity() {
     // PANIER
     // =========================
 
-    private fun ajouterAuPanier(
-        produit: Produit,
-        quantite: Int
-    ) {
-
-        val existant =
-            panier.find { it.produit.id == produit.id }
-
-        if (existant != null) {
-            existant.quantite += quantite
-        } else {
-            panier.add(
-                PanierItem(
-                    produit,
-                    quantite
-                )
-            )
-        }
-    }
-
     private fun afficherPanier() {
 
         val layout = LinearLayout(this)
@@ -595,10 +625,13 @@ class MainActivity : Activity() {
         layout.setPadding(20, 20, 20, 20)
 
         val titre = TextView(this)
-        titre.text = "🛒 Mon panier"
+        titre.text = "🛒 PANIER"
         titre.textSize = 25f
         titre.gravity = Gravity.CENTER
-        titre.setTypeface(null, android.graphics.Typeface.BOLD)
+        titre.setTypeface(
+            null,
+            android.graphics.Typeface.BOLD
+        )
 
         layout.addView(titre)
 
@@ -606,38 +639,35 @@ class MainActivity : Activity() {
 
         for (item in panier) {
 
-            val bloc = LinearLayout(this)
-            bloc.orientation = LinearLayout.VERTICAL
-            bloc.setPadding(10, 15, 10, 15)
+            val produit =
+                produits.find {
+                    it.id == item.produitId
+                } ?: continue
 
-            val nom = TextView(this)
-            nom.text =
-                "${item.produit.nom} × ${item.quantite}"
-            nom.textSize = 19f
-
-            bloc.addView(nom)
+            val ligne = TextView(this)
 
             val sousTotal =
-                item.produit.prix * item.quantite
+                produit.prix * item.quantite
 
             total += sousTotal
 
-            val prix = TextView(this)
-            prix.text = "$sousTotal FCFA"
-            prix.textSize = 17f
-            prix.setTextColor(vert)
+            ligne.text =
+                "${produit.nom} x ${item.quantite} = $sousTotal FCFA"
 
-            bloc.addView(prix)
+            ligne.textSize = 18f
+            ligne.setPadding(5, 15, 5, 15)
 
-            layout.addView(bloc)
+            layout.addView(ligne)
         }
 
         val totalText = TextView(this)
         totalText.text = "TOTAL : $total FCFA"
         totalText.textSize = 22f
-        totalText.setTypeface(null, android.graphics.Typeface.BOLD)
         totalText.gravity = Gravity.CENTER
-        totalText.setPadding(10, 20, 10, 20)
+        totalText.setTypeface(
+            null,
+            android.graphics.Typeface.BOLD
+        )
 
         layout.addView(totalText)
 
@@ -649,23 +679,25 @@ class MainActivity : Activity() {
         commander.setOnClickListener {
 
             if (panier.isEmpty()) {
+
                 Toast.makeText(
                     this,
-                    "Votre panier est vide",
+                    "Le panier est vide",
                     Toast.LENGTH_SHORT
                 ).show()
-                return@setOnClickListener
-            }
 
-            Toast.makeText(
-                this,
-                "Commande enregistrée",
-                Toast.LENGTH_LONG
-            ).show()
+            } else {
+
+                Toast.makeText(
+                    this,
+                    "Commande enregistrée",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
 
         val retour = Button(this)
-        retour.text = "⬅️ Continuer mes achats"
+        retour.text = "⬅️ Retour"
 
         layout.addView(retour)
 
@@ -677,7 +709,7 @@ class MainActivity : Activity() {
     }
 
     // =========================
-    // MENU ☰
+    // MENU
     // =========================
 
     private fun ouvrirMenu() {
@@ -687,21 +719,21 @@ class MainActivity : Activity() {
             "🏪 Espace vendeur",
             "💳 Abonnement vendeur",
             "📦 Gestion des produits",
-            "📊 Gestion du stock",
-            "🧾 Gestion des commandes",
+            "📊 Stock",
+            "🧾 Commandes",
             "👑 Administration",
             "⚙️ Paramètres"
         )
 
         AlertDialog.Builder(this)
-            .setTitle("Menu")
+            .setTitle("VIE ESPOIR MARKETING")
             .setItems(options) { _, position ->
 
                 when (position) {
 
-                    0 -> afficherCreationCompte()
+                    0 -> afficherCompte()
 
-                    1 -> afficherEspaceVendeur()
+                    1 -> afficherVendeur()
 
                     2 -> afficherAbonnement()
 
@@ -723,7 +755,7 @@ class MainActivity : Activity() {
     // COMPTE
     // =========================
 
-    private fun afficherCreationCompte() {
+    private fun afficherCompte() {
 
         val layout = LinearLayout(this)
         layout.orientation = LinearLayout.VERTICAL
@@ -742,34 +774,29 @@ class MainActivity : Activity() {
 
         val telephone = EditText(this)
         telephone.hint = "Téléphone"
-        telephone.inputType = 3
         layout.addView(telephone)
 
         val email = EditText(this)
         email.hint = "Email"
         layout.addView(email)
 
-        val motDePasse = EditText(this)
-        motDePasse.hint = "Mot de passe"
-        motDePasse.inputType = 129
-        layout.addView(motDePasse)
+        val bouton = Button(this)
+        bouton.text = "Créer le compte"
 
-        val creer = Button(this)
-        creer.text = "Créer mon compte"
+        layout.addView(bouton)
 
-        layout.addView(creer)
-
-        creer.setOnClickListener {
+        bouton.setOnClickListener {
 
             Toast.makeText(
                 this,
-                "Compte créé avec succès",
-                Toast.LENGTH_LONG
+                "Compte créé",
+                Toast.LENGTH_SHORT
             ).show()
         }
 
         val retour = Button(this)
         retour.text = "⬅️ Retour"
+
         layout.addView(retour)
 
         retour.setOnClickListener {
@@ -783,7 +810,7 @@ class MainActivity : Activity() {
     // VENDEUR
     // =========================
 
-    private fun afficherEspaceVendeur() {
+    private fun afficherVendeur() {
 
         val options = arrayOf(
             "➕ Ajouter un produit",
@@ -813,13 +840,17 @@ class MainActivity : Activity() {
             .show()
     }
 
+    // =========================
+    // ABONNEMENT
+    // =========================
+
     private fun afficherAbonnement() {
 
         val packs = arrayOf(
-            "Pack vendeur - 5 000 FCFA",
-            "Pack vendeur - 10 000 FCFA",
-            "Pack vendeur - 25 000 FCFA",
-            "Pack vendeur Premium - 50 000 FCFA"
+            "Pack 5 000 FCFA",
+            "Pack 10 000 FCFA",
+            "Pack 25 000 FCFA",
+            "Pack Premium 50 000 FCFA"
         )
 
         AlertDialog.Builder(this)
@@ -828,8 +859,8 @@ class MainActivity : Activity() {
 
                 Toast.makeText(
                     this,
-                    "Pack sélectionné : ${packs[position]}",
-                    Toast.LENGTH_LONG
+                    packs[position],
+                    Toast.LENGTH_SHORT
                 ).show()
             }
             .show()
@@ -859,7 +890,7 @@ class MainActivity : Activity() {
         layout.addView(nom)
 
         val prix = EditText(this)
-        prix.hint = "Prix en FCFA"
+        prix.hint = "Prix"
         prix.inputType = 2
         layout.addView(prix)
 
@@ -877,6 +908,7 @@ class MainActivity : Activity() {
         layout.addView(stock)
 
         val image = ImageView(this)
+
         image.setImageResource(
             android.R.drawable.ic_menu_gallery
         )
@@ -885,7 +917,7 @@ class MainActivity : Activity() {
             image,
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                300
+                280
             )
         )
 
@@ -906,25 +938,29 @@ class MainActivity : Activity() {
         }
 
         val enregistrer = Button(this)
-        enregistrer.text = "✅ Ajouter le produit"
+        enregistrer.text = "✅ Enregistrer le produit"
         layout.addView(enregistrer)
 
         enregistrer.setOnClickListener {
 
-            val nomTexte = nom.text.toString().trim()
+            val nomTexte =
+                nom.text.toString().trim()
+
             val prixTexte =
                 prix.text.toString().toIntOrNull()
+
             val stockTexte =
                 stock.text.toString().toIntOrNull()
 
-            if (nomTexte.isEmpty() ||
+            if (
+                nomTexte.isEmpty() ||
                 prixTexte == null ||
                 stockTexte == null
             ) {
 
                 Toast.makeText(
                     this,
-                    "Veuillez remplir les informations",
+                    "Remplissez les informations",
                     Toast.LENGTH_SHORT
                 ).show()
 
@@ -975,7 +1011,7 @@ class MainActivity : Activity() {
 
             Toast.makeText(
                 this,
-                "Impossible d'ouvrir la caméra",
+                "Caméra indisponible",
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -999,7 +1035,7 @@ class MainActivity : Activity() {
     }
 
     // =========================
-    // RETOUR PHOTO
+    // RETOUR IMAGE
     // =========================
 
     @Suppress("DEPRECATION")
@@ -1022,7 +1058,8 @@ class MainActivity : Activity() {
             REQUEST_CAMERA -> {
 
                 val bitmap =
-                    data?.extras?.get("data") as? Bitmap
+                    data?.extras?.get("data")
+                        as? Bitmap
 
                 if (bitmap != null) {
 
@@ -1030,7 +1067,7 @@ class MainActivity : Activity() {
 
                     Toast.makeText(
                         this,
-                        "Photo prise avec succès",
+                        "Photo prise",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -1060,7 +1097,7 @@ class MainActivity : Activity() {
 
                         Toast.makeText(
                             this,
-                            "Erreur avec la photo",
+                            "Impossible de charger la photo",
                             Toast.LENGTH_LONG
                         ).show()
                     }
@@ -1089,27 +1126,20 @@ class MainActivity : Activity() {
                     .setTitle(produit.nom)
                     .setItems(
                         arrayOf(
-                            "Modifier",
                             "Supprimer"
                         )
-                    ) { _, action ->
+                    ) { _, _ ->
 
-                        if (action == 1) {
+                        produits.remove(produit)
 
-                            produits.remove(produit)
-
-                            Toast.makeText(
-                                this,
-                                "Produit supprimé",
-                                Toast.LENGTH_SHORT
-                            ).show()
-
-                            afficherAccueil()
-                        }
+                        Toast.makeText(
+                            this,
+                            "Produit supprimé",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                     .show()
             }
-            .setNegativeButton("Fermer", null)
             .show()
     }
 
@@ -1119,18 +1149,18 @@ class MainActivity : Activity() {
 
     private fun afficherStock() {
 
-        val message = StringBuilder()
+        val texte = StringBuilder()
 
-        for (p in produits) {
+        for (produit in produits) {
 
-            message.append(
-                "${p.nom} : ${p.stock} unités\n"
+            texte.append(
+                "${produit.nom} : ${produit.stock}\n"
             )
         }
 
         AlertDialog.Builder(this)
             .setTitle("📊 Stock")
-            .setMessage(message.toString())
+            .setMessage(texte.toString())
             .setPositiveButton("OK", null)
             .show()
     }
@@ -1144,7 +1174,7 @@ class MainActivity : Activity() {
         AlertDialog.Builder(this)
             .setTitle("🧾 Commandes")
             .setMessage(
-                "Les commandes des clients apparaîtront ici."
+                "Les commandes apparaîtront ici."
             )
             .setPositiveButton("OK", null)
             .show()
@@ -1153,9 +1183,9 @@ class MainActivity : Activity() {
     private fun afficherVentes() {
 
         AlertDialog.Builder(this)
-            .setTitle("📊 Mes ventes")
+            .setTitle("📊 Ventes")
             .setMessage(
-                "Les statistiques de ventes apparaîtront ici."
+                "Les ventes apparaîtront ici."
             )
             .setPositiveButton("OK", null)
             .show()
@@ -1164,9 +1194,9 @@ class MainActivity : Activity() {
     private fun afficherRevenus() {
 
         AlertDialog.Builder(this)
-            .setTitle("💰 Mes revenus")
+            .setTitle("💰 Revenus")
             .setMessage(
-                "Le tableau des revenus apparaîtra ici."
+                "Les revenus apparaîtront ici."
             )
             .setPositiveButton("OK", null)
             .show()
@@ -1179,14 +1209,14 @@ class MainActivity : Activity() {
     private fun afficherAdministration() {
 
         val options = arrayOf(
-            "👥 Utilisateurs",
-            "🏪 Vendeurs",
-            "📦 Produits",
-            "📊 Stock",
-            "🧾 Commandes",
-            "💳 Abonnements",
-            "💰 Paiements",
-            "📄 Rapports"
+            "Utilisateurs",
+            "Vendeurs",
+            "Produits",
+            "Stock",
+            "Commandes",
+            "Abonnements",
+            "Paiements",
+            "Rapports"
         )
 
         AlertDialog.Builder(this)
@@ -1195,7 +1225,7 @@ class MainActivity : Activity() {
 
                 Toast.makeText(
                     this,
-                    "${options[position]} sélectionné",
+                    options[position],
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -1217,90 +1247,58 @@ class MainActivity : Activity() {
     // BARRE DU BAS
     // =========================
 
-    private fun ajouterBarreNavigation(
-        principal: LinearLayout
-    ) {
+    private fun creerBarreBas(): LinearLayout {
 
         val barre = LinearLayout(this)
-
         barre.orientation = LinearLayout.HORIZONTAL
         barre.gravity = Gravity.CENTER
-        barre.setBackgroundColor(vertClair)
+        barre.setBackgroundColor(Color.rgb(235, 248, 240))
 
-        val accueil = creerBoutonNavigation(
-            "🏠\nAccueil"
-        )
-
-        val produitsBtn = creerBoutonNavigation(
-            "🛍️\nProduits"
-        )
-
-        val panierBtn = creerBoutonNavigation(
-            "🛒\nPanier"
-        )
-
-        val compteBtn = creerBoutonNavigation(
-            "👤\nCompte"
-        )
+        val accueil = boutonBas("🏠\nAccueil")
+        val produits = boutonBas("🛍️\nProduits")
+        val panier = boutonBas("🛒\nPanier")
+        val compte = boutonBas("👤\nCompte")
 
         barre.addView(
             accueil,
-            LinearLayout.LayoutParams(
-                0,
-                70,
-                1f
-            )
+            LinearLayout.LayoutParams(0, 70, 1f)
         )
 
         barre.addView(
-            produitsBtn,
-            LinearLayout.LayoutParams(
-                0,
-                70,
-                1f
-            )
+            produits,
+            LinearLayout.LayoutParams(0, 70, 1f)
         )
 
         barre.addView(
-            panierBtn,
-            LinearLayout.LayoutParams(
-                0,
-                70,
-                1f
-            )
+            panier,
+            LinearLayout.LayoutParams(0, 70, 1f)
         )
 
         barre.addView(
-            compteBtn,
-            LinearLayout.LayoutParams(
-                0,
-                70,
-                1f
-            )
+            compte,
+            LinearLayout.LayoutParams(0, 70, 1f)
         )
 
         accueil.setOnClickListener {
-            recherche = ""
-            categorieSelectionnee = "Tous"
             afficherAccueil()
         }
 
-        produitsBtn.setOnClickListener {
-            afficherListeProduits()
+        produits.setOnClickListener {
+            afficherAccueil()
         }
 
-        panierBtn.setOnClickListener {
+        panier.setOnClickListener {
             afficherPanier()
         }
 
-        compteBtn.setOnClickListener {
-            afficherCreationCompte()
+        compte.setOnClickListener {
+            afficherCompte()
         }
 
-        principal.addView(barre)
+        return barre
     }
 
-    private fun creerBoutonNavigation(
+    private fun boutonBas(
         texte: String
     ): TextView {
 
@@ -1312,34 +1310,5 @@ class MainActivity : Activity() {
         bouton.setTextColor(vert)
 
         return bouton
-    }
-
-    // =========================
-    // PAGE PRODUITS
-    // =========================
-
-    private fun afficherListeProduits() {
-
-        categorieSelectionnee = "Tous"
-        recherche = ""
-
-        afficherAccueil()
-    }
-
-    // =========================
-    // ÉCRAN PRINCIPAL
-    // =========================
-
-    private fun creerEcranPrincipal(): LinearLayout {
-
-        val scroll = ScrollView(this)
-
-        val contenu = LinearLayout(this)
-        contenu.orientation = LinearLayout.VERTICAL
-        contenu.setPadding(10, 5, 10, 5)
-
-        scroll.addView(contenu)
-
-        return contenu
     }
 }
