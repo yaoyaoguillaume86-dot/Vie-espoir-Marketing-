@@ -1,7 +1,7 @@
 package com.vieespoir.marketing
 
 import android.app.Activity
-import android.os.Bundle
+import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Color
 import android.view.Gravity
