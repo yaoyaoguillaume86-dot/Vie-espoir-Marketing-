@@ -66,7 +66,7 @@ class SplashActivity : Activity() {
                 finish()
             } catch (_: Exception) {
             }
-        }, 1800)
+        }, 10000)
     }
 }
 
@@ -1150,13 +1150,13 @@ class MainActivity : Activity() {
         )
 
         root.addView(
-    bouton(
-        "⬅️ Retour"
-    ) {
+            bouton(
+                "⬅️ Retour"
+            ) {
 
-        onBackPressed()
-    }
-)
+                onBackPressed()
+            }
+        )
 
         setContentView(
             scroll(root)
