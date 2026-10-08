@@ -15,8 +15,9 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
 
+        <!-- Écran de bienvenue : première page -->
         <activity
-            android:name=".MainActivity"
+            android:name=".SplashActivity"
             android:exported="true">
 
             <intent-filter>
@@ -25,6 +26,11 @@
             </intent-filter>
 
         </activity>
+
+        <!-- Écran principal de l'application -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
 
     </application>
 
