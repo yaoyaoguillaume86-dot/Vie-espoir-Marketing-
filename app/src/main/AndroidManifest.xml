@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -7,7 +8,7 @@
     <application
         android:allowBackup="true"
         android:label="Vie Espoir Marketing"
-        android:theme="@style/AppTheme"
+        android:theme="@style/AppTheme">
 
         <!-- Écran de bienvenue -->
         <activity
@@ -21,7 +22,7 @@
 
         </activity>
 
-        <!-- Application principale -->
+        <!-- Écran principal -->
         <activity
             android:name=".MainActivity"
             android:exported="false" />
