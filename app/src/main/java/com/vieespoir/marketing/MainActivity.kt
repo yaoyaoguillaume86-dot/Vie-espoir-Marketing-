@@ -45,9 +45,9 @@ class SplashActivity : Activity() {
 
         val logo = ImageView(this).apply {
 
-            setImageResource(
-                R.drawable.logo_vie_espoir
-            )
+     setImageResource(
+    com.vieespoir.marketing.R.drawable.logo_vie_espoir
+)
 
             scaleType =
                 ImageView.ScaleType.FIT_CENTER
