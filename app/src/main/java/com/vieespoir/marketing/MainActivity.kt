@@ -43,24 +43,6 @@ class SplashActivity : Activity() {
             setPadding(30, 30, 30, 30)
         }
 
-        val logo = ImageView(this).apply {
-
-     setImageResource(
-    com.vieespoir.marketing.R.drawable.logo_vie_espoir
-)
-
-            scaleType =
-                ImageView.ScaleType.FIT_CENTER
-
-            layoutParams =
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    500
-                )
-        }
-
-        layout.addView(logo)
-
         val bienvenue = TextView(this).apply {
 
             text =
