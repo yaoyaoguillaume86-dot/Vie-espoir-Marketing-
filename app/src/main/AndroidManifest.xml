@@ -1,21 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Internet -->
     <uses-permission android:name="android.permission.INTERNET" />
-
-    <!-- Caméra pour ajouter la photo d'un produit -->
     <uses-permission android:name="android.permission.CAMERA" />
 
     <application
         android:allowBackup="true"
         android:label="Vie Espoir Marketing"
-        android:icon="@drawable/logo_vie_espoir"
-        android:roundIcon="@drawable/logo_vie_espoir"
-        android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
-        <!-- Écran de bienvenue : première page -->
+        <!-- Écran de bienvenue -->
         <activity
             android:name=".SplashActivity"
             android:exported="true">
@@ -27,7 +21,7 @@
 
         </activity>
 
-        <!-- Écran principal de l'application -->
+        <!-- Application principale -->
         <activity
             android:name=".MainActivity"
             android:exported="false" />
