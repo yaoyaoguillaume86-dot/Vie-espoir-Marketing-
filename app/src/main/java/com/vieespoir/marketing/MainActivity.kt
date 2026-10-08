@@ -261,7 +261,7 @@ class MainActivity : Activity() {
         val recherche = EditText(this)
         recherche.hint = "🔎 Rechercher un produit"
         recherche.textSize = 18f
-        recherche.singleLine = true
+        recherche.quelqueChose.setSingleLine(true)
 
         contenu.addView(
             recherche,
@@ -356,7 +356,7 @@ class MainActivity : Activity() {
 
         val recherche = EditText(this)
         recherche.hint = "🔎 Rechercher un produit"
-        recherche.singleLine = true
+        recherche.quelqueChose.setSingleLine(true)
 
         contenu.addView(recherche)
 
