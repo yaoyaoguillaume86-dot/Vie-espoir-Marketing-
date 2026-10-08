@@ -1,29 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <!-- Internet -->
-    <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- Caméra -->
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <!-- Internet pour WhatsApp et les fonctions en ligne -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:allowBackup="true"
         android:label="Vie Espoir Marketing"
+        android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <!-- Écran de bienvenue : logo pendant 10 secondes -->
+        <!--
+            Écran de lancement.
+            C'est lui qui s'affiche en premier.
+        -->
         <activity
             android:name=".SplashActivity"
             android:exported="true">
 
             <intent-filter>
-
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
-
             </intent-filter>
 
         </activity>
