@@ -24,9 +24,9 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.Locale
 
-// =========================================================
+// ============================================================
 // ÉCRAN DE BIENVENUE
-// =========================================================
+// ============================================================
 
 class SplashActivity : Activity() {
 
@@ -44,375 +44,197 @@ class SplashActivity : Activity() {
         }
 
         val bienvenue = TextView(this).apply {
-
-            text =
-                "BIENVENUE\nVIE ESPOIR MARKETING"
-
+            text = "BIENVENUE\nVIE ESPOIR MARKETING"
             textSize = 22f
-
-            setTextColor(
-                Color.rgb(20, 100, 50)
-            )
-
+            setTextColor(Color.rgb(20, 100, 50))
             gravity = Gravity.CENTER
-
-            typeface =
-                Typeface.DEFAULT_BOLD
-
-            setPadding(
-                0,
-                20,
-                0,
-                0
-            )
+            typeface = Typeface.DEFAULT_BOLD
         }
 
         layout.addView(bienvenue)
-
         setContentView(layout)
 
-        Handler(
-            Looper.getMainLooper()
-        ).postDelayed({
-
-            startActivity(
-                Intent(
-                    this,
-                    MainActivity::class.java
-                )
-            )
-
+        Handler(Looper.getMainLooper()).postDelayed({
+            startActivity(Intent(this, MainActivity::class.java))
             finish()
-
-        }, 10000)
+        }, 2500)
     }
 }
 
 
-// =========================================================
+// ============================================================
 // APPLICATION PRINCIPALE
-// =========================================================
+// ============================================================
 
 class MainActivity : Activity() {
 
-    // =========================================================
-    // DONNÉES
-    // =========================================================
+    // ========================================================
+    // MODÈLES
+    // ========================================================
 
     data class Produit(
-        val id: String =
-            System.currentTimeMillis().toString(),
-
+        val id: String = System.currentTimeMillis().toString(),
         var nom: String,
-
         var prix: String,
-
         var categorie: String,
-
         var stock: Int = 0,
-
         var description: String = "",
-
-        var image: String = ""
+        var images: MutableList<String> = mutableListOf(),
+        var vendeur: String = "",
+        var entreprise: String = ""
     )
 
     data class PanierItem(
         val produitId: String,
-
         val nom: String,
-
         val prix: Int,
-
         var quantite: Int,
-
-        val image: String = ""
+        val images: MutableList<String> = mutableListOf()
     )
 
     data class Commande(
         val id: String,
-
         val client: String,
-
         val telephone: String,
-
         val produit: String,
-
         val montant: String,
-
+        val paiement: String,
         var statut: String = "Nouvelle"
     )
 
-    private val produits =
-        ArrayList<Produit>()
+    data class Compte(
+        val id: String,
+        var nom: String,
+        var entreprise: String,
+        var email: String,
+        var telephone: String,
+        var adresse: String,
+        var motDePasse: String,
+        var type: String,
+        var dateCreation: Long,
+        var valide: Boolean = false
+    )
 
-    private val panier =
-        ArrayList<PanierItem>()
+    // ========================================================
+    // DONNÉES
+    // ========================================================
 
-    private val clients =
-        ArrayList<String>()
+    private val produits = ArrayList<Produit>()
+    private val panier = ArrayList<PanierItem>()
+    private val commandes = ArrayList<Commande>()
+    private val comptes = ArrayList<Compte>()
+    private val evenementsAdmin = ArrayList<String>()
 
-    private val commandes =
-        ArrayList<Commande>()
+    private var compteConnecteId = ""
+    private var imageProduit = ""
+    private val imagesProduit = ArrayList<String>()
 
     private lateinit var zoneProduits: LinearLayout
-
     private lateinit var imagePreview: ImageView
+    private lateinit var galeriePhotos: LinearLayout
 
-    private var imageProduit = ""
-
-    // =========================================================
+    // ========================================================
     // STOCKAGE
-    // =========================================================
+    // ========================================================
 
-    private val PREFS =
-        "vie_espoir_data"
+    private val PREFS = "vie_espoir_data"
 
-    private val PRODUCTS_KEY =
-        "products"
+    private val PRODUCTS_KEY = "products"
+    private val CART_KEY = "cart"
+    private val ORDERS_KEY = "orders"
+    private val ACCOUNTS_KEY = "accounts"
+    private val EVENTS_KEY = "events"
 
-    private val CART_KEY =
-        "cart"
-
-    private val CLIENTS_KEY =
-        "clients"
-
-    private val ORDERS_KEY =
-        "orders"
-
-    private val SELLER_NAME =
-        "seller_name"
-
-    private val SELLER_EMAIL =
-        "seller_email"
-
-    private val SELLER_PHONE =
-        "seller_phone"
-
-    private val SELLER_WHATSAPP =
-        "seller_whatsapp"
-
-    private val SELLER_VALIDATED =
-        "seller_validated"
-
-    private val SELLER_PACK =
-        "seller_pack"
+    private val CONNECTED_ACCOUNT = "connected_account"
 
     private val CAMERA_REQUEST = 100
-
     private val GALLERY_REQUEST = 101
+    private val MULTI_GALLERY_REQUEST = 102
 
-    private val ORANGE_WAVE =
-        "0710405688"
+    // ========================================================
+    // ADMINISTRATEUR
+    // ========================================================
 
-    private val MTN =
-        "0546420566"
+    /*
+     * PROTOTYPE LOCAL.
+     *
+     * Ces identifiants devront être remplacés plus tard
+     * par un véritable système d'authentification sécurisé
+     * côté serveur.
+     */
+    private val ADMIN_EMAIL = "admin@vieespoir.com"
+    private val ADMIN_PASSWORD = "VieEspoirAdmin2026"
+
+    private var adminConnecte = false
+
+    // ========================================================
+    // CONTACT / PAIEMENT
+    // ========================================================
+
+    private val ORANGE_WAVE = "0710405688"
+    private val MTN = "0546420566"
+
+    // ========================================================
+    // COULEURS
+    // ========================================================
+
+    private val VERT = Color.rgb(20, 100, 50)
+    private val VERT_FONCE = Color.rgb(8, 65, 32)
+    private val OR = Color.rgb(218, 165, 32)
+    private val BLANC = Color.WHITE
+    private val FOND = Color.rgb(247, 249, 246)
+    private val GRIS = Color.rgb(235, 237, 235)
+    private val TEXTE = Color.rgb(35, 35, 35)
 
     private val prefs by lazy {
-
-        getSharedPreferences(
-            PREFS,
-            MODE_PRIVATE
-        )
+        getSharedPreferences(PREFS, MODE_PRIVATE)
     }
 
-    // =========================================================
-    // COULEURS
-    // =========================================================
-
-    private val VERT =
-        Color.rgb(20, 100, 50)
-
-    private val VERT_FONCE =
-        Color.rgb(8, 65, 32)
-
-    private val OR =
-        Color.rgb(218, 165, 32)
-
-    private val OR_CLAIR =
-        Color.rgb(255, 193, 7)
-
-    private val BLANC =
-        Color.WHITE
-
-    private val FOND =
-        Color.rgb(247, 249, 246)
-
-    private val GRIS =
-        Color.rgb(235, 237, 235)
-
-    private val TEXTE =
-        Color.rgb(35, 35, 35)
-
-    // =========================================================
+    // ========================================================
     // DÉMARRAGE
-    // =========================================================
+    // ========================================================
 
-    override fun onCreate(
-        savedInstanceState: Bundle?
-    ) {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
-        super.onCreate(
-            savedInstanceState
-        )
-
-        window.statusBarColor =
-            VERT_FONCE
-
-        window.navigationBarColor =
-            Color.WHITE
+        window.statusBarColor = VERT_FONCE
+        window.navigationBarColor = Color.WHITE
 
         chargerDonnees()
+
+        compteConnecteId =
+            prefs.getString(CONNECTED_ACCOUNT, "") ?: ""
 
         afficherAccueil()
     }
 
-    // =========================================================
-    // OUTILS INTERFACE
-    // =========================================================
+    // ========================================================
+    // INTERFACE
+    // ========================================================
 
-    private fun layoutBase():
-            LinearLayout {
-
+    private fun layoutBase(): LinearLayout {
         return LinearLayout(this).apply {
-
-            orientation =
-                LinearLayout.VERTICAL
-
-            setPadding(
-                12,
-                8,
-                12,
-                20
-            )
-
-            setBackgroundColor(
-                FOND
-            )
+            orientation = LinearLayout.VERTICAL
+            setPadding(12, 8, 12, 25)
+            setBackgroundColor(FOND)
         }
     }
 
-    private fun scroll(
-        contenu: LinearLayout
-    ): ScrollView {
-
+    private fun scroll(contenu: LinearLayout): ScrollView {
         return ScrollView(this).apply {
-
             isFillViewport = true
-
             addView(contenu)
         }
     }
 
-    private fun titre(
-        texte: String
-    ): TextView {
-
+    private fun titre(texte: String): TextView {
         return TextView(this).apply {
-
             text = texte
-
             textSize = 23f
-
-            gravity =
-                Gravity.CENTER
-
-            setTextColor(
-                VERT
-            )
-
-            typeface =
-                Typeface.DEFAULT_BOLD
-
-            setPadding(
-                8,
-                18,
-                8,
-                18
-            )
-        }
-    }
-
-    private fun bouton(
-        texte: String,
-        action: () -> Unit
-    ): Button {
-
-        return Button(this).apply {
-
-            text = texte
-
-            textSize = 15f
-
-            setTextColor(
-                TEXTE
-            )
-
-            setBackgroundColor(
-                GRIS
-            )
-
-            typeface =
-                Typeface.DEFAULT_BOLD
-
-            setOnClickListener {
-                action()
-            }
-
-            layoutParams =
-                LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                ).apply {
-
-                    setMargins(
-                        4,
-                        5,
-                        4,
-                        5
-                    )
-                }
-        }
-    }
-
-    private fun boutonVert(
-        texte: String,
-        action: () -> Unit
-    ): Button {
-
-        return Button(this).apply {
-
-            text = texte
-
-            textSize = 15f
-
-            setTextColor(
-                Color.WHITE
-            )
-
-            setBackgroundColor(
-                VERT
-            )
-
-            typeface =
-                Typeface.DEFAULT_BOLD
-
-            setOnClickListener {
-                action()
-            }
-
-            layoutParams =
-                LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                ).apply {
-
-                    setMargins(
-                        4,
-                        5,
-                        4,
-                        5
-                    )
-                }
+            gravity = Gravity.CENTER
+            setTextColor(VERT)
+            typeface = Typeface.DEFAULT_BOLD
+            setPadding(8, 18, 8, 18)
         }
     }
 
@@ -421,117 +243,118 @@ class MainActivity : Activity() {
         taille: Float = 16f,
         couleur: Int = TEXTE
     ): TextView {
-
         return TextView(this).apply {
-
             text = contenu
-
             textSize = taille
-
-            setTextColor(
-                couleur
-            )
-
-            setPadding(
-                8,
-                6,
-                8,
-                6
-            )
+            setTextColor(couleur)
+            setPadding(8, 7, 8, 7)
         }
     }
 
-    // =========================================================
+    private fun bouton(
+        texte: String,
+        action: () -> Unit
+    ): Button {
+        return Button(this).apply {
+            text = texte
+            textSize = 15f
+            setTextColor(TEXTE)
+            setBackgroundColor(GRIS)
+            typeface = Typeface.DEFAULT_BOLD
+
+            setOnClickListener {
+                action()
+            }
+
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(4, 5, 4, 5)
+            }
+        }
+    }
+
+    private fun boutonVert(
+        texte: String,
+        action: () -> Unit
+    ): Button {
+        return Button(this).apply {
+            text = texte
+            textSize = 15f
+            setTextColor(Color.WHITE)
+            setBackgroundColor(VERT)
+            typeface = Typeface.DEFAULT_BOLD
+
+            setOnClickListener {
+                action()
+            }
+
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(4, 5, 4, 5)
+            }
+        }
+    }
+
+    private fun toast(message: String) {
+        Toast.makeText(
+            this,
+            message,
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    // ========================================================
     // ACCUEIL
-    // =========================================================
+    // ========================================================
 
     private fun afficherAccueil() {
 
-        val root =
-            layoutBase()
+        val root = layoutBase()
 
-        val header =
-            LinearLayout(this).apply {
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(8, 10, 8, 10)
+            setBackgroundColor(Color.WHITE)
+        }
 
-                orientation =
-                    LinearLayout.HORIZONTAL
+        val logo = TextView(this).apply {
+            text = "🦁"
+            textSize = 42f
+            gravity = Gravity.CENTER
+        }
 
-                gravity =
-                    Gravity.CENTER_VERTICAL
+        val nom = TextView(this).apply {
+            text = "VIE ESPOIR\nMARKETING"
+            textSize = 20f
+            setTextColor(VERT)
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER_VERTICAL
 
-                setPadding(
-                    8,
-                    10,
-                    8,
-                    10
-                )
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+        }
 
-                setBackgroundColor(
-                    Color.WHITE
-                )
+        val menu = Button(this).apply {
+            text = "☰"
+            textSize = 25f
+            setTextColor(VERT)
+            setBackgroundColor(GRIS)
+
+            setOnClickListener {
+                afficherMenu()
             }
-
-        val logo =
-            TextView(this).apply {
-
-                text = "🦁"
-
-                textSize = 42f
-
-                gravity =
-                    Gravity.CENTER
-            }
-
-        val nom =
-            TextView(this).apply {
-
-                text =
-                    "VIE ESPOIR\nMARKETING"
-
-                textSize = 20f
-
-                setTextColor(
-                    VERT
-                )
-
-                typeface =
-                    Typeface.DEFAULT_BOLD
-
-                gravity =
-                    Gravity.CENTER_VERTICAL
-
-                layoutParams =
-                    LinearLayout.LayoutParams(
-                        0,
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        1f
-                    )
-            }
-
-        val menu =
-            Button(this).apply {
-
-                text = "☰"
-
-                textSize = 25f
-
-                setTextColor(
-                    VERT
-                )
-
-                setBackgroundColor(
-                    GRIS
-                )
-
-                setOnClickListener {
-                    afficherMenu()
-                }
-            }
+        }
 
         header.addView(logo)
-
         header.addView(nom)
-
         header.addView(menu)
 
         root.addView(header)
@@ -542,110 +365,88 @@ class MainActivity : Activity() {
                 14f,
                 VERT
             ).apply {
-
-                gravity =
-                    Gravity.CENTER
-
-                typeface =
-                    Typeface.create(
-                        Typeface.DEFAULT,
-                        Typeface.ITALIC
-                    )
+                gravity = Gravity.CENTER
+                typeface = Typeface.create(
+                    Typeface.DEFAULT,
+                    Typeface.ITALIC
+                )
             }
         )
 
-        val recherche =
-            EditText(this).apply {
+        if (compteConnecteId.isNotEmpty()) {
 
-                hint =
-                    "🔎 Rechercher un produit"
+            val compte = compteActuel()
 
-                textSize = 16f
+            if (compte != null) {
 
-                setSingleLine(true)
-
-                setPadding(
-                    16,
-                    12,
-                    16,
-                    12
-                )
-
-                setBackgroundColor(
-                    Color.WHITE
+                root.addView(
+                    texte(
+                        "👋 Bienvenue ${compte.nom}",
+                        17f,
+                        VERT
+                    ).apply {
+                        gravity = Gravity.CENTER
+                        typeface = Typeface.DEFAULT_BOLD
+                    }
                 )
             }
+        }
+
+        val recherche = EditText(this).apply {
+            hint = "🔎 Rechercher un produit"
+            textSize = 16f
+            setSingleLine(true)
+            setPadding(16, 12, 16, 12)
+            setBackgroundColor(Color.WHITE)
+        }
 
         root.addView(recherche)
 
         root.addView(
-            boutonVert(
-                "🔎 Rechercher"
-            ) {
-
+            boutonVert("🔎 Rechercher") {
                 afficherProduits(
-                    recherche.text
-                        .toString()
-                        .trim()
+                    recherche.text.toString().trim()
                 )
             }
         )
 
         root.addView(
-            titre(
-                "🛍️ Produits disponibles"
-            )
+            titre("🛍️ Produits disponibles")
         )
 
-        zoneProduits =
-            LinearLayout(this).apply {
+        zoneProduits = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
 
-                orientation =
-                    LinearLayout.VERTICAL
-            }
-
-        root.addView(
-            zoneProduits
-        )
+        root.addView(zoneProduits)
 
         root.addView(
             bouton(
                 "🛒 Mon panier (${panier.size})"
             ) {
-
                 afficherPanier()
             }
         )
 
         root.addView(
             texte(
-                "VIE ESPOIR MARKETING\nProduits • Commandes • Vente",
+                "VIE ESPOIR MARKETING\nProduits • Commandes • Vente • Entreprises",
                 13f,
                 Color.GRAY
             ).apply {
-
-                gravity =
-                    Gravity.CENTER
-
-                setPadding(
-                    8,
-                    25,
-                    8,
-                    20
-                )
+                gravity = Gravity.CENTER
+                setPadding(8, 25, 8, 20)
             }
         )
 
-        setContentView(
-            scroll(root)
-        )
+        setContentView(scroll(root))
 
         afficherProduitsAccueil()
     }
 
-    // =========================================================
+    // ========================================================
     // PRODUITS ACCUEIL
-    // =========================================================
+    // ========================================================
 
     private fun afficherProduitsAccueil() {
 
@@ -658,16 +459,8 @@ class MainActivity : Activity() {
                     "Aucun produit disponible pour le moment.",
                     17f
                 ).apply {
-
-                    gravity =
-                        Gravity.CENTER
-
-                    setPadding(
-                        10,
-                        30,
-                        10,
-                        30
-                    )
+                    gravity = Gravity.CENTER
+                    setPadding(10, 30, 10, 30)
                 }
             )
 
@@ -675,7 +468,6 @@ class MainActivity : Activity() {
         }
 
         for (produit in produits) {
-
             ajouterCarteProduit(
                 zoneProduits,
                 produit
@@ -683,76 +475,125 @@ class MainActivity : Activity() {
         }
     }
 
-    // =========================================================
+    // ========================================================
     // CARTE PRODUIT
-    // =========================================================
+    // ========================================================
 
     private fun ajouterCarteProduit(
         parent: LinearLayout,
         produit: Produit
     ) {
 
-        val carte =
-            LinearLayout(this).apply {
+        val carte = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(12, 12, 12, 12)
+            setBackgroundColor(Color.WHITE)
 
-                orientation =
-                    LinearLayout.VERTICAL
-
-                setPadding(
-                    12,
-                    12,
-                    12,
-                    12
-                )
-
-                setBackgroundColor(
-                    Color.WHITE
-                )
-
-                layoutParams =
-                    LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT
-                    ).apply {
-
-                        setMargins(
-                            3,
-                            8,
-                            3,
-                            8
-                        )
-                    }
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(3, 8, 3, 8)
             }
+        }
 
-        if (produit.image.isNotEmpty()) {
+        // ----------------------------------------------------
+        // IMAGE PRINCIPALE
+        // ----------------------------------------------------
+
+        val imagePrincipale =
+            if (produit.images.isNotEmpty())
+                produit.images[0]
+            else
+                ""
+
+        if (imagePrincipale.isNotEmpty()) {
 
             try {
 
-                val image =
-                    ImageView(this).apply {
+                val image = ImageView(this).apply {
 
-                        layoutParams =
-                            LinearLayout.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                260
-                            )
-
-                        scaleType =
-                            ImageView.ScaleType.CENTER_CROP
-
-                        setImageURI(
-                            Uri.parse(
-                                produit.image
-                            )
+                    layoutParams =
+                        LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            250
                         )
-                    }
 
-                carte.addView(
-                    image
-                )
+                    scaleType =
+                        ImageView.ScaleType.CENTER_CROP
+
+                    setImageURI(
+                        Uri.parse(imagePrincipale)
+                    )
+                }
+
+                carte.addView(image)
 
             } catch (_: Exception) {
             }
+        }
+
+        // ----------------------------------------------------
+        // PETITES VIGNETTES
+        // ----------------------------------------------------
+
+        if (produit.images.size > 1) {
+
+            val miniatures =
+                LinearLayout(this).apply {
+
+                    orientation =
+                        LinearLayout.HORIZONTAL
+
+                    gravity =
+                        Gravity.CENTER
+
+                    setPadding(
+                        0,
+                        5,
+                        0,
+                        5
+                    )
+                }
+
+            for (chemin in produit.images) {
+
+                try {
+
+                    val miniature =
+                        ImageView(this).apply {
+
+                            layoutParams =
+                                LinearLayout.LayoutParams(
+                                    65,
+                                    65
+                                ).apply {
+
+                                    setMargins(
+                                        3,
+                                        3,
+                                        3,
+                                        3
+                                    )
+                                }
+
+                            scaleType =
+                                ImageView.ScaleType.CENTER_CROP
+
+                            setImageURI(
+                                Uri.parse(chemin)
+                            )
+                        }
+
+                    miniatures.addView(
+                        miniature
+                    )
+
+                } catch (_: Exception) {
+                }
+            }
+
+            carte.addView(miniatures)
         }
 
         carte.addView(
@@ -761,9 +602,7 @@ class MainActivity : Activity() {
                 21f,
                 VERT
             ).apply {
-
-                typeface =
-                    Typeface.DEFAULT_BOLD
+                typeface = Typeface.DEFAULT_BOLD
             }
         )
 
@@ -778,33 +617,35 @@ class MainActivity : Activity() {
                 19f,
                 VERT
             ).apply {
-
-                typeface =
-                    Typeface.DEFAULT_BOLD
+                typeface = Typeface.DEFAULT_BOLD
             }
         )
 
+        if (produit.entreprise.isNotEmpty()) {
+
+            carte.addView(
+                texte(
+                    "🏢 ${produit.entreprise}",
+                    14f,
+                    OR
+                )
+            )
+        }
+
         carte.addView(
             texte(
-                "Catégorie : ${produit.categorie}",
+                "🏷️ ${produit.categorie}",
                 14f,
                 Color.GRAY
             )
         )
 
-        val stockTexte =
-            if (produit.stock > 0) {
-
-                "📦 Stock : ${produit.stock}"
-
-            } else {
-
-                "⚠️ Stock non disponible"
-            }
-
         carte.addView(
             texte(
-                stockTexte,
+                if (produit.stock > 0)
+                    "📦 Stock : ${produit.stock}"
+                else
+                    "⚠️ Produit indisponible",
                 14f,
                 if (produit.stock > 0)
                     VERT
@@ -813,9 +654,7 @@ class MainActivity : Activity() {
             )
         )
 
-        if (
-            produit.description.isNotEmpty()
-        ) {
+        if (produit.description.isNotEmpty()) {
 
             carte.addView(
                 texte(
@@ -827,57 +666,203 @@ class MainActivity : Activity() {
         }
 
         carte.addView(
-            boutonVert(
-                "🛒 Ajouter au panier"
-            ) {
+            boutonVert("🛒 Ajouter au panier") {
 
                 if (produit.stock <= 0) {
 
-                    Toast.makeText(
-                        this,
-                        "Produit indisponible",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    toast(
+                        "Produit indisponible"
+                    )
 
                     return@boutonVert
                 }
 
-                ajouterAuPanier(
-                    produit
-                )
+                ajouterAuPanier(produit)
             }
         )
 
         carte.addView(
-            bouton(
-                "📤 Partager"
-            ) {
-
-                partagerProduit(
-                    produit
-                )
+            bouton("👁️ Voir le produit") {
+                afficherDetailProduit(produit)
             }
         )
 
         carte.addView(
-            bouton(
-                "✏️ Modifier / gérer"
-            ) {
-
-                afficherModifierProduit(
-                    produit
-                )
+            bouton("📤 Partager") {
+                partagerProduit(produit)
             }
         )
 
-        parent.addView(
-            carte
-        )
+        // ----------------------------------------------------
+        // GESTION VENDEUR
+        // ----------------------------------------------------
+
+        val compte = compteActuel()
+
+        if (
+            compte != null &&
+            compte.type == "VENDEUR" &&
+            compte.valide
+        ) {
+
+            carte.addView(
+                bouton("✏️ Modifier / gérer") {
+                    afficherModifierProduit(produit)
+                }
+            )
+        }
+
+        parent.addView(carte)
     }
 
-    // =========================================================
-    // AJOUT PANIER
-    // =========================================================
+    // ========================================================
+    // DÉTAIL PRODUIT
+    // ========================================================
+
+    private fun afficherDetailProduit(
+        produit: Produit
+    ) {
+
+        val root = layoutBase()
+
+        root.addView(
+            titre("🛍️ ${produit.nom}")
+        )
+
+        if (produit.images.isNotEmpty()) {
+
+            val galerie =
+                LinearLayout(this).apply {
+
+                    orientation =
+                        LinearLayout.HORIZONTAL
+
+                    gravity =
+                        Gravity.CENTER
+                }
+
+            for (chemin in produit.images) {
+
+                try {
+
+                    val image =
+                        ImageView(this).apply {
+
+                            layoutParams =
+                                LinearLayout.LayoutParams(
+                                    90,
+                                    90
+                                ).apply {
+
+                                    setMargins(
+                                        4,
+                                        4,
+                                        4,
+                                        4
+                                    )
+                                }
+
+                            scaleType =
+                                ImageView.ScaleType.CENTER_CROP
+
+                            setImageURI(
+                                Uri.parse(chemin)
+                            )
+
+                            setOnClickListener {
+
+                                val grand =
+                                    ImageView(this@MainActivity)
+
+                                grand.setImageURI(
+                                    Uri.parse(chemin)
+                                )
+
+                                grand.adjustViewBounds = true
+
+                                AlertDialog.Builder(
+                                    this@MainActivity
+                                )
+                                    .setView(grand)
+                                    .setPositiveButton(
+                                        "Fermer",
+                                        null
+                                    )
+                                    .show()
+                            }
+                        }
+
+                    galerie.addView(image)
+
+                } catch (_: Exception) {
+                }
+            }
+
+            root.addView(galerie)
+        }
+
+        root.addView(
+            texte(
+                "💰 ${formaterNombre(
+                    produit.prix.toIntOrNull() ?: 0
+                )} FCFA",
+                21f,
+                VERT
+            ).apply {
+                gravity = Gravity.CENTER
+                typeface = Typeface.DEFAULT_BOLD
+            }
+        )
+
+        root.addView(
+            texte(
+                "🏢 ${produit.entreprise.ifEmpty {
+                    "Vendeur"
+                }}",
+                16f,
+                OR
+            ).apply {
+                gravity = Gravity.CENTER
+            }
+        )
+
+        root.addView(
+            texte(
+                produit.description.ifEmpty {
+                    "Aucune description."
+                },
+                16f
+            )
+        )
+
+        root.addView(
+            boutonVert("🛒 Ajouter au panier") {
+
+                if (produit.stock <= 0) {
+
+                    toast(
+                        "Produit indisponible"
+                    )
+
+                } else {
+
+                    ajouterAuPanier(produit)
+                }
+            }
+        )
+
+        root.addView(
+            bouton("📤 Partager") {
+                partagerProduit(produit)
+            }
+        )
+
+        setContentView(scroll(root))
+    }
+
+    // ========================================================
+    // PANIER
+    // ========================================================
 
     private fun ajouterAuPanier(
         produit: Produit
@@ -885,17 +870,12 @@ class MainActivity : Activity() {
 
         val existant =
             panier.find {
-                it.produitId ==
-                    produit.id
+                it.produitId == produit.id
             }
 
         if (existant != null) {
 
-            if (
-                existant.quantite <
-                produit.stock
-            ) {
-
+            if (existant.quantite < produit.stock) {
                 existant.quantite++
             }
 
@@ -903,96 +883,458 @@ class MainActivity : Activity() {
 
             panier.add(
                 PanierItem(
-                    produitId =
-                        produit.id,
-
-                    nom =
-                        produit.nom,
-
+                    produitId = produit.id,
+                    nom = produit.nom,
                     prix =
                         produit.prix
                             .replace(" ", "")
-                            .toIntOrNull()
-                            ?: 0,
-
+                            .toIntOrNull() ?: 0,
                     quantite = 1,
-
-                    image =
-                        produit.image
+                    images =
+                        produit.images.toMutableList()
                 )
             )
         }
 
         sauvegarderPanier()
 
-        Toast.makeText(
-            this,
-            "Produit ajouté au panier",
-            Toast.LENGTH_SHORT
-        ).show()
+        toast(
+            "Produit ajouté au panier"
+        )
     }
 
-    // =========================================================
-    // RECHERCHE / PRODUITS
-    // =========================================================
+    private fun afficherPanier() {
+
+        val root = layoutBase()
+
+        root.addView(
+            titre("🛒 Mon panier")
+        )
+
+        if (panier.isEmpty()) {
+
+            root.addView(
+                texte(
+                    "Votre panier est vide.",
+                    18f
+                ).apply {
+                    gravity = Gravity.CENTER
+                    setPadding(10, 40, 10, 40)
+                }
+            )
+
+        } else {
+
+            var total = 0
+
+            for (item in panier) {
+
+                val bloc =
+                    LinearLayout(this).apply {
+
+                        orientation =
+                            LinearLayout.VERTICAL
+
+                        setPadding(
+                            12,
+                            12,
+                            12,
+                            12
+                        )
+
+                        setBackgroundColor(
+                            Color.WHITE
+                        )
+                    }
+
+                bloc.addView(
+                    texte(
+                        item.nom,
+                        19f,
+                        VERT
+                    ).apply {
+                        typeface =
+                            Typeface.DEFAULT_BOLD
+                    }
+                )
+
+                bloc.addView(
+                    texte(
+                        "${formaterNombre(item.prix)} FCFA",
+                        16f
+                    )
+                )
+
+                bloc.addView(
+                    texte(
+                        "Quantité : ${item.quantite}",
+                        16f
+                    )
+                )
+
+                bloc.addView(
+                    bouton("➕ Ajouter 1") {
+
+                        val produit =
+                            produits.find {
+                                it.id == item.produitId
+                            }
+
+                        if (
+                            produit != null &&
+                            item.quantite < produit.stock
+                        ) {
+
+                            item.quantite++
+
+                            sauvegarderPanier()
+                            afficherPanier()
+                        }
+                    }
+                )
+
+                bloc.addView(
+                    bouton("➖ Retirer 1") {
+
+                        if (item.quantite > 1) {
+                            item.quantite--
+                        } else {
+                            panier.remove(item)
+                        }
+
+                        sauvegarderPanier()
+                        afficherPanier()
+                    }
+                )
+
+                root.addView(bloc)
+
+                total +=
+                    item.prix * item.quantite
+            }
+
+            root.addView(
+                texte(
+                    "TOTAL : ${formaterNombre(total)} FCFA",
+                    22f,
+                    VERT
+                ).apply {
+                    gravity = Gravity.CENTER
+                    typeface = Typeface.DEFAULT_BOLD
+                    setPadding(10, 25, 10, 25)
+                }
+            )
+
+            root.addView(
+                boutonVert("✅ Continuer la commande") {
+                    demanderInfosCommande(total)
+                }
+            )
+
+            root.addView(
+                bouton("🗑️ Vider le panier") {
+
+                    panier.clear()
+                    sauvegarderPanier()
+                    afficherPanier()
+                }
+            )
+        }
+
+        setContentView(scroll(root))
+    }
+
+    // ========================================================
+    // COMMANDE + PAIEMENT OBLIGATOIRE
+    // ========================================================
+
+    private fun demanderInfosCommande(
+        total: Int
+    ) {
+
+        val box =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(20, 5, 20, 5)
+            }
+
+        val client =
+            EditText(this).apply {
+                hint = "Nom du client"
+            }
+
+        val tel =
+            EditText(this).apply {
+                hint = "Téléphone"
+                inputType =
+                    InputType.TYPE_CLASS_PHONE
+            }
+
+        val adresse =
+            EditText(this).apply {
+                hint = "Adresse de livraison"
+                minLines = 2
+            }
+
+        box.addView(client)
+        box.addView(tel)
+        box.addView(adresse)
+
+        AlertDialog.Builder(this)
+            .setTitle("📦 Informations de commande")
+            .setView(box)
+            .setNegativeButton(
+                "Annuler",
+                null
+            )
+            .setPositiveButton(
+                "Continuer",
+                null
+            )
+            .create()
+            .also { dialogue ->
+
+                dialogue.setOnShowListener {
+
+                    dialogue.getButton(
+                        AlertDialog.BUTTON_POSITIVE
+                    ).setOnClickListener {
+
+                        val nomClient =
+                            client.text.toString().trim()
+
+                        val telephone =
+                            tel.text.toString().trim()
+
+                        if (nomClient.isEmpty()) {
+
+                            toast(
+                                "Nom du client obligatoire"
+                            )
+
+                            return@setOnClickListener
+                        }
+
+                        if (telephone.isEmpty()) {
+
+                            toast(
+                                "Téléphone obligatoire"
+                            )
+
+                            return@setOnClickListener
+                        }
+
+                        if (
+                            adresse.text
+                                .toString()
+                                .trim()
+                                .isEmpty()
+                        ) {
+
+                            toast(
+                                "Adresse obligatoire"
+                            )
+
+                            return@setOnClickListener
+                        }
+
+                        dialogue.dismiss()
+
+                        choisirPaiementCommande(
+                            nomClient,
+                            telephone,
+                            total
+                        )
+                    }
+                }
+
+                dialogue.show()
+            }
+    }
+
+    // ========================================================
+    // CHOIX PAIEMENT
+    // ========================================================
+
+    private fun choisirPaiementCommande(
+        client: String,
+        telephone: String,
+        total: Int
+    ) {
+
+        val choix = arrayOf(
+            "💵 Paiement en espèces",
+            "💳 Paiement en ligne",
+            "🚚 Paiement à la livraison"
+        )
+
+        AlertDialog.Builder(this)
+            .setTitle(
+                "💳 Choisissez le mode de paiement"
+            )
+            .setItems(choix) { _, position ->
+
+                val paiement =
+                    when (position) {
+
+                        0 ->
+                            "Espèces"
+
+                        1 ->
+                            "Paiement en ligne"
+
+                        2 ->
+                            "Paiement à la livraison"
+
+                        else ->
+                            ""
+                    }
+
+                if (paiement.isEmpty()) {
+                    return@setItems
+                }
+
+                confirmerCommande(
+                    client,
+                    telephone,
+                    total,
+                    paiement
+                )
+            }
+            .setNegativeButton(
+                "Annuler",
+                null
+            )
+            .show()
+    }
+
+    // ========================================================
+    // CONFIRMATION COMMANDE
+    // ========================================================
+
+    private fun confirmerCommande(
+        client: String,
+        telephone: String,
+        total: Int,
+        paiement: String
+    ) {
+
+        val produitsCommande =
+            panier.joinToString(", ") {
+                "${it.nom} x${it.quantite}"
+            }
+
+        AlertDialog.Builder(this)
+            .setTitle("📋 Récapitulatif")
+            .setMessage(
+                """
+                Client : $client
+                
+                Produits :
+                $produitsCommande
+                
+                Total :
+                ${formaterNombre(total)} FCFA
+                
+                Paiement :
+                $paiement
+                """.trimIndent()
+            )
+            .setNegativeButton(
+                "Modifier",
+                null
+            )
+            .setPositiveButton(
+                "Confirmer la commande"
+            ) { _, _ ->
+
+                val commande =
+                    Commande(
+                        id =
+                            System.currentTimeMillis()
+                                .toString()
+                                .takeLast(6),
+
+                        client =
+                            client,
+
+                        telephone =
+                            telephone,
+
+                        produit =
+                            produitsCommande,
+
+                        montant =
+                            total.toString(),
+
+                        paiement =
+                            paiement,
+
+                        statut =
+                            "Nouvelle"
+                    )
+
+                commandes.add(commande)
+
+                sauvegarderCommandes()
+
+                enregistrerEvenement(
+                    "Nouvelle commande #${commande.id} — $paiement — ${formaterNombre(total)} FCFA"
+                )
+
+                panier.clear()
+
+                sauvegarderPanier()
+
+                toast(
+                    "✅ Commande enregistrée"
+                )
+
+                afficherAccueil()
+            }
+            .show()
+    }
+
+    // ========================================================
+    // PRODUITS / RECHERCHE
+    // ========================================================
 
     private fun afficherProduits(
         rechercheTexte: String
     ) {
 
-        val root =
-            layoutBase()
+        val root = layoutBase()
 
         root.addView(
             titre("🛍️ Produits")
         )
 
-        root.addView(
-            bouton("⬅ Accueil") {
-                afficherAccueil()
-            }
-        )
-
         val recherche =
             EditText(this).apply {
 
-                hint =
-                    "🔎 Rechercher..."
-
+                hint = "🔎 Rechercher..."
                 setSingleLine(true)
-
-                setText(
-                    rechercheTexte
-                )
+                setText(rechercheTexte)
             }
 
-        root.addView(
-            recherche
-        )
+        root.addView(recherche)
 
         root.addView(
-            boutonVert(
-                "🔎 Rechercher"
-            ) {
+            boutonVert("🔎 Rechercher") {
 
                 afficherProduits(
-                    recherche.text
-                        .toString()
-                        .trim()
+                    recherche.text.toString().trim()
                 )
             }
         )
 
         val liste =
             LinearLayout(this).apply {
-
                 orientation =
                     LinearLayout.VERTICAL
             }
 
-        root.addView(
-            liste
-        )
+        root.addView(liste)
 
         val mot =
             rechercheTexte.lowercase(
@@ -1035,131 +1377,119 @@ class MainActivity : Activity() {
                     "Aucun produit trouvé.",
                     18f
                 ).apply {
-
-                    gravity =
-                        Gravity.CENTER
-
-                    setPadding(
-                        10,
-                        35,
-                        10,
-                        35
-                    )
+                    gravity = Gravity.CENTER
+                    setPadding(10, 35, 10, 35)
                 }
             )
         }
 
-        setContentView(
-            scroll(root)
-        )
+        setContentView(scroll(root))
     }
 
-    // =========================================================
+    // ========================================================
     // AJOUT PRODUIT
-    // =========================================================
+    // ========================================================
 
     private fun afficherAjouterProduit() {
 
-        val root =
-            layoutBase()
+        val compte = compteActuel()
 
-        root.addView(
-            titre(
-                "➕ Ajouter un produit"
+        if (
+            compte == null ||
+            compte.type != "VENDEUR"
+        ) {
+
+            toast(
+                "Connectez-vous comme vendeur."
             )
-        )
+
+            afficherConnexion()
+            return
+        }
+
+        if (!compte.valide) {
+
+            toast(
+                "Votre compte vendeur n'est pas encore validé."
+            )
+
+            return
+        }
+
+        if (!vendeurPeutUtiliser()) {
+
+            toast(
+                "Votre période gratuite est terminée. Veuillez prendre un abonnement."
+            )
+
+            afficherAbonnement()
+            return
+        }
+
+        imageProduit = ""
+        imagesProduit.clear()
+
+        val root = layoutBase()
 
         root.addView(
-            bouton("⬅ Retour") {
-                afficherAccueil()
-            }
+            titre("➕ Ajouter un produit")
         )
 
         val nom =
             EditText(this).apply {
-
-                hint =
-                    "Nom du produit"
-
+                hint = "Nom du produit"
                 textSize = 16f
             }
 
         val prix =
             EditText(this).apply {
-
-                hint =
-                    "Prix en FCFA"
-
+                hint = "Prix en FCFA"
                 inputType =
                     InputType.TYPE_CLASS_NUMBER
-
-                textSize = 16f
             }
 
         val categorie =
             EditText(this).apply {
-
-                hint =
-                    "Catégorie"
-
-                textSize = 16f
+                hint = "Catégorie"
             }
 
         val stock =
             EditText(this).apply {
-
-                hint =
-                    "Quantité en stock"
-
+                hint = "Quantité en stock"
                 inputType =
                     InputType.TYPE_CLASS_NUMBER
-
-                textSize = 16f
             }
 
         val description =
             EditText(this).apply {
-
-                hint =
-                    "Description du produit"
-
-                textSize = 16f
-
+                hint = "Description du produit"
                 minLines = 3
-
-                gravity =
-                    Gravity.TOP
+                gravity = Gravity.TOP
             }
 
         root.addView(nom)
-
         root.addView(prix)
-
         root.addView(categorie)
-
         root.addView(stock)
-
         root.addView(description)
 
-        imagePreview =
-            ImageView(this).apply {
-
-                layoutParams =
-                    LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        280
-                    )
-
-                scaleType =
-                    ImageView.ScaleType.CENTER_CROP
-
-                visibility =
-                    View.GONE
+        galeriePhotos =
+            LinearLayout(this).apply {
+                orientation =
+                    LinearLayout.HORIZONTAL
+                gravity =
+                    Gravity.CENTER
             }
 
         root.addView(
-            imagePreview
+            texte(
+                "📸 Photos du produit",
+                17f,
+                VERT
+            )
         )
+
+        root.addView(galeriePhotos)
 
         root.addView(
             bouton(
@@ -1171,9 +1501,9 @@ class MainActivity : Activity() {
 
         root.addView(
             bouton(
-                "🖼️ Choisir une photo"
+                "🖼️ Ajouter des photos"
             ) {
-                ouvrirGalerie()
+                ouvrirGalerieMultiple()
             }
         )
 
@@ -1183,35 +1513,22 @@ class MainActivity : Activity() {
             ) {
 
                 val nomProduit =
-                    nom.text
-                        .toString()
-                        .trim()
+                    nom.text.toString().trim()
 
                 val prixProduit =
-                    prix.text
-                        .toString()
-                        .trim()
+                    prix.text.toString().trim()
 
                 val categorieProduit =
-                    categorie.text
-                        .toString()
-                        .trim()
+                    categorie.text.toString().trim()
 
                 val stockProduit =
-                    stock.text
-                        .toString()
-                        .trim()
-                        .toIntOrNull()
-                        ?: 0
+                    stock.text.toString()
+                        .toIntOrNull() ?: 0
 
                 val descriptionProduit =
-                    description.text
-                        .toString()
-                        .trim()
+                    description.text.toString().trim()
 
-                if (
-                    nomProduit.isEmpty()
-                ) {
+                if (nomProduit.isEmpty()) {
 
                     toast(
                         "Entrez le nom du produit"
@@ -1220,9 +1537,7 @@ class MainActivity : Activity() {
                     return@boutonVert
                 }
 
-                if (
-                    prixProduit.isEmpty()
-                ) {
+                if (prixProduit.isEmpty()) {
 
                     toast(
                         "Entrez le prix"
@@ -1231,35 +1546,36 @@ class MainActivity : Activity() {
                     return@boutonVert
                 }
 
+                val compteVendeur =
+                    compteActuel()
+
                 produits.add(
                     Produit(
-                        nom =
-                            nomProduit,
-
-                        prix =
-                            prixProduit,
-
+                        nom = nomProduit,
+                        prix = prixProduit,
                         categorie =
-                            if (
-                                categorieProduit.isEmpty()
-                            )
+                            categorieProduit.ifEmpty {
                                 "Autres"
-                            else
-                                categorieProduit,
-
-                        stock =
-                            stockProduit,
-
+                            },
+                        stock = stockProduit,
                         description =
                             descriptionProduit,
-
-                        image =
-                            imageProduit
+                        images =
+                            imagesProduit.toMutableList(),
+                        vendeur =
+                            compteVendeur?.nom ?: "",
+                        entreprise =
+                            compteVendeur?.entreprise ?: ""
                     )
                 )
 
                 sauvegarderProduits()
 
+                enregistrerEvenement(
+                    "Nouveau produit ajouté : $nomProduit"
+                )
+
+                imagesProduit.clear()
                 imageProduit = ""
 
                 toast(
@@ -1270,143 +1586,103 @@ class MainActivity : Activity() {
             }
         )
 
-        setContentView(
-            scroll(root)
-        )
+        setContentView(scroll(root))
     }
 
-    // =========================================================
+    // ========================================================
     // MODIFIER PRODUIT
-    // =========================================================
+    // ========================================================
 
     private fun afficherModifierProduit(
         produit: Produit
     ) {
 
-        val root =
-            layoutBase()
+        val compte = compteActuel()
+
+        if (
+            compte == null ||
+            compte.type != "VENDEUR"
+        ) {
+            toast("Accès vendeur requis")
+            return
+        }
+
+        val root = layoutBase()
 
         root.addView(
-            titre(
-                "✏️ Modifier le produit"
-            )
-        )
-
-        root.addView(
-            bouton("⬅ Retour") {
-                afficherAccueil()
-            }
+            titre("✏️ Modifier le produit")
         )
 
         val nom =
             EditText(this).apply {
-
                 hint = "Nom"
-
-                setText(
-                    produit.nom
-                )
+                setText(produit.nom)
             }
 
         val prix =
             EditText(this).apply {
-
                 hint = "Prix"
-
-                setText(
-                    produit.prix
-                )
-
+                setText(produit.prix)
                 inputType =
                     InputType.TYPE_CLASS_NUMBER
             }
 
         val categorie =
             EditText(this).apply {
-
-                hint =
-                    "Catégorie"
-
-                setText(
-                    produit.categorie
-                )
+                hint = "Catégorie"
+                setText(produit.categorie)
             }
 
         val stock =
             EditText(this).apply {
-
                 hint = "Stock"
-
-                setText(
-                    produit.stock.toString()
-                )
-
+                setText(produit.stock.toString())
                 inputType =
                     InputType.TYPE_CLASS_NUMBER
             }
 
         val description =
             EditText(this).apply {
-
-                hint =
-                    "Description"
-
-                setText(
-                    produit.description
-                )
-
+                hint = "Description"
+                setText(produit.description)
                 minLines = 3
-
-                gravity =
-                    Gravity.TOP
+                gravity = Gravity.TOP
             }
 
         root.addView(nom)
-
         root.addView(prix)
-
         root.addView(categorie)
-
         root.addView(stock)
-
         root.addView(description)
 
         root.addView(
             boutonVert(
-                "💾 Enregistrer les modifications"
+                "💾 Enregistrer"
             ) {
 
                 produit.nom =
-                    nom.text
-                        .toString()
-                        .trim()
+                    nom.text.toString().trim()
 
                 produit.prix =
-                    prix.text
-                        .toString()
-                        .trim()
+                    prix.text.toString().trim()
 
                 produit.categorie =
-                    categorie.text
-                        .toString()
-                        .trim()
+                    categorie.text.toString().trim()
 
                 produit.stock =
-                    stock.text
-                        .toString()
-                        .toIntOrNull()
-                        ?: 0
+                    stock.text.toString()
+                        .toIntOrNull() ?: 0
 
                 produit.description =
-                    description.text
-                        .toString()
-                        .trim()
+                    description.text.toString().trim()
 
                 sauvegarderProduits()
 
-                toast(
-                    "Produit modifié"
+                enregistrerEvenement(
+                    "Produit modifié : ${produit.nom}"
                 )
+
+                toast("Produit modifié")
 
                 afficherAccueil()
             }
@@ -1418,9 +1694,7 @@ class MainActivity : Activity() {
             ) {
 
                 AlertDialog.Builder(this)
-                    .setTitle(
-                        "Supprimer"
-                    )
+                    .setTitle("Supprimer")
                     .setMessage(
                         "Supprimer ${produit.nom} ?"
                     )
@@ -1432,14 +1706,12 @@ class MainActivity : Activity() {
                         "Supprimer"
                     ) { _, _ ->
 
-                        produits.remove(
-                            produit
-                        )
+                        produits.remove(produit)
 
                         sauvegarderProduits()
 
-                        toast(
-                            "Produit supprimé"
+                        enregistrerEvenement(
+                            "Produit supprimé : ${produit.nom}"
                         )
 
                         afficherAccueil()
@@ -1448,14 +1720,12 @@ class MainActivity : Activity() {
             }
         )
 
-        setContentView(
-            scroll(root)
-        )
+        setContentView(scroll(root))
     }
 
-    // =========================================================
+    // ========================================================
     // CAMERA
-    // =========================================================
+    // ========================================================
 
     private fun ouvrirCamera() {
 
@@ -1463,8 +1733,7 @@ class MainActivity : Activity() {
             android.os.Build.VERSION.SDK_INT >= 23 &&
             checkSelfPermission(
                 Manifest.permission.CAMERA
-            ) !=
-            PackageManager.PERMISSION_GRANTED
+            ) != PackageManager.PERMISSION_GRANTED
         ) {
 
             requestPermissions(
@@ -1497,23 +1766,34 @@ class MainActivity : Activity() {
         }
     }
 
-    // =========================================================
-    // GALERIE
-    // =========================================================
+    // ========================================================
+    // GALERIE MULTIPLE
+    // ========================================================
 
-    private fun ouvrirGalerie() {
+    private fun ouvrirGalerieMultiple() {
 
         try {
 
             val intent =
                 Intent(
-                    Intent.ACTION_PICK,
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                )
+                    Intent.ACTION_OPEN_DOCUMENT
+                ).apply {
+
+                    type = "image/*"
+
+                    putExtra(
+                        Intent.EXTRA_ALLOW_MULTIPLE,
+                        true
+                    )
+
+                    addCategory(
+                        Intent.CATEGORY_OPENABLE
+                    )
+                }
 
             startActivityForResult(
                 intent,
-                GALLERY_REQUEST
+                MULTI_GALLERY_REQUEST
             )
 
         } catch (_: Exception) {
@@ -1523,6 +1803,10 @@ class MainActivity : Activity() {
             )
         }
     }
+
+    // ========================================================
+    // PERMISSION
+    // ========================================================
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -1537,8 +1821,7 @@ class MainActivity : Activity() {
         )
 
         if (
-            requestCode ==
-            CAMERA_REQUEST &&
+            requestCode == CAMERA_REQUEST &&
             grantResults.isNotEmpty() &&
             grantResults[0] ==
             PackageManager.PERMISSION_GRANTED
@@ -1548,9 +1831,9 @@ class MainActivity : Activity() {
         }
     }
 
-    // =========================================================
-    // RÉSULTAT PHOTO
-    // =========================================================
+    // ========================================================
+    // RESULTAT PHOTO
+    // ========================================================
 
     override fun onActivityResult(
         requestCode: Int,
@@ -1564,42 +1847,57 @@ class MainActivity : Activity() {
             data
         )
 
-        if (
-            resultCode != RESULT_OK
-        ) {
+        if (resultCode != RESULT_OK) {
             return
         }
 
+        // ----------------------------------------------------
+        // GALERIE MULTIPLE
+        // ----------------------------------------------------
+
         if (
             requestCode ==
-            GALLERY_REQUEST
+            MULTI_GALLERY_REQUEST
         ) {
 
-            val uri =
-                data?.data
+            val clipData =
+                data?.clipData
 
-            if (uri != null) {
+            if (clipData != null) {
 
-                try {
+                for (
+                    i in 0 until clipData.itemCount
+                ) {
 
-                    imageProduit =
+                    val uri =
+                        clipData.getItemAt(i).uri
+
+                    ajouterImageProduit(
                         uri.toString()
-
-                    imagePreview.visibility =
-                        View.VISIBLE
-
-                    imagePreview.setImageURI(
-                        uri
                     )
+                }
 
-                } catch (_: Exception) {
+            } else {
 
-                    toast(
-                        "Impossible de charger l'image"
+                val uri =
+                    data?.data
+
+                if (uri != null) {
+
+                    ajouterImageProduit(
+                        uri.toString()
                     )
                 }
             }
+
+            toast(
+                "Photo(s) ajoutée(s)"
+            )
         }
+
+        // ----------------------------------------------------
+        // CAMERA
+        // ----------------------------------------------------
 
         if (
             requestCode ==
@@ -1619,42 +1917,65 @@ class MainActivity : Activity() {
                             bitmap
                         )
 
-                    imageProduit =
+                    ajouterImageProduit(
                         chemin
-
-                    imagePreview.visibility =
-                        View.VISIBLE
-
-                    imagePreview.setImageURI(
-                        Uri.parse(
-                            chemin
-                        )
                     )
 
                     toast(
-                        "Photo enregistrée"
+                        "Photo ajoutée"
                     )
 
                 } catch (_: Exception) {
 
-                    imagePreview.visibility =
-                        View.VISIBLE
-
-                    imagePreview.setImageBitmap(
-                        bitmap
-                    )
-
                     toast(
-                        "Photo prise"
+                        "Impossible d'enregistrer la photo"
                     )
                 }
             }
         }
     }
 
-    // =========================================================
-    // SAUVER PHOTO CAMÉRA
-    // =========================================================
+    private fun ajouterImageProduit(
+        chemin: String
+    ) {
+
+        if (
+            !imagesProduit.contains(chemin)
+        ) {
+
+            imagesProduit.add(chemin)
+        }
+
+        if (::galeriePhotos.isInitialized) {
+
+            val image =
+                ImageView(this).apply {
+
+                    layoutParams =
+                        LinearLayout.LayoutParams(
+                            75,
+                            75
+                        ).apply {
+
+                            setMargins(
+                                4,
+                                4,
+                                4,
+                                4
+                            )
+                        }
+
+                    scaleType =
+                        ImageView.ScaleType.CENTER_CROP
+
+                    setImageURI(
+                        Uri.parse(chemin)
+                    )
+                }
+
+            galeriePhotos.addView(image)
+        }
+    }
 
     private fun sauvegarderBitmap(
         bitmap: Bitmap
@@ -1677,392 +1998,816 @@ class MainActivity : Activity() {
             )
         }
 
-        return Uri.fromFile(
-            fichier
-        ).toString()
+        return Uri.fromFile(fichier).toString()
     }
 
-    // =========================================================
-    // PANIER
-    // =========================================================
+    // ========================================================
+    // MENU
+    // ========================================================
 
-    private fun afficherPanier() {
+    private fun afficherMenu() {
 
-        val root =
-            layoutBase()
+        val compte = compteActuel()
 
-        root.addView(
-            titre(
-                "🛒 Mon panier"
-            )
-        )
+        val choix =
+            ArrayList<String>()
 
-        root.addView(
-            bouton("⬅ Accueil") {
-                afficherAccueil()
-            }
-        )
+        choix.add("🏠 Accueil")
+        choix.add("🛍️ Produits")
+        choix.add("🛒 Mon panier")
 
-        if (panier.isEmpty()) {
-
-            root.addView(
-                texte(
-                    "Votre panier est vide.",
-                    18f
-                ).apply {
-
-                    gravity =
-                        Gravity.CENTER
-
-                    setPadding(
-                        10,
-                        40,
-                        10,
-                        40
-                    )
-                }
-            )
-
-        } else {
-
-            var total = 0
-
-            for (item in panier) {
-
-                val bloc =
-                    LinearLayout(this).apply {
-
-                        orientation =
-                            LinearLayout.VERTICAL
-
-                        setPadding(
-                            12,
-                            12,
-                            12,
-                            12
-                        )
-
-                        setBackgroundColor(
-                            Color.WHITE
-                        )
-                    }
-
-                bloc.addView(
-                    texte(
-                        item.nom,
-                        19f,
-                        VERT
-                    ).apply {
-
-                        typeface =
-                            Typeface.DEFAULT_BOLD
-                    }
-                )
-
-                bloc.addView(
-                    texte(
-                        "${formaterNombre(item.prix)} FCFA",
-                        16f
-                    )
-                )
-
-                bloc.addView(
-                    texte(
-                        "Quantité : ${item.quantite}",
-                        16f
-                    )
-                )
-
-                bloc.addView(
-                    bouton(
-                        "➕ Ajouter 1"
-                    ) {
-
-                        val produit =
-                            produits.find {
-
-                                it.id ==
-                                    item.produitId
-                            }
-
-                        if (
-                            produit != null &&
-                            item.quantite <
-                            produit.stock
-                        ) {
-
-                            item.quantite++
-
-                            sauvegarderPanier()
-
-                            afficherPanier()
-                        }
-                    }
-                )
-
-                bloc.addView(
-                    bouton(
-                        "➖ Retirer 1"
-                    ) {
-
-                        if (
-                            item.quantite > 1
-                        ) {
-
-                            item.quantite--
-
-                        } else {
-
-                            panier.remove(
-                                item
-                            )
-                        }
-
-                        sauvegarderPanier()
-
-                        afficherPanier()
-                    }
-                )
-
-                root.addView(
-                    bloc
-                )
-
-                total +=
-                    item.prix *
-                    item.quantite
-            }
-
-            root.addView(
-                texte(
-                    "TOTAL : ${formaterNombre(total)} FCFA",
-                    22f,
-                    VERT
-                ).apply {
-
-                    gravity =
-                        Gravity.CENTER
-
-                    typeface =
-                        Typeface.DEFAULT_BOLD
-
-                    setPadding(
-                        10,
-                        25,
-                        10,
-                        25
-                    )
-                }
-            )
-
-            root.addView(
-                boutonVert(
-                    "✅ Passer la commande"
-                ) {
-
-                    demanderInfosCommande(
-                        total
-                    )
-                }
-            )
-
-            root.addView(
-                bouton(
-                    "🗑️ Vider le panier"
-                ) {
-
-                    panier.clear()
-
-                    sauvegarderPanier()
-
-                    afficherPanier()
-                }
-            )
+        if (
+            compte == null ||
+            compte.type != "VENDEUR"
+        ) {
+            choix.add("👤 Créer un compte")
+            choix.add("🔐 Se connecter")
         }
 
-        setContentView(
-            scroll(root)
-        )
+        if (
+            compte != null &&
+            compte.type == "VENDEUR"
+        ) {
+            choix.add("👨‍💼 Espace vendeur")
+            choix.add("➕ Ajouter un produit")
+            choix.add("📦 Mes commandes")
+            choix.add("📊 Tableau de bord")
+            choix.add("💎 Abonnement")
+        }
+
+        choix.add("👤 Mon compte")
+        choix.add("📞 Contact / WhatsApp")
+        choix.add("📤 Partager l'application")
+        choix.add("🔐 Administration")
+        choix.add("🚪 Quitter")
+
+        AlertDialog.Builder(this)
+            .setTitle(
+                "☰ VIE ESPOIR MARKETING"
+            )
+            .setItems(
+                choix.toTypedArray()
+            ) { _, position ->
+
+                when (
+                    choix[position]
+                ) {
+
+                    "🏠 Accueil" ->
+                        afficherAccueil()
+
+                    "🛍️ Produits" ->
+                        afficherProduits("")
+
+                    "🛒 Mon panier" ->
+                        afficherPanier()
+
+                    "👤 Créer un compte" ->
+                        afficherCreationCompte()
+
+                    "🔐 Se connecter" ->
+                        afficherConnexion()
+
+                    "👨‍💼 Espace vendeur" ->
+                        afficherEspaceVendeur()
+
+                    "➕ Ajouter un produit" ->
+                        afficherAjouterProduit()
+
+                    "📦 Mes commandes" ->
+                        afficherCommandes()
+
+                    "📊 Tableau de bord" ->
+                        afficherTableauDeBord()
+
+                    "💎 Abonnement" ->
+                        afficherAbonnement()
+
+                    "👤 Mon compte" ->
+                        afficherCompte()
+
+                    "📞 Contact / WhatsApp" ->
+                        afficherContact()
+
+                    "📤 Partager l'application" ->
+                        partagerApplication()
+
+                    "🔐 Administration" ->
+                        afficherConnexionAdmin()
+
+                    "🚪 Quitter" ->
+                        confirmerQuitter()
+                }
+            }
+            .show()
     }
 
-    // =========================================================
-    // COMMANDE
-    // =========================================================
+    // ========================================================
+    // COMPTE VENDEUR
+    // ========================================================
 
-    private fun demanderInfosCommande(
-        total: Int
-    ) {
+    private fun afficherCreationCompte() {
 
-        val box =
-            LinearLayout(this).apply {
+        val root = layoutBase()
 
-                orientation =
-                    LinearLayout.VERTICAL
+        root.addView(
+            titre("➕ Créer mon compte")
+        )
 
-                setPadding(
-                    20,
-                    5,
-                    20,
-                    5
-                )
+        val nom =
+            EditText(this).apply {
+                hint = "Nom complet"
             }
 
-        val client =
+        val entreprise =
             EditText(this).apply {
-
-                hint =
-                    "Nom du client"
+                hint = "Nom de l'entreprise / boutique"
             }
 
-        val tel =
+        val email =
             EditText(this).apply {
+                hint = "Adresse e-mail"
+                inputType =
+                    InputType.TYPE_CLASS_TEXT or
+                    InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+            }
 
-                hint =
-                    "Téléphone"
-
+        val phone =
+            EditText(this).apply {
+                hint = "Téléphone"
                 inputType =
                     InputType.TYPE_CLASS_PHONE
             }
 
-        box.addView(client)
+        val adresse =
+            EditText(this).apply {
+                hint = "Adresse"
+            }
 
-        box.addView(tel)
+        val password =
+            EditText(this).apply {
+                hint = "Mot de passe"
+                inputType =
+                    InputType.TYPE_CLASS_TEXT or
+                    InputType.TYPE_TEXT_VARIATION_PASSWORD
+            }
+
+        root.addView(nom)
+        root.addView(entreprise)
+        root.addView(email)
+        root.addView(phone)
+        root.addView(adresse)
+        root.addView(password)
+
+        root.addView(
+            texte(
+                "🎁 Nouveau vendeur : 7 jours gratuits.",
+                16f,
+                VERT
+            ).apply {
+                gravity = Gravity.CENTER
+            }
+        )
+
+        root.addView(
+            boutonVert("✅ Créer mon compte") {
+
+                val n =
+                    nom.text.toString().trim()
+
+                val ent =
+                    entreprise.text.toString().trim()
+
+                val e =
+                    email.text.toString().trim()
+
+                val p =
+                    phone.text.toString().trim()
+
+                val a =
+                    adresse.text.toString().trim()
+
+                val mdp =
+                    password.text.toString()
+
+                if (
+                    n.isEmpty() ||
+                    ent.isEmpty() ||
+                    e.isEmpty() ||
+                    p.isEmpty() ||
+                    a.isEmpty() ||
+                    mdp.isEmpty()
+                ) {
+
+                    toast(
+                        "Tous les champs sont obligatoires"
+                    )
+
+                    return@boutonVert
+                }
+
+                if (
+                    comptes.any {
+                        it.email.equals(
+                            e,
+                            ignoreCase = true
+                        )
+                    }
+                ) {
+
+                    toast(
+                        "Cet e-mail est déjà utilisé"
+                    )
+
+                    return@boutonVert
+                }
+
+                val compte =
+                    Compte(
+                        id =
+                            System.currentTimeMillis()
+                                .toString(),
+
+                        nom = n,
+                        entreprise = ent,
+                        email = e,
+                        telephone = p,
+                        adresse = a,
+                        motDePasse = mdp,
+                        type = "VENDEUR",
+                        dateCreation =
+                            System.currentTimeMillis(),
+                        valide = true
+                    )
+
+                comptes.add(compte)
+
+                compteConnecteId =
+                    compte.id
+
+                prefs.edit()
+                    .putString(
+                        CONNECTED_ACCOUNT,
+                        compte.id
+                    )
+                    .apply()
+
+                sauvegarderComptes()
+
+                enregistrerEvenement(
+                    "Nouveau vendeur inscrit : $n — $ent"
+                )
+
+                toast(
+                    "Compte créé. Vous avez 7 jours gratuits."
+                )
+
+                afficherEspaceVendeur()
+            }
+        )
+
+        root.addView(
+            bouton("🔐 J'ai déjà un compte") {
+                afficherConnexion()
+            }
+        )
+
+        setContentView(scroll(root))
+    }
+
+    // ========================================================
+    // CONNEXION
+    // ========================================================
+
+    private fun afficherConnexion() {
+
+        val root = layoutBase()
+
+        root.addView(
+            titre("🔐 Connexion")
+        )
+
+        val email =
+            EditText(this).apply {
+                hint = "E-mail"
+                inputType =
+                    InputType.TYPE_CLASS_TEXT or
+                    InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+            }
+
+        val password =
+            EditText(this).apply {
+                hint = "Mot de passe"
+                inputType =
+                    InputType.TYPE_CLASS_TEXT or
+                    InputType.TYPE_TEXT_VARIATION_PASSWORD
+            }
+
+        root.addView(email)
+        root.addView(password)
+
+        root.addView(
+            boutonVert("🔓 Se connecter") {
+
+                val e =
+                    email.text.toString().trim()
+
+                val mdp =
+                    password.text.toString()
+
+                val compte =
+                    comptes.find {
+                        it.email.equals(
+                            e,
+                            ignoreCase = true
+                        ) &&
+                        it.motDePasse == mdp
+                    }
+
+                if (compte == null) {
+
+                    toast(
+                        "E-mail ou mot de passe incorrect"
+                    )
+
+                    return@boutonVert
+                }
+
+                compteConnecteId =
+                    compte.id
+
+                prefs.edit()
+                    .putString(
+                        CONNECTED_ACCOUNT,
+                        compte.id
+                    )
+                    .apply()
+
+                toast(
+                    "Connexion réussie"
+                )
+
+                afficherEspaceVendeur()
+            }
+        )
+
+        root.addView(
+            bouton(
+                "🔑 Mot de passe oublié ?"
+            ) {
+                afficherMotDePasseOublie()
+            }
+        )
+
+        root.addView(
+            bouton(
+                "➕ Créer un nouveau compte"
+            ) {
+                afficherCreationCompte()
+            }
+        )
+
+        setContentView(scroll(root))
+    }
+
+    // ========================================================
+    // MOT DE PASSE OUBLIE
+    // ========================================================
+
+    private fun afficherMotDePasseOublie() {
+
+        val champ =
+            EditText(this).apply {
+                hint = "Votre adresse e-mail"
+                inputType =
+                    InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+            }
 
         AlertDialog.Builder(this)
             .setTitle(
-                "📦 Informations de commande"
+                "🔑 Mot de passe oublié"
             )
-            .setView(box)
+            .setMessage(
+                "Dans la version connectée au serveur, un code de récupération sera envoyé par e-mail ou téléphone."
+            )
+            .setView(champ)
             .setNegativeButton(
                 "Annuler",
                 null
             )
             .setPositiveButton(
-                "Confirmer"
+                "Continuer"
             ) { _, _ ->
 
-                val nomClient =
-                    client.text
-                        .toString()
-                        .trim()
+                val email =
+                    champ.text.toString().trim()
 
-                val telephone =
-                    tel.text
-                        .toString()
-                        .trim()
-
-                if (
-                    nomClient.isEmpty()
-                ) {
-
-                    toast(
-                        "Nom du client obligatoire"
-                    )
-
-                    return@setPositiveButton
-                }
-
-                val produitsCommande =
-                    panier.joinToString(
-                        ", "
-                    ) {
-
-                        "${it.nom} x${it.quantite}"
+                val compte =
+                    comptes.find {
+                        it.email.equals(
+                            email,
+                            ignoreCase = true
+                        )
                     }
 
-                commandes.add(
-                    Commande(
-                        id =
-                            System.currentTimeMillis()
-                                .toString()
-                                .takeLast(6),
+                if (compte == null) {
 
-                        client =
-                            nomClient,
-
-                        telephone =
-                            telephone,
-
-                        produit =
-                            produitsCommande,
-
-                        montant =
-                            total.toString(),
-
-                        statut =
-                            "Nouvelle"
+                    toast(
+                        "Compte introuvable"
                     )
-                )
 
-                clients.add(
-                    nomClient
-                )
+                } else {
 
-                sauvegarderCommandes()
-
-                sauvegarderClients()
-
-                panier.clear()
-
-                sauvegarderPanier()
-
-                toast(
-                    "Commande enregistrée avec succès"
-                )
-
-                afficherAccueil()
+                    toast(
+                        "Récupération à connecter au serveur"
+                    )
+                }
             }
             .show()
     }
 
-    // =========================================================
-    // COMMANDES
-    // =========================================================
+    // ========================================================
+    // ESPACE VENDEUR
+    // ========================================================
 
-    private fun afficherCommandes() {
+    private fun afficherEspaceVendeur() {
 
-        val root =
-            layoutBase()
+        val compte = compteActuel()
+
+        if (compte == null) {
+
+            afficherConnexion()
+            return
+        }
+
+        val root = layoutBase()
 
         root.addView(
-            titre(
-                "📦 Commandes"
-            )
+            titre("👨‍💼 Espace vendeur")
         )
 
         root.addView(
-            bouton("⬅ Retour") {
-                afficherEspaceVendeur()
+            texte(
+                """
+                👋 ${compte.nom}
+                
+                🏢 ${compte.entreprise}
+                
+                📧 ${compte.email}
+                
+                📞 ${compte.telephone}
+                """.trimIndent(),
+                17f,
+                VERT
+            ).apply {
+                gravity = Gravity.CENTER
+                typeface = Typeface.DEFAULT_BOLD
+                setBackgroundColor(Color.WHITE)
             }
         )
 
-        if (
-            commandes.isEmpty()
-        ) {
+        val jours =
+            joursGratuitsRestants(compte)
+
+        if (jours > 0) {
+
+            root.addView(
+                texte(
+                    "🎁 Il vous reste $jours jour(s) gratuit(s).",
+                    17f,
+                    VERT
+                ).apply {
+                    gravity = Gravity.CENTER
+                }
+            )
+
+        } else {
+
+            root.addView(
+                texte(
+                    "⚠️ Votre période gratuite est terminée.",
+                    17f,
+                    Color.RED
+                ).apply {
+                    gravity = Gravity.CENTER
+                }
+            )
+        }
+
+        if (compte.valide) {
+
+            root.addView(
+                boutonVert(
+                    "➕ Ajouter un produit"
+                ) {
+                    afficherAjouterProduit()
+                }
+            )
+
+            root.addView(
+                bouton(
+                    "🛍️ Mes produits"
+                ) {
+                    afficherProduits("")
+                }
+            )
+
+            root.addView(
+                bouton(
+                    "📦 Mes commandes"
+                ) {
+                    afficherCommandes()
+                }
+            )
+
+            root.addView(
+                bouton(
+                    "📊 Mon tableau de bord"
+                ) {
+                    afficherTableauDeBord()
+                }
+            )
+
+            root.addView(
+                bouton(
+                    "📦 Gestion du stock"
+                ) {
+                    afficherStock()
+                }
+            )
+
+            root.addView(
+                bouton(
+                    "💎 Mon abonnement"
+                ) {
+                    afficherAbonnement()
+                }
+            )
+        }
+
+        root.addView(
+            bouton(
+                "🚪 Se déconnecter"
+            ) {
+                deconnecter()
+            }
+        )
+
+        setContentView(scroll(root))
+    }
+
+    // ========================================================
+    // COMPTE
+    // ========================================================
+
+    private fun afficherCompte() {
+
+        val compte = compteActuel()
+
+        val root = layoutBase()
+
+        root.addView(
+            titre("👤 Mon compte")
+        )
+
+        if (compte == null) {
+
+            root.addView(
+                texte(
+                    "Vous n'êtes pas connecté.",
+                    18f
+                ).apply {
+                    gravity = Gravity.CENTER
+                }
+            )
+
+            root.addView(
+                boutonVert(
+                    "🔐 Se connecter"
+                ) {
+                    afficherConnexion()
+                }
+            )
+
+            root.addView(
+                bouton(
+                    "➕ Créer un compte"
+                ) {
+                    afficherCreationCompte()
+                }
+            )
+
+        } else {
+
+            root.addView(
+                texte(
+                    """
+                    👤 ${compte.nom}
+                    
+                    🏢 ${compte.entreprise}
+                    
+                    📧 ${compte.email}
+                    
+                    📞 ${compte.telephone}
+                    
+                    📍 ${compte.adresse}
+                    
+                    👤 Type : ${compte.type}
+                    """.trimIndent(),
+                    17f,
+                    VERT
+                ).apply {
+                    gravity = Gravity.CENTER
+                    setBackgroundColor(Color.WHITE)
+                }
+            )
+
+            root.addView(
+                boutonVert(
+                    "👨‍💼 Espace vendeur"
+                ) {
+                    afficherEspaceVendeur()
+                }
+            )
+
+            root.addView(
+                bouton(
+                    "🚪 Se déconnecter"
+                ) {
+                    deconnecter()
+                }
+            )
+        }
+
+        setContentView(scroll(root))
+    }
+
+    private fun deconnecter() {
+
+        compteConnecteId = ""
+
+        prefs.edit()
+            .remove(CONNECTED_ACCOUNT)
+            .apply()
+
+        toast(
+            "Déconnexion effectuée"
+        )
+
+        afficherAccueil()
+    }
+
+    // ========================================================
+    // ABONNEMENT
+    // ========================================================
+
+    private fun afficherAbonnement() {
+
+        val compte = compteActuel()
+
+        if (compte == null) {
+            afficherConnexion()
+            return
+        }
+
+        val root = layoutBase()
+
+        root.addView(
+            titre("💎 Abonnement vendeur")
+        )
+
+        val jours =
+            joursGratuitsRestants(compte)
+
+        if (jours > 0) {
+
+            root.addView(
+                texte(
+                    "🎁 Essai gratuit : $jours jour(s) restant(s).",
+                    18f,
+                    VERT
+                ).apply {
+                    gravity = Gravity.CENTER
+                }
+            )
+        }
+
+        root.addView(
+            texte(
+                "Après l'essai gratuit, l'abonnement commence à 5 000 FCFA par mois.",
+                16f
+            ).apply {
+                gravity = Gravity.CENTER
+                setBackgroundColor(Color.WHITE)
+            }
+        )
+
+        root.addView(
+            boutonVert(
+                "💎 5 000 FCFA / mois"
+            ) {
+                afficherPaiementAbonnement()
+            }
+        )
+
+        setContentView(scroll(root))
+    }
+
+    private fun afficherPaiementAbonnement() {
+
+        val root = layoutBase()
+
+        root.addView(
+            titre("💳 Paiement abonnement")
+        )
+
+        root.addView(
+            texte(
+                """
+                Abonnement :
+                5 000 FCFA / mois
+                
+                Choisissez votre moyen de paiement.
+                """.trimIndent(),
+                18f,
+                VERT
+            ).apply {
+                gravity = Gravity.CENTER
+                setBackgroundColor(Color.WHITE)
+            }
+        )
+
+        root.addView(
+            boutonVert(
+                "🟠 Orange Money / Wave"
+            ) {
+                appelerNumero(ORANGE_WAVE)
+
+                enregistrerEvenement(
+                    "Demande de paiement abonnement — Orange/Wave"
+                )
+            }
+        )
+
+        root.addView(
+            boutonVert(
+                "🟡 MTN Mobile Money"
+            ) {
+                appelerNumero(MTN)
+
+                enregistrerEvenement(
+                    "Demande de paiement abonnement — MTN"
+                )
+            }
+        )
+
+        root.addView(
+            bouton(
+                "💬 WhatsApp"
+            ) {
+                ouvrirWhatsApp(ORANGE_WAVE)
+            }
+        )
+
+        root.addView(
+            texte(
+                "Après paiement, l'administrateur doit confirmer l'activation.",
+                14f,
+                Color.GRAY
+            ).apply {
+                gravity = Gravity.CENTER
+            }
+        )
+
+        setContentView(scroll(root))
+    }
+
+    // ========================================================
+    // COMMANDES
+    // ========================================================
+
+    private fun afficherCommandes() {
+
+        val root = layoutBase()
+
+        root.addView(
+            titre("📦 Commandes")
+        )
+
+        if (commandes.isEmpty()) {
 
             root.addView(
                 texte(
                     "Aucune commande.",
                     18f
                 ).apply {
-
-                    gravity =
-                        Gravity.CENTER
-
-                    setPadding(
-                        10,
-                        35,
-                        10,
-                        35
-                    )
+                    gravity = Gravity.CENTER
                 }
             )
 
         } else {
 
-            for (
-                commande in commandes
-            ) {
+            for (commande in commandes) {
 
                 val bloc =
                     LinearLayout(this).apply {
@@ -2086,14 +2831,20 @@ class MainActivity : Activity() {
                     texte(
                         """
                         📦 Commande #${commande.id}
+                        
                         👤 ${commande.client}
+                        
                         📞 ${commande.telephone}
-                        🛍 ${commande.produit}
+                        
+                        🛍️ ${commande.produit}
+                        
                         💰 ${formaterNombre(
-                            commande.montant
-                                .toIntOrNull()
+                            commande.montant.toIntOrNull()
                                 ?: 0
                         )} FCFA
+                        
+                        💳 Paiement : ${commande.paiement}
+                        
                         📌 ${commande.statut}
                         """.trimIndent(),
                         16f
@@ -2101,23 +2852,23 @@ class MainActivity : Activity() {
                 )
 
                 bloc.addView(
-                    boutonVert(
-                        "✅ Confirmer"
-                    ) {
+                    boutonVert("✅ Confirmer") {
 
                         commande.statut =
                             "Confirmée"
 
                         sauvegarderCommandes()
 
+                        enregistrerEvenement(
+                            "Commande #${commande.id} confirmée"
+                        )
+
                         afficherCommandes()
                     }
                 )
 
                 bloc.addView(
-                    bouton(
-                        "📦 Préparer"
-                    ) {
+                    bouton("📦 Préparer") {
 
                         commande.statut =
                             "En préparation"
@@ -2129,9 +2880,7 @@ class MainActivity : Activity() {
                 )
 
                 bloc.addView(
-                    bouton(
-                        "🚚 En livraison"
-                    ) {
+                    bouton("🚚 En livraison") {
 
                         commande.statut =
                             "En livraison"
@@ -2143,9 +2892,7 @@ class MainActivity : Activity() {
                 )
 
                 bloc.addView(
-                    bouton(
-                        "✅ Livrée"
-                    ) {
+                    bouton("✅ Livrée") {
 
                         commande.statut =
                             "Livrée"
@@ -2157,9 +2904,7 @@ class MainActivity : Activity() {
                 )
 
                 bloc.addView(
-                    bouton(
-                        "❌ Annuler"
-                    ) {
+                    bouton("❌ Annuler") {
 
                         commande.statut =
                             "Annulée"
@@ -2170,714 +2915,34 @@ class MainActivity : Activity() {
                     }
                 )
 
-                root.addView(
-                    bloc
-                )
+                root.addView(bloc)
             }
         }
 
-        setContentView(
-            scroll(root)
-        )
+        setContentView(scroll(root))
     }
 
-    // =========================================================
-    // MENU PRINCIPAL
-    // =========================================================
-
-    private fun afficherMenu() {
-
-        val choix =
-            arrayOf(
-
-                "🏠 Accueil",
-
-                "🛍️ Produits",
-
-                "➕ Ajouter un produit",
-
-                "🛒 Mon panier",
-
-                "📦 Commandes",
-
-                "👨‍💼 Espace vendeur",
-
-                "📊 Tableau de bord",
-
-                "📦 Gestion du stock",
-
-                "👥 Clients",
-
-                "💎 Abonnement vendeur",
-
-                "💳 Paiement",
-
-                "👤 Mon compte",
-
-                "📞 Contact / WhatsApp",
-
-                "📤 Partager l'application",
-
-                "🚪 Quitter l'application"
-            )
-
-        AlertDialog.Builder(this)
-            .setTitle(
-                "☰ VIE ESPOIR MARKETING"
-            )
-            .setItems(
-                choix
-            ) { _, position ->
-
-                when (position) {
-
-                    0 ->
-                        afficherAccueil()
-
-                    1 ->
-                        afficherProduits("")
-
-                    2 ->
-                        afficherAjouterProduit()
-
-                    3 ->
-                        afficherPanier()
-
-                    4 ->
-                        afficherCommandes()
-
-                    5 ->
-                        afficherEspaceVendeur()
-
-                    6 ->
-                        afficherTableauDeBord()
-
-                    7 ->
-                        afficherStock()
-
-                    8 ->
-                        afficherClients()
-
-                    9 ->
-                        afficherAbonnement()
-
-                    10 ->
-                        afficherPaiement()
-
-                    11 ->
-                        afficherCompte()
-
-                    12 ->
-                        afficherContact()
-
-                    13 ->
-                        partagerApplication()
-
-                    14 -> {
-
-                        AlertDialog.Builder(this)
-                            .setTitle(
-                                "🚪 Quitter l'application"
-                            )
-                            .setMessage(
-                                "Voulez-vous vraiment quitter Vie Espoir Marketing ?"
-                            )
-                            .setNegativeButton(
-                                "Annuler",
-                                null
-                            )
-                            .setPositiveButton(
-                                "Quitter"
-                            ) { _, _ ->
-
-                                finishAffinity()
-                            }
-                            .show()
-                    }
-                }
-            }
-            .show()
-    }
-
-    // =========================================================
-    // ESPACE VENDEUR
-    // =========================================================
-
-    private fun afficherEspaceVendeur() {
-
-        val root =
-            layoutBase()
-
-        root.addView(
-            titre(
-                "👨‍💼 Espace vendeur"
-            )
-        )
-
-        root.addView(
-            bouton("⬅ Accueil") {
-                afficherAccueil()
-            }
-        )
-
-        val nom =
-            prefs.getString(
-                SELLER_NAME,
-                ""
-            ) ?: ""
-
-        val valide =
-            prefs.getBoolean(
-                SELLER_VALIDATED,
-                false
-            )
-
-        if (
-            nom.isEmpty()
-        ) {
-
-            root.addView(
-                texte(
-                    "Vous devez créer votre compte vendeur.",
-                    17f
-                ).apply {
-
-                    gravity =
-                        Gravity.CENTER
-                }
-            )
-
-            root.addView(
-                boutonVert(
-                    "👤 Créer mon compte"
-                ) {
-
-                    afficherCreationCompte()
-                }
-            )
-
-            root.addView(
-                bouton(
-                    "🔐 Se connecter"
-                ) {
-
-                    afficherConnexion()
-                }
-            )
-
-        } else {
-
-            root.addView(
-                texte(
-                    """
-                    Bonjour $nom 👋
-                    
-                    ${
-                        if (valide)
-                            "✅ Compte vendeur actif"
-                        else
-                            "⏳ Compte en attente"
-                    }
-                    """.trimIndent(),
-                    20f,
-                    VERT
-                ).apply {
-
-                    gravity =
-                        Gravity.CENTER
-
-                    typeface =
-                        Typeface.DEFAULT_BOLD
-                }
-            )
-
-            root.addView(
-                boutonVert(
-                    "➕ Ajouter un produit"
-                ) {
-
-                    afficherAjouterProduit()
-                }
-            )
-
-            root.addView(
-                bouton(
-                    "🛍️ Mes produits"
-                ) {
-
-                    afficherProduits("")
-                }
-            )
-
-            root.addView(
-                bouton(
-                    "📦 Mes commandes"
-                ) {
-
-                    afficherCommandes()
-                }
-            )
-
-            root.addView(
-                bouton(
-                    "📊 Mon tableau de bord"
-                ) {
-
-                    afficherTableauDeBord()
-                }
-            )
-
-            root.addView(
-                bouton(
-                    "📦 Mon stock"
-                ) {
-
-                    afficherStock()
-                }
-            )
-
-            root.addView(
-                bouton(
-                    "💎 Mon abonnement"
-                ) {
-
-                    afficherAbonnement()
-                }
-            )
-        }
-
-        setContentView(
-            scroll(root)
-        )
-    }
-
-    // =========================================================
-    // COMPTE
-    // =========================================================
-
-    private fun afficherCompte() {
-
-        val root =
-            layoutBase()
-
-        root.addView(
-            titre(
-                "👤 Mon compte"
-            )
-        )
-
-        root.addView(
-            bouton("⬅ Accueil") {
-                afficherAccueil()
-            }
-        )
-
-        val nom =
-            prefs.getString(
-                SELLER_NAME,
-                ""
-            ) ?: ""
-
-        if (
-            nom.isEmpty()
-        ) {
-
-            root.addView(
-                texte(
-                    "Aucun compte vendeur enregistré.",
-                    17f
-                ).apply {
-
-                    gravity =
-                        Gravity.CENTER
-                }
-            )
-
-            root.addView(
-                boutonVert(
-                    "➕ Créer un compte"
-                ) {
-
-                    afficherCreationCompte()
-                }
-            )
-
-            root.addView(
-                bouton(
-                    "🔐 Se connecter"
-                ) {
-
-                    afficherConnexion()
-                }
-            )
-
-        } else {
-
-            val email =
-                prefs.getString(
-                    SELLER_EMAIL,
-                    ""
-                ) ?: ""
-
-            val phone =
-                prefs.getString(
-                    SELLER_PHONE,
-                    ""
-                ) ?: ""
-
-            val whatsapp =
-                prefs.getString(
-                    SELLER_WHATSAPP,
-                    ""
-                ) ?: ""
-
-            val pack =
-                prefs.getString(
-                    SELLER_PACK,
-                    "Aucun"
-                ) ?: "Aucun"
-
-            root.addView(
-                texte(
-                    """
-                    👋 Bienvenue $nom
-                    
-                    📧 $email
-                    📞 $phone
-                    💬 WhatsApp : $whatsapp
-                    💎 Abonnement : $pack
-                    """.trimIndent(),
-                    17f
-                ).apply {
-
-                    gravity =
-                        Gravity.CENTER
-                }
-            )
-
-            root.addView(
-                boutonVert(
-                    "👨‍💼 Espace vendeur"
-                ) {
-
-                    afficherEspaceVendeur()
-                }
-            )
-
-            root.addView(
-                bouton(
-                    "💎 Modifier mon abonnement"
-                ) {
-
-                    afficherAbonnement()
-                }
-            )
-
-            root.addView(
-                bouton(
-                    "🚪 Se déconnecter"
-                ) {
-
-                    prefs.edit()
-                        .remove(
-                            SELLER_NAME
-                        )
-                        .remove(
-                            SELLER_EMAIL
-                        )
-                        .remove(
-                            SELLER_PHONE
-                        )
-                        .remove(
-                            SELLER_WHATSAPP
-                        )
-                        .remove(
-                            SELLER_VALIDATED
-                        )
-                        .remove(
-                            SELLER_PACK
-                        )
-                        .apply()
-
-                    toast(
-                        "Déconnexion effectuée"
-                    )
-
-                    afficherCompte()
-                }
-            )
-        }
-
-        setContentView(
-            scroll(root)
-        )
-    }
-
-    // =========================================================
-    // CRÉATION COMPTE
-    // =========================================================
-
-    private fun afficherCreationCompte() {
-
-        val root =
-            layoutBase()
-
-        root.addView(
-            titre(
-                "➕ Créer un compte vendeur"
-            )
-        )
-
-        root.addView(
-            bouton("⬅ Retour") {
-                afficherCompte()
-            }
-        )
-
-        val nom =
-            EditText(this).apply {
-
-                hint =
-                    "Nom complet"
-            }
-
-        val email =
-            EditText(this).apply {
-
-                hint =
-                    "Adresse e-mail"
-
-                inputType =
-                    InputType.TYPE_CLASS_TEXT or
-                    InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
-            }
-
-        val phone =
-            EditText(this).apply {
-
-                hint =
-                    "Téléphone"
-
-                inputType =
-                    InputType.TYPE_CLASS_PHONE
-            }
-
-        val whatsapp =
-            EditText(this).apply {
-
-                hint =
-                    "WhatsApp"
-
-                inputType =
-                    InputType.TYPE_CLASS_PHONE
-            }
-
-        root.addView(nom)
-
-        root.addView(email)
-
-        root.addView(phone)
-
-        root.addView(whatsapp)
-
-        root.addView(
-            boutonVert(
-                "✅ Créer mon compte"
-            ) {
-
-                val n =
-                    nom.text
-                        .toString()
-                        .trim()
-
-                val e =
-                    email.text
-                        .toString()
-                        .trim()
-
-                val p =
-                    phone.text
-                        .toString()
-                        .trim()
-
-                val w =
-                    whatsapp.text
-                        .toString()
-                        .trim()
-
-                if (
-                    n.isEmpty() ||
-                    e.isEmpty() ||
-                    p.isEmpty()
-                ) {
-
-                    toast(
-                        "Nom, e-mail et téléphone obligatoires"
-                    )
-
-                    return@boutonVert
-                }
-
-                prefs.edit()
-                    .putString(
-                        SELLER_NAME,
-                        n
-                    )
-                    .putString(
-                        SELLER_EMAIL,
-                        e
-                    )
-                    .putString(
-                        SELLER_PHONE,
-                        p
-                    )
-                    .putString(
-                        SELLER_WHATSAPP,
-                        w
-                    )
-                    .putBoolean(
-                        SELLER_VALIDATED,
-                        true
-                    )
-                    .apply()
-
-                toast(
-                    "Compte créé avec succès"
-                )
-
-                afficherCompte()
-            }
-        )
-
-        setContentView(
-            scroll(root)
-        )
-    }
-
-    // =========================================================
-    // CONNEXION
-    // =========================================================
-
-    private fun afficherConnexion() {
-
-        val root =
-            layoutBase()
-
-        root.addView(
-            titre(
-                "🔐 Connexion vendeur"
-            )
-        )
-
-        root.addView(
-            bouton("⬅ Retour") {
-                afficherCompte()
-            }
-        )
-
-        val email =
-            EditText(this).apply {
-
-                hint =
-                    "Votre e-mail"
-
-                inputType =
-                    InputType.TYPE_CLASS_TEXT or
-                    InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
-            }
-
-        root.addView(
-            email
-        )
-
-        root.addView(
-            boutonVert(
-                "🔓 Se connecter"
-            ) {
-
-                val entre =
-                    email.text
-                        .toString()
-                        .trim()
-
-                val enregistre =
-                    prefs.getString(
-                        SELLER_EMAIL,
-                        ""
-                    ) ?: ""
-
-                if (
-                    enregistre.isEmpty()
-                ) {
-
-                    toast(
-                        "Aucun compte trouvé"
-                    )
-
-                } else if (
-                    entre == enregistre
-                ) {
-
-                    toast(
-                        "Connexion réussie"
-                    )
-
-                    afficherEspaceVendeur()
-
-                } else {
-
-                    toast(
-                        "E-mail incorrect"
-                    )
-                }
-            }
-        )
-
-        setContentView(
-            scroll(root)
-        )
-    }
-
-    // =========================================================
+    // ========================================================
     // TABLEAU DE BORD
-    // =========================================================
+    // ========================================================
 
     private fun afficherTableauDeBord() {
 
-        val root =
-            layoutBase()
+        val root = layoutBase()
 
         root.addView(
-            titre(
-                "📊 Tableau de bord"
-            )
+            titre("📊 Tableau de bord")
         )
-
-        root.addView(
-            bouton("⬅ Retour") {
-                afficherEspaceVendeur()
-            }
-        )
-
-        var ventes = 0
 
         var montant = 0
 
-        for (
-            commande in commandes
-        ) {
+        for (commande in commandes) {
 
-            if (
-                commande.statut !=
-                "Annulée"
-            ) {
-
-                ventes++
+            if (commande.statut != "Annulée") {
 
                 montant +=
                     commande.montant
-                        .toIntOrNull()
-                        ?: 0
+                        .toIntOrNull() ?: 0
             }
         }
 
@@ -2888,90 +2953,35 @@ class MainActivity : Activity() {
                 
                 📦 Commandes : ${commandes.size}
                 
-                ✅ Ventes actives : $ventes
+                👥 Comptes : ${comptes.size}
                 
                 💰 Chiffre d'affaires : ${formaterNombre(montant)} FCFA
-                
-                👥 Clients : ${clients.size}
                 """.trimIndent(),
                 19f,
                 VERT
             ).apply {
-
-                gravity =
-                    Gravity.CENTER
-
-                setPadding(
-                    10,
-                    25,
-                    10,
-                    25
-                )
-
-                typeface =
-                    Typeface.DEFAULT_BOLD
-
-                setBackgroundColor(
-                    Color.WHITE
-                )
+                gravity = Gravity.CENTER
+                typeface = Typeface.DEFAULT_BOLD
+                setBackgroundColor(Color.WHITE)
             }
         )
 
-        root.addView(
-            bouton(
-                "📦 Voir les commandes"
-            ) {
-
-                afficherCommandes()
-            }
-        )
-
-        root.addView(
-            bouton(
-                "🛍️ Voir les produits"
-            ) {
-
-                afficherProduits("")
-            }
-        )
-
-        setContentView(
-            scroll(root)
-        )
+        setContentView(scroll(root))
     }
 
-    // =========================================================
+    // ========================================================
     // STOCK
-    // =========================================================
+    // ========================================================
 
     private fun afficherStock() {
 
-        val root =
-            layoutBase()
+        val root = layoutBase()
 
         root.addView(
-            titre(
-                "📦 Gestion du stock"
-            )
+            titre("📦 Gestion du stock")
         )
 
-        root.addView(
-            bouton("⬅ Retour") {
-                afficherEspaceVendeur()
-            }
-        )
-
-        root.addView(
-            texte(
-                "Nombre de produits : ${produits.size}",
-                18f,
-                VERT
-            )
-        )
-
-        for (
-            produit in produits
-        ) {
+        for (produit in produits) {
 
             val bloc =
                 LinearLayout(this).apply {
@@ -2997,7 +3007,6 @@ class MainActivity : Activity() {
                     18f,
                     VERT
                 ).apply {
-
                     typeface =
                         Typeface.DEFAULT_BOLD
                 }
@@ -3005,21 +3014,9 @@ class MainActivity : Activity() {
 
             bloc.addView(
                 texte(
-                    "Prix : ${formaterNombre(
-                        produit.prix
-                            .toIntOrNull()
-                            ?: 0
-                    )} FCFA"
-                )
-            )
-
-            bloc.addView(
-                texte(
                     "Stock : ${produit.stock}",
                     16f,
-                    if (
-                        produit.stock <= 5
-                    )
+                    if (produit.stock <= 5)
                         Color.RED
                     else
                         VERT
@@ -3027,16 +3024,12 @@ class MainActivity : Activity() {
             )
 
             bloc.addView(
-                bouton(
-                    "➕ Ajouter du stock"
-                ) {
+                bouton("➕ Ajouter du stock") {
 
                     val champ =
                         EditText(this).apply {
-
                             hint =
-                                "Quantité à ajouter"
-
+                                "Quantité"
                             inputType =
                                 InputType.TYPE_CLASS_NUMBER
                         }
@@ -3045,9 +3038,7 @@ class MainActivity : Activity() {
                         .setTitle(
                             "Ajouter du stock"
                         )
-                        .setView(
-                            champ
-                        )
+                        .setView(champ)
                         .setNegativeButton(
                             "Annuler",
                             null
@@ -3057,13 +3048,11 @@ class MainActivity : Activity() {
                         ) { _, _ ->
 
                             val q =
-                                champ.text
-                                    .toString()
+                                champ.text.toString()
                                     .toIntOrNull()
                                     ?: 0
 
-                            produit.stock +=
-                                q
+                            produit.stock += q
 
                             sauvegarderProduits()
 
@@ -3073,370 +3062,333 @@ class MainActivity : Activity() {
                 }
             )
 
-            bloc.addView(
-                bouton(
-                    "✏️ Modifier"
+            root.addView(bloc)
+        }
+
+        setContentView(scroll(root))
+    }
+
+    // ========================================================
+    // ADMINISTRATION
+    // ========================================================
+
+    private fun afficherConnexionAdmin() {
+
+        val email =
+            EditText(this).apply {
+                hint = "Email administrateur"
+            }
+
+        val password =
+            EditText(this).apply {
+                hint = "Mot de passe administrateur"
+                inputType =
+                    InputType.TYPE_CLASS_TEXT or
+                    InputType.TYPE_TEXT_VARIATION_PASSWORD
+            }
+
+        val box =
+            LinearLayout(this).apply {
+                orientation =
+                    LinearLayout.VERTICAL
+                setPadding(
+                    20,
+                    5,
+                    20,
+                    5
+                )
+
+                addView(email)
+                addView(password)
+            }
+
+        AlertDialog.Builder(this)
+            .setTitle(
+                "🔐 Administration privée"
+            )
+            .setView(box)
+            .setNegativeButton(
+                "Annuler",
+                null
+            )
+            .setPositiveButton(
+                "Connexion"
+            ) { _, _ ->
+
+                if (
+                    email.text.toString().trim()
+                        == ADMIN_EMAIL &&
+                    password.text.toString()
+                        == ADMIN_PASSWORD
                 ) {
 
-                    afficherModifierProduit(
-                        produit
+                    adminConnecte = true
+
+                    afficherAdministration()
+
+                } else {
+
+                    toast(
+                        "Accès administrateur refusé"
                     )
                 }
-            )
-
-            root.addView(
-                bloc
-            )
-        }
-
-        root.addView(
-            boutonVert(
-                "➕ Ajouter un produit"
-            ) {
-
-                afficherAjouterProduit()
             }
-        )
-
-        setContentView(
-            scroll(root)
-        )
+            .show()
     }
 
-    // =========================================================
-    // CLIENTS
-    // =========================================================
+    private fun afficherAdministration() {
 
-    private fun afficherClients() {
-
-        val root =
-            layoutBase()
-
-        root.addView(
-            titre(
-                "👥 Mes clients"
-            )
-        )
-
-        root.addView(
-            bouton("⬅ Retour") {
-                afficherEspaceVendeur()
-            }
-        )
-
-        if (
-            clients.isEmpty()
-        ) {
-
-            root.addView(
-                texte(
-                    "Aucun client enregistré.",
-                    18f
-                ).apply {
-
-                    gravity =
-                        Gravity.CENTER
-                }
-            )
+        if (!adminConnecte) {
+            afficherConnexionAdmin()
+            return
         }
 
-        for (
-            client in clients
-        ) {
-
-            root.addView(
-                texte(
-                    "👤 $client",
-                    17f
-                ).apply {
-
-                    setBackgroundColor(
-                        Color.WHITE
-                    )
-
-                    setPadding(
-                        15,
-                        15,
-                        15,
-                        15
-                    )
-                }
-            )
-        }
+        val root = layoutBase()
 
         root.addView(
-            boutonVert(
-                "➕ Ajouter un client"
-            ) {
-
-                val champ =
-                    EditText(this).apply {
-
-                        hint =
-                            "Nom du client"
-                    }
-
-                AlertDialog.Builder(this)
-                    .setTitle(
-                        "Ajouter un client"
-                    )
-                    .setView(
-                        champ
-                    )
-                    .setNegativeButton(
-                        "Annuler",
-                        null
-                    )
-                    .setPositiveButton(
-                        "Ajouter"
-                    ) { _, _ ->
-
-                        val nom =
-                            champ.text
-                                .toString()
-                                .trim()
-
-                        if (
-                            nom.isNotEmpty()
-                        ) {
-
-                            clients.add(
-                                nom
-                            )
-
-                            sauvegarderClients()
-
-                            afficherClients()
-                        }
-                    }
-                    .show()
-            }
+            titre("👑 Administration")
         )
-
-        setContentView(
-            scroll(root)
-        )
-    }
-
-    // =========================================================
-    // ABONNEMENT — NOUVELLE VERSION
-    // =========================================================
-
-    private fun afficherAbonnement() {
-
-        val root =
-            layoutBase()
-
-        root.addView(
-            titre(
-                "💎 Abonnement vendeur"
-            )
-        )
-
-        root.addView(
-            bouton("⬅ Retour") {
-                afficherEspaceVendeur()
-            }
-        )
-
-        val actuel =
-            prefs.getString(
-                SELLER_PACK,
-                "Aucun"
-            ) ?: "Aucun"
 
         root.addView(
             texte(
-                "Abonnement actuel : $actuel",
-                18f,
+                "🔐 Espace réservé à l'administrateur",
+                17f,
                 VERT
             ).apply {
-
-                gravity =
-                    Gravity.CENTER
-
-                typeface =
-                    Typeface.DEFAULT_BOLD
-
-                setPadding(
-                    10,
-                    15,
-                    10,
-                    15
-                )
-            }
-        )
-
-        root.addView(
-            texte(
-                "L'abonnement vendeur commence à 5 000 FCFA par mois.",
-                16f,
-                TEXTE
-            ).apply {
-
-                gravity =
-                    Gravity.CENTER
-
-                setPadding(
-                    10,
-                    15,
-                    10,
-                    15
-                )
-
-                setBackgroundColor(
-                    Color.WHITE
-                )
-            }
-        )
-
-        root.addView(
-            boutonVert(
-                "💎 Choisir — 5 000 FCFA / mois"
-            ) {
-
-                val pack =
-                    "Abonnement mensuel — 5 000 FCFA / mois"
-
-                prefs.edit()
-                    .putString(
-                        SELLER_PACK,
-                        pack
-                    )
-                    .apply()
-
-                toast(
-                    "Abonnement sélectionné : 5 000 FCFA / mois"
-                )
-
-                afficherPaiement()
-            }
-        )
-
-        setContentView(
-            scroll(root)
-        )
-    }
-
-    // =========================================================
-    // PAIEMENT
-    // =========================================================
-
-    private fun afficherPaiement() {
-
-        val root =
-            layoutBase()
-
-        root.addView(
-            titre(
-                "💳 Paiement"
-            )
-        )
-
-        root.addView(
-            bouton("⬅ Retour") {
-                afficherAbonnement()
+                gravity = Gravity.CENTER
+                typeface = Typeface.DEFAULT_BOLD
             }
         )
 
         root.addView(
             texte(
                 """
-                Abonnement sélectionné :
-                5 000 FCFA / mois
+                👥 Comptes : ${comptes.size}
                 
-                Choisissez votre moyen de paiement :
+                🛍️ Produits : ${produits.size}
                 
-                🟠 Orange Money / Wave
-                📞 $ORANGE_WAVE
+                📦 Commandes : ${commandes.size}
                 
-                🟡 MTN Mobile Money
-                📞 $MTN
+                🔔 Événements : ${evenementsAdmin.size}
                 """.trimIndent(),
-                18f
+                18f,
+                VERT
             ).apply {
-
-                gravity =
-                    Gravity.CENTER
-
-                setBackgroundColor(
-                    Color.WHITE
-                )
-
-                setPadding(
-                    10,
-                    20,
-                    10,
-                    20
-                )
+                gravity = Gravity.CENTER
+                setBackgroundColor(Color.WHITE)
             }
         )
 
         root.addView(
             boutonVert(
-                "🟠 Orange Money / Wave"
+                "👥 Voir les vendeurs"
             ) {
-
-                appelerNumero(
-                    ORANGE_WAVE
-                )
+                afficherVendeursAdmin()
             }
         )
 
         root.addView(
             boutonVert(
-                "🟡 MTN Mobile Money"
+                "📦 Voir les commandes"
             ) {
+                afficherCommandesAdmin()
+            }
+        )
 
-                appelerNumero(
-                    MTN
-                )
+        root.addView(
+            boutonVert(
+                "🔔 Voir les notifications"
+            ) {
+                afficherEvenementsAdmin()
             }
         )
 
         root.addView(
             bouton(
-                "💬 Contacter par WhatsApp"
+                "🚪 Fermer l'administration"
             ) {
-
-                ouvrirWhatsApp(
-                    ORANGE_WAVE
-                )
+                adminConnecte = false
+                afficherAccueil()
             }
         )
 
-        root.addView(
-            texte(
-                "Après paiement, l'administrateur pourra confirmer l'activation de l'abonnement.",
-                14f,
-                Color.GRAY
-            ).apply {
-
-                gravity =
-                    Gravity.CENTER
-
-                setPadding(
-                    10,
-                    20,
-                    10,
-                    20
-                )
-            }
-        )
-
-        setContentView(
-            scroll(root)
-        )
+        setContentView(scroll(root))
     }
 
-    // =========================================================
+    private fun afficherVendeursAdmin() {
+
+        val root = layoutBase()
+
+        root.addView(
+            titre("👥 Vendeurs")
+        )
+
+        for (compte in comptes) {
+
+            if (compte.type != "VENDEUR") {
+                continue
+            }
+
+            val bloc =
+                LinearLayout(this).apply {
+
+                    orientation =
+                        LinearLayout.VERTICAL
+
+                    setPadding(
+                        12,
+                        12,
+                        12,
+                        12
+                    )
+
+                    setBackgroundColor(
+                        Color.WHITE
+                    )
+                }
+
+            bloc.addView(
+                texte(
+                    """
+                    👤 ${compte.nom}
+                    🏢 ${compte.entreprise}
+                    📧 ${compte.email}
+                    📞 ${compte.telephone}
+                    📍 ${compte.adresse}
+                    """.trimIndent(),
+                    16f,
+                    VERT
+                )
+            )
+
+            bloc.addView(
+                boutonVert(
+                    if (compte.valide)
+                        "✅ Vendeur actif"
+                    else
+                        "⏳ Activer vendeur"
+                ) {
+
+                    compte.valide = true
+
+                    sauvegarderComptes()
+
+                    enregistrerEvenement(
+                        "Vendeur activé : ${compte.entreprise}"
+                    )
+
+                    afficherVendeursAdmin()
+                }
+            )
+
+            root.addView(bloc)
+        }
+
+        setContentView(scroll(root))
+    }
+
+    private fun afficherCommandesAdmin() {
+
+        val root = layoutBase()
+
+        root.addView(
+            titre("📦 Toutes les commandes")
+        )
+
+        if (commandes.isEmpty()) {
+
+            root.addView(
+                texte(
+                    "Aucune commande.",
+                    18f
+                ).apply {
+                    gravity = Gravity.CENTER
+                }
+            )
+        }
+
+        for (commande in commandes) {
+
+            root.addView(
+                texte(
+                    """
+                    📦 #${commande.id}
+                    👤 ${commande.client}
+                    📞 ${commande.telephone}
+                    🛍️ ${commande.produit}
+                    💰 ${commande.montant} FCFA
+                    💳 ${commande.paiement}
+                    📌 ${commande.statut}
+                    """.trimIndent(),
+                    16f,
+                    TEXTE
+                ).apply {
+                    setBackgroundColor(Color.WHITE)
+                    setPadding(
+                        12,
+                        12,
+                        12,
+                        12
+                    )
+                }
+            )
+        }
+
+        setContentView(scroll(root))
+    }
+
+    private fun afficherEvenementsAdmin() {
+
+        val root = layoutBase()
+
+        root.addView(
+            titre("🔔 Notifications administrateur")
+        )
+
+        if (evenementsAdmin.isEmpty()) {
+
+            root.addView(
+                texte(
+                    "Aucun événement.",
+                    18f
+                ).apply {
+                    gravity = Gravity.CENTER
+                }
+            )
+        }
+
+        for (
+            evenement in evenementsAdmin.asReversed()
+        ) {
+
+            root.addView(
+                texte(
+                    "🔔 $evenement",
+                    16f
+                ).apply {
+                    setBackgroundColor(
+                        Color.WHITE
+                    )
+                    setPadding(
+                        12,
+                        12,
+                        12,
+                        12
+                    )
+                }
+            )
+        }
+
+        setContentView(scroll(root))
+    }
+
+    // ========================================================
     // CONTACT
-    // =========================================================
+    // ========================================================
 
     private fun afficherContact() {
 
-        val root =
-            layoutBase()
+        val root = layoutBase()
 
         root.addView(
             titre(
@@ -3445,90 +3397,45 @@ class MainActivity : Activity() {
         )
 
         root.addView(
-            bouton("⬅ Accueil") {
-                afficherAccueil()
-            }
-        )
-
-        root.addView(
             texte(
                 """
-                🟠 Orange Money / Wave
-                
+                🟠 Orange / Wave
                 $ORANGE_WAVE
                 
                 🟡 MTN
-                
                 $MTN
                 """.trimIndent(),
                 19f,
                 VERT
             ).apply {
-
-                gravity =
-                    Gravity.CENTER
-
-                typeface =
-                    Typeface.DEFAULT_BOLD
-
-                setBackgroundColor(
-                    Color.WHITE
-                )
+                gravity = Gravity.CENTER
+                typeface = Typeface.DEFAULT_BOLD
+                setBackgroundColor(Color.WHITE)
             }
         )
 
         root.addView(
             boutonVert(
-                "📞 Appeler Orange / Wave"
+                "📞 Appeler"
             ) {
-
-                appelerNumero(
-                    ORANGE_WAVE
-                )
-            }
-        )
-
-        root.addView(
-            boutonVert(
-                "📞 Appeler MTN"
-            ) {
-
-                appelerNumero(
-                    MTN
-                )
+                appelerNumero(ORANGE_WAVE)
             }
         )
 
         root.addView(
             bouton(
-                "💬 WhatsApp Orange / Wave"
+                "💬 WhatsApp"
             ) {
-
-                ouvrirWhatsApp(
-                    ORANGE_WAVE
-                )
+                ouvrirWhatsApp(ORANGE_WAVE)
             }
         )
 
-        root.addView(
-            bouton(
-                "💬 WhatsApp MTN"
-            ) {
-
-                ouvrirWhatsApp(
-                    MTN
-                )
-            }
-        )
-
-        setContentView(
-            scroll(root)
-        )
+        setContentView(scroll(root))
     }
 
-    // =========================================================
+    // ========================================================
     // APPEL
-    // =========================================================
+    // ========================================================
 
     private fun appelerNumero(
         numero: String
@@ -3539,9 +3446,7 @@ class MainActivity : Activity() {
             startActivity(
                 Intent(
                     Intent.ACTION_DIAL,
-                    Uri.parse(
-                        "tel:$numero"
-                    )
+                    Uri.parse("tel:$numero")
                 )
             )
 
@@ -3553,9 +3458,9 @@ class MainActivity : Activity() {
         }
     }
 
-    // =========================================================
+    // ========================================================
     // WHATSAPP
-    // =========================================================
+    // ========================================================
 
     private fun ouvrirWhatsApp(
         numero: String
@@ -3563,19 +3468,11 @@ class MainActivity : Activity() {
 
         val propre =
             numero
-                .replace(
-                    "+",
-                    ""
-                )
-                .replace(
-                    " ",
-                    ""
-                )
+                .replace("+", "")
+                .replace(" ", "")
 
         val international =
-            if (
-                propre.startsWith("0")
-            )
+            if (propre.startsWith("0"))
                 "225$propre"
             else
                 propre
@@ -3599,45 +3496,43 @@ class MainActivity : Activity() {
         }
     }
 
-    // =========================================================
+    // ========================================================
     // PARTAGE PRODUIT
-    // =========================================================
+    // ========================================================
 
     private fun partagerProduit(
         produit: Produit
     ) {
 
         val prix =
-            produit.prix
-                .toIntOrNull()
-                ?: 0
+            produit.prix.toIntOrNull() ?: 0
 
         val texte =
             """
             🛍️ VIE ESPOIR MARKETING
             
+            🏢 ${produit.entreprise.ifEmpty {
+                "Boutique"
+            }}
+            
             ${produit.nom}
             
-            💰 Prix : ${formaterNombre(prix)} FCFA
+            💰 Prix :
+            ${formaterNombre(prix)} FCFA
             
-            🏷️ Catégorie : ${produit.categorie}
-            
-            📦 Stock : ${produit.stock}
+            🏷️ ${produit.categorie}
             
             ${produit.description}
             
-            Contact :
-            Orange / Wave : $ORANGE_WAVE
-            MTN : $MTN
+            📲 Ouvrez Vie Espoir Marketing pour voir le produit et commander.
+            
+            📞 $ORANGE_WAVE
             """.trimIndent()
 
         val intent =
-            Intent(
-                Intent.ACTION_SEND
-            ).apply {
+            Intent(Intent.ACTION_SEND).apply {
 
-                type =
-                    "text/plain"
+                type = "text/plain"
 
                 putExtra(
                     Intent.EXTRA_TEXT,
@@ -3653,9 +3548,9 @@ class MainActivity : Activity() {
         )
     }
 
-    // =========================================================
+    // ========================================================
     // PARTAGE APPLICATION
-    // =========================================================
+    // ========================================================
 
     private fun partagerApplication() {
 
@@ -3665,18 +3560,20 @@ class MainActivity : Activity() {
             
             Découvrez notre plateforme de vente.
             
-            Produits • Commandes • Vendeurs
+            🏢 Entreprises
+            🛍️ Produits
+            🛒 Commandes
+            💳 Paiements
+            🚚 Livraison
             
-            Ensemble pour un meilleur avenir.
+            Téléchargez Vie Espoir Marketing
+            pour découvrir les produits et commander.
             """.trimIndent()
 
         val intent =
-            Intent(
-                Intent.ACTION_SEND
-            ).apply {
+            Intent(Intent.ACTION_SEND).apply {
 
-                type =
-                    "text/plain"
+                type = "text/plain"
 
                 putExtra(
                     Intent.EXTRA_TEXT,
@@ -3692,9 +3589,153 @@ class MainActivity : Activity() {
         )
     }
 
-    // =========================================================
+    // ========================================================
+    // RETOUR DU TÉLÉPHONE
+    // ========================================================
+
+    override fun onBackPressed() {
+
+        /*
+         * Comme cette application utilise actuellement
+         * plusieurs écrans construits avec setContentView(),
+         * Android ne possède pas automatiquement l'historique
+         * de toutes ces pages.
+         *
+         * Pour cette V2, nous revenons vers l'accueil plutôt
+         * que de fermer directement l'application.
+         */
+
+        if (isTaskRoot) {
+
+            AlertDialog.Builder(this)
+                .setTitle(
+                    "🚪 Quitter l'application"
+                )
+                .setMessage(
+                    "Voulez-vous vraiment quitter Vie Espoir Marketing ?"
+                )
+                .setNegativeButton(
+                    "Annuler",
+                    null
+                )
+                .setPositiveButton(
+                    "Quitter"
+                ) { _, _ ->
+                    finishAffinity()
+                }
+                .show()
+
+        } else {
+
+            super.onBackPressed()
+        }
+    }
+
+    private fun confirmerQuitter() {
+
+        AlertDialog.Builder(this)
+            .setTitle(
+                "🚪 Quitter"
+            )
+            .setMessage(
+                "Voulez-vous vraiment quitter Vie Espoir Marketing ?"
+            )
+            .setNegativeButton(
+                "Annuler",
+                null
+            )
+            .setPositiveButton(
+                "Quitter"
+            ) { _, _ ->
+                finishAffinity()
+            }
+            .show()
+    }
+
+    // ========================================================
+    // COMPTE ACTUEL
+    // ========================================================
+
+    private fun compteActuel(): Compte? {
+
+        if (compteConnecteId.isEmpty()) {
+            return null
+        }
+
+        return comptes.find {
+            it.id == compteConnecteId
+        }
+    }
+
+    // ========================================================
+    // 7 JOURS GRATUITS
+    // ========================================================
+
+    private fun joursGratuitsRestants(
+        compte: Compte
+    ): Long {
+
+        val septJours =
+            7L * 24L * 60L * 60L * 1000L
+
+        val fin =
+            compte.dateCreation +
+            septJours
+
+        val restant =
+            fin - System.currentTimeMillis()
+
+        if (restant <= 0) {
+            return 0
+        }
+
+        return (
+            restant /
+            (24L * 60L * 60L * 1000L)
+        ) + 1
+    }
+
+    private fun vendeurPeutUtiliser(): Boolean {
+
+        val compte =
+            compteActuel()
+                ?: return false
+
+        if (!compte.valide) {
+            return false
+        }
+
+        return joursGratuitsRestants(
+            compte
+        ) > 0
+    }
+
+    // ========================================================
+    // EVENEMENTS ADMIN
+    // ========================================================
+
+    private fun enregistrerEvenement(
+        evenement: String
+    ) {
+
+        val ligne =
+            "${System.currentTimeMillis()} — $evenement"
+
+        evenementsAdmin.add(ligne)
+
+        prefs.edit()
+            .putString(
+                EVENTS_KEY,
+                JSONArray(
+                    evenementsAdmin
+                ).toString()
+            )
+            .apply()
+    }
+
+    // ========================================================
     // FORMATAGE
-    // =========================================================
+    // ========================================================
 
     private fun formaterNombre(
         nombre: Int
@@ -3704,82 +3745,38 @@ class MainActivity : Activity() {
             Locale.FRANCE,
             "%,d",
             nombre
-        ).replace(
-            ',',
-            ' '
-        )
+        ).replace(',', ' ')
     }
 
-    private fun toast(
-        message: String
-    ) {
-
-        Toast.makeText(
-            this,
-            message,
-            Toast.LENGTH_SHORT
-        ).show()
-    }
-
-    // =========================================================
-    // RETOUR — QUITTER L'APPLICATION
-    // =========================================================
-
-    override fun onBackPressed() {
-
-        finishAffinity()
-    }
-
-    // =========================================================
+    // ========================================================
     // SAUVEGARDE PRODUITS
-    // =========================================================
+    // ========================================================
 
     private fun sauvegarderProduits() {
 
-        val tableau =
-            JSONArray()
+        val tableau = JSONArray()
 
-        for (
-            produit in produits
-        ) {
+        for (produit in produits) {
+
+            val images =
+                JSONArray()
+
+            for (image in produit.images) {
+                images.put(image)
+            }
 
             tableau.put(
                 JSONObject().apply {
 
-                    put(
-                        "id",
-                        produit.id
-                    )
-
-                    put(
-                        "nom",
-                        produit.nom
-                    )
-
-                    put(
-                        "prix",
-                        produit.prix
-                    )
-
-                    put(
-                        "categorie",
-                        produit.categorie
-                    )
-
-                    put(
-                        "stock",
-                        produit.stock
-                    )
-
-                    put(
-                        "description",
-                        produit.description
-                    )
-
-                    put(
-                        "image",
-                        produit.image
-                    )
+                    put("id", produit.id)
+                    put("nom", produit.nom)
+                    put("prix", produit.prix)
+                    put("categorie", produit.categorie)
+                    put("stock", produit.stock)
+                    put("description", produit.description)
+                    put("images", images)
+                    put("vendeur", produit.vendeur)
+                    put("entreprise", produit.entreprise)
                 }
             )
         }
@@ -3792,18 +3789,22 @@ class MainActivity : Activity() {
             .apply()
     }
 
-    // =========================================================
+    // ========================================================
     // SAUVEGARDE PANIER
-    // =========================================================
+    // ========================================================
 
     private fun sauvegarderPanier() {
 
-        val tableau =
-            JSONArray()
+        val tableau = JSONArray()
 
-        for (
-            item in panier
-        ) {
+        for (item in panier) {
+
+            val images =
+                JSONArray()
+
+            for (image in item.images) {
+                images.put(image)
+            }
 
             tableau.put(
                 JSONObject().apply {
@@ -3829,8 +3830,8 @@ class MainActivity : Activity() {
                     )
 
                     put(
-                        "image",
-                        item.image
+                        "images",
+                        images
                     )
                 }
             )
@@ -3844,77 +3845,26 @@ class MainActivity : Activity() {
             .apply()
     }
 
-    // =========================================================
-    // SAUVEGARDE CLIENTS
-    // =========================================================
-
-    private fun sauvegarderClients() {
-
-        val tableau =
-            JSONArray()
-
-        for (
-            client in clients
-        ) {
-
-            tableau.put(
-                client
-            )
-        }
-
-        prefs.edit()
-            .putString(
-                CLIENTS_KEY,
-                tableau.toString()
-            )
-            .apply()
-    }
-
-    // =========================================================
+    // ========================================================
     // SAUVEGARDE COMMANDES
-    // =========================================================
+    // ========================================================
 
     private fun sauvegarderCommandes() {
 
-        val tableau =
-            JSONArray()
+        val tableau = JSONArray()
 
-        for (
-            commande in commandes
-        ) {
+        for (commande in commandes) {
 
             tableau.put(
                 JSONObject().apply {
 
-                    put(
-                        "id",
-                        commande.id
-                    )
-
-                    put(
-                        "client",
-                        commande.client
-                    )
-
-                    put(
-                        "telephone",
-                        commande.telephone
-                    )
-
-                    put(
-                        "produit",
-                        commande.produit
-                    )
-
-                    put(
-                        "montant",
-                        commande.montant
-                    )
-
-                    put(
-                        "statut",
-                        commande.statut
-                    )
+                    put("id", commande.id)
+                    put("client", commande.client)
+                    put("telephone", commande.telephone)
+                    put("produit", commande.produit)
+                    put("montant", commande.montant)
+                    put("paiement", commande.paiement)
+                    put("statut", commande.statut)
                 }
             )
         }
@@ -3927,23 +3877,71 @@ class MainActivity : Activity() {
             .apply()
     }
 
-    // =========================================================
+    // ========================================================
+    // SAUVEGARDE COMPTES
+    // ========================================================
+
+    private fun sauvegarderComptes() {
+
+        val tableau = JSONArray()
+
+        for (compte in comptes) {
+
+            tableau.put(
+                JSONObject().apply {
+
+                    put("id", compte.id)
+                    put("nom", compte.nom)
+                    put(
+                        "entreprise",
+                        compte.entreprise
+                    )
+                    put("email", compte.email)
+                    put(
+                        "telephone",
+                        compte.telephone
+                    )
+                    put("adresse", compte.adresse)
+                    put(
+                        "motDePasse",
+                        compte.motDePasse
+                    )
+                    put("type", compte.type)
+                    put(
+                        "dateCreation",
+                        compte.dateCreation
+                    )
+                    put(
+                        "valide",
+                        compte.valide
+                    )
+                }
+            )
+        }
+
+        prefs.edit()
+            .putString(
+                ACCOUNTS_KEY,
+                tableau.toString()
+            )
+            .apply()
+    }
+
+    // ========================================================
     // CHARGEMENT
-    // =========================================================
+    // ========================================================
 
     private fun chargerDonnees() {
 
         produits.clear()
-
         panier.clear()
-
-        clients.clear()
-
         commandes.clear()
+        comptes.clear()
+        evenementsAdmin.clear()
 
-        // -----------------------------------------------------
+        // ----------------------------------------------------
         // PRODUITS
-        // -----------------------------------------------------
+        // ----------------------------------------------------
 
         val produitsJson =
             prefs.getString(
@@ -3951,34 +3949,65 @@ class MainActivity : Activity() {
                 null
             )
 
-        if (
-            !produitsJson.isNullOrEmpty()
-        ) {
+        if (!produitsJson.isNullOrEmpty()) {
 
             try {
 
                 val tableau =
-                    JSONArray(
-                        produitsJson
-                    )
+                    JSONArray(produitsJson)
 
                 for (
                     i in 0 until tableau.length()
                 ) {
 
                     val objet =
-                        tableau.getJSONObject(
-                            i
+                        tableau.getJSONObject(i)
+
+                    val images =
+                        mutableListOf<String>()
+
+                    val imagesJson =
+                        objet.optJSONArray(
+                            "images"
                         )
+
+                    if (imagesJson != null) {
+
+                        for (
+                            j in 0 until imagesJson.length()
+                        ) {
+
+                            images.add(
+                                imagesJson.optString(j)
+                            )
+                        }
+                    }
+
+                    // Compatibilité avec l'ancien format
+                    if (
+                        images.isEmpty()
+                    ) {
+
+                        val ancienneImage =
+                            objet.optString(
+                                "image",
+                                ""
+                            )
+
+                        if (
+                            ancienneImage.isNotEmpty()
+                        ) {
+                            images.add(
+                                ancienneImage
+                            )
+                        }
+                    }
 
                     produits.add(
                         Produit(
-
                             id =
                                 objet.optString(
-                                    "id",
-                                    System.currentTimeMillis()
-                                        .toString()
+                                    "id"
                                 ),
 
                             nom =
@@ -4008,9 +4037,17 @@ class MainActivity : Activity() {
                                     "description"
                                 ),
 
-                            image =
+                            images =
+                                images,
+
+                            vendeur =
                                 objet.optString(
-                                    "image"
+                                    "vendeur"
+                                ),
+
+                            entreprise =
+                                objet.optString(
+                                    "entreprise"
                                 )
                         )
                     )
@@ -4020,9 +4057,9 @@ class MainActivity : Activity() {
             }
         }
 
-        // -----------------------------------------------------
+        // ----------------------------------------------------
         // PANIER
-        // -----------------------------------------------------
+        // ----------------------------------------------------
 
         val panierJson =
             prefs.getString(
@@ -4030,29 +4067,42 @@ class MainActivity : Activity() {
                 null
             )
 
-        if (
-            !panierJson.isNullOrEmpty()
-        ) {
+        if (!panierJson.isNullOrEmpty()) {
 
             try {
 
                 val tableau =
-                    JSONArray(
-                        panierJson
-                    )
+                    JSONArray(panierJson)
 
                 for (
                     i in 0 until tableau.length()
                 ) {
 
                     val objet =
-                        tableau.getJSONObject(
-                            i
+                        tableau.getJSONObject(i)
+
+                    val images =
+                        mutableListOf<String>()
+
+                    val imagesJson =
+                        objet.optJSONArray(
+                            "images"
                         )
+
+                    if (imagesJson != null) {
+
+                        for (
+                            j in 0 until imagesJson.length()
+                        ) {
+
+                            images.add(
+                                imagesJson.optString(j)
+                            )
+                        }
+                    }
 
                     panier.add(
                         PanierItem(
-
                             produitId =
                                 objet.optString(
                                     "produitId"
@@ -4075,10 +4125,8 @@ class MainActivity : Activity() {
                                     1
                                 ),
 
-                            image =
-                                objet.optString(
-                                    "image"
-                                )
+                            images =
+                                images
                         )
                     )
                 }
@@ -4087,45 +4135,9 @@ class MainActivity : Activity() {
             }
         }
 
-        // -----------------------------------------------------
-        // CLIENTS
-        // -----------------------------------------------------
-
-        val clientsJson =
-            prefs.getString(
-                CLIENTS_KEY,
-                null
-            )
-
-        if (
-            !clientsJson.isNullOrEmpty()
-        ) {
-
-            try {
-
-                val tableau =
-                    JSONArray(
-                        clientsJson
-                    )
-
-                for (
-                    i in 0 until tableau.length()
-                ) {
-
-                    clients.add(
-                        tableau.getString(
-                            i
-                        )
-                    )
-                }
-
-            } catch (_: Exception) {
-            }
-        }
-
-        // -----------------------------------------------------
+        // ----------------------------------------------------
         // COMMANDES
-        // -----------------------------------------------------
+        // ----------------------------------------------------
 
         val commandesJson =
             prefs.getString(
@@ -4133,29 +4145,22 @@ class MainActivity : Activity() {
                 null
             )
 
-        if (
-            !commandesJson.isNullOrEmpty()
-        ) {
+        if (!commandesJson.isNullOrEmpty()) {
 
             try {
 
                 val tableau =
-                    JSONArray(
-                        commandesJson
-                    )
+                    JSONArray(commandesJson)
 
                 for (
                     i in 0 until tableau.length()
                 ) {
 
                     val objet =
-                        tableau.getJSONObject(
-                            i
-                        )
+                        tableau.getJSONObject(i)
 
                     commandes.add(
                         Commande(
-
                             id =
                                 objet.optString(
                                     "id"
@@ -4181,12 +4186,134 @@ class MainActivity : Activity() {
                                     "montant"
                                 ),
 
+                            paiement =
+                                objet.optString(
+                                    "paiement",
+                                    "Non défini"
+                                ),
+
                             statut =
                                 objet.optString(
                                     "statut",
                                     "Nouvelle"
                                 )
                         )
+                    )
+                }
+
+            } catch (_: Exception) {
+            }
+        }
+
+        // ----------------------------------------------------
+        // COMPTES
+        // ----------------------------------------------------
+
+        val comptesJson =
+            prefs.getString(
+                ACCOUNTS_KEY,
+                null
+            )
+
+        if (!comptesJson.isNullOrEmpty()) {
+
+            try {
+
+                val tableau =
+                    JSONArray(comptesJson)
+
+                for (
+                    i in 0 until tableau.length()
+                ) {
+
+                    val objet =
+                        tableau.getJSONObject(i)
+
+                    comptes.add(
+                        Compte(
+                            id =
+                                objet.optString(
+                                    "id"
+                                ),
+
+                            nom =
+                                objet.optString(
+                                    "nom"
+                                ),
+
+                            entreprise =
+                                objet.optString(
+                                    "entreprise"
+                                ),
+
+                            email =
+                                objet.optString(
+                                    "email"
+                                ),
+
+                            telephone =
+                                objet.optString(
+                                    "telephone"
+                                ),
+
+                            adresse =
+                                objet.optString(
+                                    "adresse"
+                                ),
+
+                            motDePasse =
+                                objet.optString(
+                                    "motDePasse"
+                                ),
+
+                            type =
+                                objet.optString(
+                                    "type",
+                                    "VENDEUR"
+                                ),
+
+                            dateCreation =
+                                objet.optLong(
+                                    "dateCreation",
+                                    System.currentTimeMillis()
+                                ),
+
+                            valide =
+                                objet.optBoolean(
+                                    "valide",
+                                    false
+                                )
+                        )
+                    )
+                }
+
+            } catch (_: Exception) {
+            }
+        }
+
+        // ----------------------------------------------------
+        // EVENEMENTS
+        // ----------------------------------------------------
+
+        val eventsJson =
+            prefs.getString(
+                EVENTS_KEY,
+                null
+            )
+
+        if (!eventsJson.isNullOrEmpty()) {
+
+            try {
+
+                val tableau =
+                    JSONArray(eventsJson)
+
+                for (
+                    i in 0 until tableau.length()
+                ) {
+
+                    evenementsAdmin.add(
+                        tableau.optString(i)
                     )
                 }
 
