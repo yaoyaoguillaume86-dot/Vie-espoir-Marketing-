@@ -1150,13 +1150,13 @@ class MainActivity : Activity() {
         )
 
         root.addView(
-            bouton(
-                "⬅️ Retour"
-            ) {
+    bouton(
+        "⬅️ Retour"
+    ) {
 
-                onBackPressedDispatcher.onBackPressed()
-            }
-        )
+        onBackPressed()
+    }
+)
 
         setContentView(
             scroll(root)
