@@ -622,7 +622,7 @@ private fun afficherAccueil() {
 // ========================================================
 
 private fun chargerProduitsFirebase() {
-    db.collection("produits")
+    db.collection("Produits")
         .get()
         .addOnSuccessListener { result ->
 
