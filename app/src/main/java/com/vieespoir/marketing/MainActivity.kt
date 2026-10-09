@@ -274,8 +274,9 @@ override fun onCreate(savedInstanceState: Bundle?) {
             ""  
         ) ?: ""  
 
-    afficherAccueil()  
-}  
+    afficherAccueil()
+chargerProduitsFirebase()
+}
 
 // ========================================================  
 // INTERFACE DE BASE  
