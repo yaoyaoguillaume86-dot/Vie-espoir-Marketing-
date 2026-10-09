@@ -76,7 +76,7 @@ override fun onCreate(savedInstanceState: Bundle?) {
 // ============================================================
 
 class MainActivity : Activity() {
-
+private val db = FirebaseFirestore.getInstance()
 // ========================================================  
 // MODÈLES  
 // ========================================================  
