@@ -23,7 +23,7 @@ import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Locale
-
+import com.google.firebase.firestore.FirebaseFirestore
 // ============================================================
 // ÉCRAN DE BIENVENUE
 // ============================================================
