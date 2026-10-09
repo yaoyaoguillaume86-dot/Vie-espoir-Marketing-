@@ -642,8 +642,7 @@ private fun chargerProduitsFirebase() {
                     document.getString("categorie") ?: "Autres"
 
                 val stock =
-                    (document.getLong("stock") ?: 0L).toInt()
-
+    (document.getLong("stock") ?: 10L).toInt()
                 val description =
                     document.getString("description") ?: ""
 
