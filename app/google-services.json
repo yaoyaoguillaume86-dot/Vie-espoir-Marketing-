@@ -1,1 +1,48 @@
-google-services.json
+{
+  "project_info": {
+    "project_number": "241290142539",
+    "project_id": "vie-espoir-marketing",
+    "storage_bucket": "vie-espoir-marketing.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:241290142539:android:33c65f5303e33bdcb8bece",
+        "android_client_info": {
+          "package_name": "Com.vie.espoir.marketing"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVAlIEFZTie07vcBi4rr7sEPBGvcLNeBg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:241290142539:android:5c03ad6953bb8d13b8bece",
+        "android_client_info": {
+          "package_name": "com.vieespoir.marketing"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVAlIEFZTie07vcBi4rr7sEPBGvcLNeBg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
