@@ -670,7 +670,7 @@ private fun chargerProduitsFirebase() {
             toast("Impossible de charger les produits Firebase")
             afficherProduitsAccueil()
         }
-} ========================================================  
+}
 
 private fun afficherProduitsAccueil() {  
 
