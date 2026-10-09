@@ -616,7 +616,61 @@ private fun afficherAccueil() {
 
 // ========================================================  
 // PRODUITS ACCUEIL  
-// ========================================================  
+//// ========================================================
+// CHARGER LES PRODUITS DEPUIS FIREBASE
+// ========================================================
+
+private fun chargerProduitsFirebase() {
+    db.collection("produits")
+        .get()
+        .addOnSuccessListener { result ->
+
+            produits.clear()
+
+            for (document in result.documents) {
+                val nom = document.getString("nom") ?: continue
+                val prixValeur = document.get("prix")
+
+                val prix = when (prixValeur) {
+                    is Number -> prixValeur.toInt().toString()
+                    is String -> prixValeur
+                    else -> "0"
+                }
+
+                val categorie =
+                    document.getString("categorie") ?: "Autres"
+
+                val stock =
+                    (document.getLong("stock") ?: 0L).toInt()
+
+                val description =
+                    document.getString("description") ?: ""
+
+                produits.add(
+                    Produit(
+                        id = document.id,
+                        nom = nom,
+                        prix = prix,
+                        categorie = categorie,
+                        stock = stock,
+                        description = description,
+                        images = mutableListOf(),
+                        vendeur = document.getString("vendeur") ?: "",
+                        entreprise = document.getString("entreprise") ?: ""
+                    )
+                )
+            }
+
+            sauvegarderProduits()
+            afficherProduitsAccueil()
+
+            toast("Produits chargés depuis Firebase")
+        }
+        .addOnFailureListener {
+            toast("Impossible de charger les produits Firebase")
+            afficherProduitsAccueil()
+        }
+} ========================================================  
 
 private fun afficherProduitsAccueil() {  
 
