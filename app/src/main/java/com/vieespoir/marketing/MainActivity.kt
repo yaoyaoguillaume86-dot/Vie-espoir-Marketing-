@@ -666,10 +666,15 @@ private fun chargerProduitsFirebase() {
 
             toast("Produits chargés depuis Firebase")
         }
-        .addOnFailureListener {
-            toast("Impossible de charger les produits Firebase")
-            afficherProduitsAccueil()
-        }
+        
+}.addOnFailureListener { erreur ->
+    toast("Erreur Firebase : ${erreur.message}")
+    afficherProduitsAccueil()
+    android.util.Log.e(
+        "FIREBASE_PRODUITS",
+        "Erreur de chargement des produits",
+        erreur
+    )
 }
 
 private fun afficherProduitsAccueil() {  
