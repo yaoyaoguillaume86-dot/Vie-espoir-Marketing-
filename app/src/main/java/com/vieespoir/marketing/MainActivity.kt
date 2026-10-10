@@ -627,7 +627,10 @@ private fun chargerProduitsFirebase() {
         .addOnSuccessListener { result ->
 
             produits.clear()
-
+android.util.Log.d(
+    "FIREBASE_PRODUITS",
+    "Nombre de documents : ${result.documents.size}"
+)
             for (document in result.documents) {
                 val nom = document.getString("nom") ?: continue
 
