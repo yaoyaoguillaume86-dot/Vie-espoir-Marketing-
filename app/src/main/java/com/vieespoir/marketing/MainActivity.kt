@@ -630,8 +630,8 @@ private fun chargerProduitsFirebase() {
 
             for (document in result.documents) {
                 val nom = document.getString("nom") ?: continue
-                val prixValeur = document.get("prix")
 
+                val prixValeur = document.get("prix")
                 val prix = when (prixValeur) {
                     is Number -> prixValeur.toInt().toString()
                     is String -> prixValeur
@@ -642,7 +642,8 @@ private fun chargerProduitsFirebase() {
                     document.getString("categorie") ?: "Autres"
 
                 val stock =
-    (document.getLong("stock") ?: 10L).toInt()
+                    (document.get("stock") as? Number)?.toInt() ?: 10
+
                 val description =
                     document.getString("description") ?: ""
 
@@ -666,15 +667,16 @@ private fun chargerProduitsFirebase() {
 
             toast("Produits chargés depuis Firebase")
         }
-        
-}.addOnFailureListener { erreur ->
-    toast("Erreur Firebase : ${erreur.message}")
-    afficherProduitsAccueil()
-    android.util.Log.e(
-        "FIREBASE_PRODUITS",
-        "Erreur de chargement des produits",
-        erreur
-    )
+        .addOnFailureListener { erreur ->
+            toast("Erreur Firebase : ${erreur.message}")
+            afficherProduitsAccueil()
+
+            android.util.Log.e(
+                "FIREBASE_PRODUITS",
+                "Erreur de chargement des produits",
+                erreur
+            )
+        }
 }
 
 private fun afficherProduitsAccueil() {  
