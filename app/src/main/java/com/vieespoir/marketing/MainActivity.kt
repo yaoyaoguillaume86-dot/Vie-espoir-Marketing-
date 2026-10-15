@@ -622,19 +622,44 @@ private fun afficherAccueil() {
 // ========================================================
 
 private fun chargerProduitsFirebase() {
+
+    android.util.Log.d(
+        "FIREBASE_PRODUITS",
+        "Début du chargement des produits"
+    )
+
     db.collection("Produits")
         .get()
         .addOnSuccessListener { result ->
 
+            android.util.Log.d(
+                "FIREBASE_PRODUITS",
+                "Nombre de documents récupérés : ${result.size()}"
+            )
+
             produits.clear()
-android.util.Log.d(
-    "FIREBASE_PRODUITS",
-    "Nombre de documents : ${result.documents.size}"
-)
+
             for (document in result.documents) {
-                val nom = document.getString("nom") ?: continue
+
+                android.util.Log.d(
+                    "FIREBASE_PRODUITS",
+                    "Document ${document.id} : ${document.data}"
+                )
+
+                val nom = document.getString("nom")
+
+                if (nom.isNullOrBlank()) {
+
+                    android.util.Log.e(
+                        "FIREBASE_PRODUITS",
+                        "Document ignoré : le champ nom est absent ou vide."
+                    )
+
+                    continue
+                }
 
                 val prixValeur = document.get("prix")
+
                 val prix = when (prixValeur) {
                     is Number -> prixValeur.toInt().toString()
                     is String -> prixValeur
@@ -645,10 +670,43 @@ android.util.Log.d(
                     document.getString("categorie") ?: "Autres"
 
                 val stock =
-                    (document.get("stock") as? Number)?.toInt() ?: 10
+                    (document.get("stock") as? Number)
+                        ?.toInt() ?: 0
 
                 val description =
                     document.getString("description") ?: ""
+
+                val vendeur =
+                    document.getString("vendeur") ?: ""
+
+                val entreprise =
+                    document.getString("entreprise") ?: ""
+
+                // Récupération des images enregistrées dans Firebase.
+                val images = mutableListOf<String>()
+
+                val imagesFirebase = document.get("images")
+
+                if (imagesFirebase is List<*>) {
+
+                    for (image in imagesFirebase) {
+
+                        if (image is String && image.isNotBlank()) {
+                            images.add(image)
+                        }
+                    }
+                }
+
+                // Compatibilité avec un ancien champ "image".
+                val ancienneImage =
+                    document.getString("image")
+
+                if (
+                    images.isEmpty() &&
+                    !ancienneImage.isNullOrBlank()
+                ) {
+                    images.add(ancienneImage)
+                }
 
                 produits.add(
                     Produit(
@@ -658,69 +716,41 @@ android.util.Log.d(
                         categorie = categorie,
                         stock = stock,
                         description = description,
-                        images = mutableListOf(),
-                        vendeur = document.getString("vendeur") ?: "",
-                        entreprise = document.getString("entreprise") ?: ""
+                        images = images,
+                        vendeur = vendeur,
+                        entreprise = entreprise
                     )
                 )
             }
 
-            sauvegarderProduits()
+            // Afficher les produits récupérés.
             afficherProduitsAccueil()
 
-            toast("Produits chargés depuis Firebase")
+            android.util.Log.d(
+                "FIREBASE_PRODUITS",
+                "Nombre de produits affichables : ${produits.size}"
+            )
+
+            toast(
+                "${produits.size} produit(s) chargé(s) depuis Firebase"
+            )
         }
         .addOnFailureListener { erreur ->
-            toast("Erreur Firebase : ${erreur.message}")
-            afficherProduitsAccueil()
 
             android.util.Log.e(
                 "FIREBASE_PRODUITS",
-                "Erreur de chargement des produits",
+                "Échec du chargement Firebase",
                 erreur
             )
+
+            toast(
+                "Erreur Firebase : ${erreur.localizedMessage}"
+            )
+
+            afficherProduitsAccueil()
         }
 }
-
-private fun afficherProduitsAccueil() {  
-
-    if (!::zoneProduits.isInitialized) {  
-        return  
-    }  
-
-    zoneProduits.removeAllViews()  
-
-    if (produits.isEmpty()) {  
-
-        zoneProduits.addView(  
-            texte(  
-                "Aucun produit disponible pour le moment.",  
-                17f  
-            ).apply {  
-
-                gravity =  
-                    Gravity.CENTER  
-
-                setPadding(  
-                    10,  
-                    30,  
-                    10,  
-                    30  
-                )  
-            }  
-        )  
-
-        return  
-    }  
-
-    for (produit in produits) {  
-
-        ajouterCarteProduit(  
-            zoneProduits,  
-            produit  
-        )  
-    }  
-}  
+              
 
 // ========================================================  
 // CARTE PRODUIT  
