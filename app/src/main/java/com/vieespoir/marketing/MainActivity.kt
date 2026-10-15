@@ -750,7 +750,47 @@ private fun chargerProduitsFirebase() {
             afficherProduitsAccueil()
         }
 }
-              
+      // ========================================================
+// AFFICHER LES PRODUITS SUR L'ACCUEIL
+// ========================================================
+
+private fun afficherProduitsAccueil() {
+
+    if (!::zoneProduits.isInitialized) {
+        return
+    }
+
+    zoneProduits.removeAllViews()
+
+    if (produits.isEmpty()) {
+
+        zoneProduits.addView(
+            texte(
+                "Aucun produit disponible pour le moment.",
+                17f
+            ).apply {
+                gravity = Gravity.CENTER
+
+                setPadding(
+                    10,
+                    30,
+                    10,
+                    30
+                )
+            }
+        )
+
+        return
+    }
+
+    for (produit in produits) {
+
+        ajouterCarteProduit(
+            zoneProduits,
+            produit
+        )
+    }
+}        
 
 // ========================================================  
 // CARTE PRODUIT  
