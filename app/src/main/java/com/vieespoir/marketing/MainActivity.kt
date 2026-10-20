@@ -639,7 +639,13 @@ private fun chargerProduitsFirebase() {
 
             produits.clear()
 
-            for (document in result.documents) {
+android.widget.Toast.makeText(
+    this,
+    "Documents trouvés dans Firebase : ${result.size()}",
+    android.widget.Toast.LENGTH_LONG
+).show()
+
+for (document in result.documents) {
 
                 android.util.Log.d(
                     "FIREBASE_PRODUITS",
