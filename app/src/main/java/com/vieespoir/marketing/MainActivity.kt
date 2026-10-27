@@ -31,7 +31,6 @@ import java.net.URL
 // ==========================================
 
 class SplashActivity : Activity() {
-
 override fun onCreate(savedInstanceState: Bundle?) {  
     super.onCreate(savedInstanceState)  
 
