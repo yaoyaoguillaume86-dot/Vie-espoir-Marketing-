@@ -688,6 +688,7 @@ private fun afficherAccueil() {
 // Teste les deux noms de collection sans exiger d'images
 // ========================================================
 
+
 private fun chargerProduitsFirebase() {
 
     android.util.Log.d(
@@ -713,23 +714,18 @@ private fun chargerProduitsFirebase() {
                     )
                 }
 
-                // Si la première collection est vide,
-                // tester l'autre nom.
                 if (result.isEmpty && nomCollection == "Produits") {
                     lireCollection("produits")
                     return@addOnSuccessListener
                 }
 
-                // Si les deux collections sont vides,
-                // afficher un message explicite.
                 if (result.isEmpty) {
                     toast(
-                        "Aucun document dans Produits ou produits. Vérifions le projet Firebase."
+                        "Aucun document dans Produits ou produits."
                     )
                     return@addOnSuccessListener
                 }
 
-                // Charger les documents trouvés.
                 produits.clear()
 
                 for (document in result.documents) {
@@ -740,7 +736,7 @@ private fun chargerProduitsFirebase() {
                         donnees["nom"]
                             ?: donnees["Nom"]
                             ?: donnees["name"]
-                        )?.toString()?.trim().orEmpty()
+                    )?.toString()?.trim().orEmpty()
 
                     if (nom.isEmpty()) {
                         android.util.Log.w(
@@ -762,7 +758,7 @@ private fun chargerProduitsFirebase() {
                     val categorie = (
                         donnees["categorie"]
                             ?: donnees["category"]
-                        )?.toString() ?: "Autres"
+                    )?.toString() ?: "Autres"
 
                     val stock = when (val valeur = donnees["stock"]) {
                         is Number -> valeur.toInt()
@@ -780,7 +776,6 @@ private fun chargerProduitsFirebase() {
                         donnees["entreprise"]?.toString() ?: ""
 
                     val images = mutableListOf<String>()
-
                     val imagesFirebase = donnees["images"]
 
                     if (imagesFirebase is List<*>) {
@@ -815,6 +810,18 @@ private fun chargerProduitsFirebase() {
                     )
                 }
 
+                android.util.Log.d(
+                    "FIREBASE_PRODUITS",
+                    "Nombre de produits chargés : ${produits.size}"
+                )
+
+                produits.forEach { produit ->
+                    android.util.Log.d(
+                        "FIREBASE_PRODUITS",
+                        "Produit : ${produit.nom}, prix : ${produit.prix}"
+                    )
+                }
+
                 afficherProduitsAccueil()
 
                 toast(
@@ -842,6 +849,7 @@ private fun chargerProduitsFirebase() {
 
     lireCollection("Produits")
 }
+
       // ========================================================
 // AFFICHER LES PRODUITS SUR L'ACCUEIL
 // ========================================================
