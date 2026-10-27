@@ -5225,83 +5225,83 @@ private fun formaterNombre(
 // SAUVEGARDE PRODUITS  
 // ========================================================  
 
-private fun sauvegarderProduits() {  
 
-    val tableau =  
-        JSONArray()  
+private fun sauvegarderProduits() {
 
-    for (produit in produits) {  
+    // 1. Conserver la sauvegarde locale existante
+    val tableau = org.json.JSONArray()
 
-        val images =  
-            JSONArray()  
+    for (produit in produits) {
 
-        for (  
-            image in produit.images  
-        ) {  
+        val images = org.json.JSONArray()
 
-            images.put(  
-                image  
-            )  
-        }  
+        for (image in produit.images) {
+            images.put(image)
+        }
 
-        tableau.put(  
-            JSONObject().apply {  
+        tableau.put(
+            org.json.JSONObject().apply {
+                put("id", produit.id)
+                put("nom", produit.nom)
+                put("prix", produit.prix)
+                put("categorie", produit.categorie)
+                put("stock", produit.stock)
+                put("description", produit.description)
+                put("images", images)
+                put("vendeur", produit.vendeur)
+                put("entreprise", produit.entreprise)
+            }
+        )
+    }
 
-                put(  
-                    "id",  
-                    produit.id  
-                )  
+    prefs.edit()
+        .putString(PRODUCTS_KEY, tableau.toString())
+        .apply()
 
-                put(  
-                    "nom",  
-                    produit.nom  
-                )  
+    // 2. Envoyer les produits vers Firebase
+    val donneesProduits = produits.toList()
 
-                put(  
-                    "prix",  
-                    produit.prix  
-                )  
+    if (donneesProduits.isEmpty()) {
+        return
+    }
 
-                put(  
-                    "categorie",  
-                    produit.categorie  
-                )  
+    for (produit in donneesProduits) {
 
-                put(  
-                    "stock",  
-                    produit.stock  
-                )  
+        val donnees = hashMapOf<String, Any>(
+            "id" to produit.id,
+            "nom" to produit.nom,
+            "prix" to produit.prix,
+            "categorie" to produit.categorie,
+            "stock" to produit.stock,
+            "description" to produit.description,
+            "images" to produit.images,
+            "vendeur" to produit.vendeur,
+            "entreprise" to produit.entreprise
+        )
 
-                put(  
-                    "description",  
-                    produit.description  
-                )  
+        db.collection("Produits")
+            .document(produit.id)
+            .set(donnees)
+            .addOnSuccessListener {
+                android.util.Log.d(
+                    "FIREBASE_PRODUITS",
+                    "Produit enregistré : ${produit.nom}"
+                )
+            }
+            .addOnFailureListener { erreur ->
+                android.util.Log.e(
+                    "FIREBASE_PRODUITS",
+                    "Échec d'enregistrement : ${produit.nom}",
+                    erreur
+                )
 
-                put(  
-                    "images",  
-                    images  
-                )  
+                toast(
+                    "Erreur Firebase : ${erreur.localizedMessage}"
+                )
+            }
+    }
+}
 
-                put(  
-                    "vendeur",  
-                    produit.vendeur  
-                )  
-
-                put(  
-                    "entreprise",  
-                    produit.entreprise  
-                )  
-            }  
-        )  
-    }  
-
-    prefs.edit()  
-        .putString(  
-            PRODUCTS_KEY,  
-            tableau.toString()  
-        )  
-        .apply()  
-}  
 
 // ========================================================  
 // SAUVEGARDE PANIER  
