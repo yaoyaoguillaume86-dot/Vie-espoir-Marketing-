@@ -2707,179 +2707,190 @@ override fun onRequestPermissionsResult(
 // RESULTAT PHOTO  
 // ========================================================  
 
-override fun onActivityResult(  
-    requestCode: Int,  
-    resultCode: Int,  
-    data: Intent?  
-) {  
 
-    super.onActivityResult(  
-        requestCode,  
-        resultCode,  
-        data  
-    )  
+override fun onActivityResult(
+    requestCode: Int,
+    resultCode: Int,
+    data: Intent?
+) {
+    super.onActivityResult(requestCode, resultCode, data)
 
-    if (  
-        resultCode != RESULT_OK  
-    ) {  
-        return  
-    }  
+    if (resultCode != RESULT_OK) return
 
-    if (  
-        requestCode ==  
-        MULTI_GALLERY_REQUEST  
-    ) {  
+    if (requestCode == MULTI_GALLERY_REQUEST) {
+        val clipData = data?.clipData
 
-        val clipData =  
-            data?.clipData  
+        if (clipData != null) {
+            for (i in 0 until clipData.itemCount) {
+                val uri = clipData.getItemAt(i).uri
 
-        if (clipData != null) {  
+                try {
+                    contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (_: Exception) {
+                    // L'accès temporaire peut suffire pour la sélection actuelle.
+                }
 
-            for (  
-                i in 0 until clipData.itemCount  
-            ) {  
+                ajouterImageProduit(uri.toString())
+            }
+        } else {
+            data?.data?.let { uri ->
+                try {
+                    contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (_: Exception) {
+                }
 
-                val uri =  
-                    clipData  
-                        .getItemAt(i)  
-                        .uri  
+                ajouterImageProduit(uri.toString())
+            }
+        }
 
-                ajouterImageProduit(  
-                    uri.toString()  
-                )  
-            }  
+        toast("Photo(s) sélectionnée(s)")
+    }
 
-        } else {  
+    if (requestCode == CAMERA_REQUEST) {
+        val bitmap = data?.extras?.get("data") as? Bitmap
 
-            val uri =  
-                data?.data  
+        if (bitmap != null) {
+            try {
+                val chemin = sauvegarderBitmap(bitmap)
+                ajouterImageProduit(chemin)
+                toast("Photo sélectionnée")
+            } catch (_: Exception) {
+                toast("Impossible d'enregistrer la photo")
+            }
+        }
+    }
+}
 
-            if (uri != null) {  
+private fun ajouterImageProduit(chemin: String) {
+    if (!imagesProduit.contains(chemin)) {
+        imagesProduit.add(chemin)
+    }
 
-                ajouterImageProduit(  
-                    uri.toString()  
-                )  
-            }  
-        }  
+    if (::galeriePhotos.isInitialized) {
+        val image = ImageView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                75,
+                75
+            ).apply {
+                setMargins(4, 4, 4, 4)
+            }
 
-        toast(  
-            "Photo(s) ajoutée(s)"  
-        )  
-    }  
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            setImageURI(Uri.parse(chemin))
+        }
 
-    if (  
-        requestCode ==  
-        CAMERA_REQUEST  
-    ) {  
+        galeriePhotos.addView(image)
+    }
+}
 
-        val bitmap =  
-            data?.extras?.get("data")  
-                as? Bitmap  
+private fun sauvegarderBitmap(bitmap: Bitmap): String {
+    val fichier = File(
+        filesDir,
+        "produit_${System.currentTimeMillis()}.jpg"
+    )
 
-        if (bitmap != null) {  
+    FileOutputStream(fichier).use { sortie ->
+        bitmap.compress(
+            Bitmap.CompressFormat.JPEG,
+            90,
+            sortie
+        )
+    }
 
-            try {  
+    return Uri.fromFile(fichier).toString()
+}
 
-                val chemin =  
-                    sauvegarderBitmap(  
-                        bitmap  
-                    )  
+// Envoi d'une photo vers Cloudinary.
+// Cette fonction doit être appelée sur un thread d'arrière-plan.
+private fun envoyerPhotoCloudinary(chemin: String): String {
+    val uri = Uri.parse(chemin)
 
-                ajouterImageProduit(  
-                    chemin  
-                )  
+    val nomFichier = "photo_${System.currentTimeMillis()}.jpg"
+    val boundary = "----VieEspoir${System.currentTimeMillis()}"
 
-                toast(  
-                    "Photo ajoutée"  
-                )  
+    val connexion = java.net.URL(
+        "https://api.cloudinary.com/v1_1/wxpenkfy/image/upload"
+    ).openConnection() as java.net.HttpURLConnection
 
-            } catch (_: Exception) {  
+    try {
+        connexion.requestMethod = "POST"
+        connexion.doOutput = true
+        connexion.connectTimeout = 30000
+        connexion.readTimeout = 60000
+        connexion.setRequestProperty(
+            "Content-Type",
+            "multipart/form-data; boundary=$boundary"
+        )
 
-                toast(  
-                    "Impossible d'enregistrer la photo"  
-                )  
-            }  
-        }  
-    }  
-}  
+        connexion.outputStream.use { sortie ->
+            fun ecrireTexte(texte: String) {
+                sortie.write(texte.toByteArray(Charsets.UTF_8))
+            }
 
-private fun ajouterImageProduit(  
-    chemin: String  
-) {  
+            ecrireTexte("--$boundary\r\n")
+            ecrireTexte(
+                "Content-Disposition: form-data; name=\"upload_preset\"\r\n\r\n"
+            )
+            ecrireTexte("vie_espoir_products\r\n")
 
-    if (  
-        !imagesProduit.contains(  
-            chemin  
-        )  
-    ) {  
+            ecrireTexte("--$boundary\r\n")
+            ecrireTexte(
+                "Content-Disposition: form-data; name=\"file\"; filename=\"$nomFichier\"\r\n"
+            )
+            ecrireTexte("Content-Type: image/jpeg\r\n\r\n")
 
-        imagesProduit.add(  
-            chemin  
-        )  
-    }  
+            val flux = if (uri.scheme == "content") {
+                contentResolver.openInputStream(uri)
+            } else {
+                val fichier = File(uri.path ?: "")
+                if (fichier.exists()) {
+                    fichier.inputStream()
+                } else {
+                    null
+                }
+            } ?: throw Exception("Photo inaccessible : $chemin")
 
-    if (  
-        ::galeriePhotos.isInitialized  
-    ) {  
+            flux.use { entree ->
+                entree.copyTo(sortie)
+            }
 
-        val image =  
-            ImageView(this).apply {  
+            ecrireTexte("\r\n--$boundary--\r\n")
+        }
 
-                layoutParams =  
-                    LinearLayout.LayoutParams(  
-                        75,  
-                        75  
-                    ).apply {  
+        val code = connexion.responseCode
+        val fluxReponse = if (code in 200..299) {
+            connexion.inputStream
+        } else {
+            connexion.errorStream
+        }
 
-                        setMargins(  
-                            4,  
-                            4,  
-                            4,  
-                            4  
-                        )  
-                    }  
+        val reponse = fluxReponse.bufferedReader().use {
+            it.readText()
+        }
 
-                scaleType =  
-                    ImageView.ScaleType.CENTER_CROP  
+        if (code !in 200..299) {
+            throw Exception("Cloudinary ($code) : $reponse")
+        }
 
-                setImageURI(  
-                    Uri.parse(  
-                        chemin  
-                    )  
-                )  
-            }  
+        val json = org.json.JSONObject(reponse)
+        val url = json.optString("secure_url")
 
-        galeriePhotos.addView(  
-            image  
-        )  
-    }  
-}  
+        if (!url.startsWith("https://")) {
+            throw Exception("Cloudinary n'a pas renvoyé d'URL valide.")
+        }
 
-private fun sauvegarderBitmap(  
-    bitmap: Bitmap  
-): String {  
+        return url
+    } finally {
+        connexion.disconnect()
+    }
+}
 
-    val fichier =  
-        File(  
-            filesDir,  
-            "produit_${System.currentTimeMillis()}.jpg"  
-        )  
-
-    FileOutputStream(  
-        fichier  
-    ).use { sortie ->  
-
-        bitmap.compress(  
-            Bitmap.CompressFormat.JPEG,  
-            90,  
-            sortie  
-        )  
-    }  
-
-    return Uri.fromFile(  
-        fichier  
-    ).toString()  
-}  
 
 // ========================================================  
 // MENU  
