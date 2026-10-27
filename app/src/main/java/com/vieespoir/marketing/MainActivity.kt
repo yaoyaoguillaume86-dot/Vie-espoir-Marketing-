@@ -30,47 +30,112 @@ import java.net.URL
 // ÉCRAN DE BIENVENUE
 // ==========================================
 
-class SplashActivity : Activity() {
-override fun onCreate(savedInstanceState: Bundle?) {  
-    super.onCreate(savedInstanceState)  
 
-    window.statusBarColor = Color.WHITE  
-    window.navigationBarColor = Color.WHITE  
+class SplashActivity : android.app.Activity() {
 
-    val layout = LinearLayout(this).apply {  
-        orientation = LinearLayout.VERTICAL  
-        gravity = Gravity.CENTER  
-        setBackgroundColor(Color.WHITE)  
-        setPadding(30, 30, 30, 30)  
-    }  
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var verificationEnCours = false
 
-    val bienvenue = TextView(this).apply {  
-        text = "BIENVENUE\nVIE ESPOIR MARKETING"  
-        textSize = 22f  
-        setTextColor(Color.rgb(20, 100, 50))  
-        gravity = Gravity.CENTER  
-        typeface = Typeface.DEFAULT_BOLD  
-    }  
+    private lateinit var message: android.widget.TextView
+    private lateinit var boutonReessayer: android.widget.Button
 
-    layout.addView(bienvenue)  
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
 
-    super.setContentView(layout)  
+        val layout = android.widget.LinearLayout(this)
+        layout.orientation = android.widget.LinearLayout.VERTICAL
+        layout.gravity = android.view.Gravity.CENTER
+        layout.setPadding(40, 40, 40, 40)
+        layout.setBackgroundColor(android.graphics.Color.WHITE)
 
-    Handler(Looper.getMainLooper()).postDelayed({  
-        try {  
-            startActivity(  
-                Intent(  
-                    this@SplashActivity,  
-                    MainActivity::class.java  
-                )  
-            )  
-            finish()  
-        } catch (_: Exception) {  
-        }  
-    }, 10000)  
+        val titre = android.widget.TextView(this)
+        titre.text = "BIENVENUE VIE ESPOIR MARKETING"
+        titre.textSize = 25f
+        titre.gravity = android.view.Gravity.CENTER
+        titre.setTextColor(android.graphics.Color.rgb(0, 120, 50))
+
+        message = android.widget.TextView(this)
+        message.text = "Vérification de la connexion Internet..."
+        message.textSize = 17f
+        message.gravity = android.view.Gravity.CENTER
+        message.setPadding(0, 30, 0, 30)
+
+        boutonReessayer = android.widget.Button(this)
+        boutonReessayer.text = "Réessayer"
+        boutonReessayer.visibility = android.view.View.GONE
+        boutonReessayer.setOnClickListener {
+            verifierInternet()
+        }
+
+        layout.addView(titre)
+        layout.addView(message)
+        layout.addView(boutonReessayer)
+
+        setContentView(layout)
+
+        handler.postDelayed({
+            verifierInternet()
+        }, 10000)
+    }
+
+    private fun verifierInternet() {
+        if (verificationEnCours) return
+        verificationEnCours = true
+
+        Thread {
+            val connecte = try {
+                val gestionnaire =
+                    getSystemService(CONNECTIVITY_SERVICE) as
+                    android.net.ConnectivityManager
+
+                val reseau = gestionnaire.activeNetwork
+                val capacites = gestionnaire.getNetworkCapabilities(reseau)
+
+                capacites != null &&
+                    capacites.hasCapability(
+                        android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET
+                    ) &&
+                    capacites.hasCapability(
+                        android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED
+                    )
+            } catch (_: Exception) {
+                false
+            }
+
+            runOnUiThread {
+                verificationEnCours = false
+
+                if (connecte) {
+                    message.text = "Connexion réussie. Ouverture de l'application..."
+
+                    handler.postDelayed({
+                        startActivity(
+                            android.content.Intent(
+                                this,
+                                MainActivity::class.java
+                            )
+                        )
+                        finish()
+                    }, 500)
+                } else {
+                    message.text =
+                        "Pas de connexion Internet. Active Internet puis réessaie."
+                    boutonReessayer.visibility = android.view.View.VISIBLE
+
+                    handler.postDelayed({
+                        verifierInternet()
+                    }, 5000)
+                }
+            }
+        }.start()
+    }
+
+    override fun onDestroy() {
+        handler.removeCallbacksAndMessages(null)
+        super.onDestroy()
+    }
 }
 
-}
 
 // ============================================================
 // APPLICATION PRINCIPALE
