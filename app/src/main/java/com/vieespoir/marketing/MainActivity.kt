@@ -25,7 +25,9 @@ import java.io.FileOutputStream
 import java.util.Locale
 import com.google.firebase.firestore.FirebaseFirestore
 import java.net.HttpURLConnection
-import java.net.URL // ==========================================
+import java.net.URL
+
+// ==========================================
 // ÉCRAN DE BIENVENUE
 // ==========================================
 
