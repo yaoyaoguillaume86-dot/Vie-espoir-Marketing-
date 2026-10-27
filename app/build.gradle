@@ -27,14 +27,11 @@ android {
 }
 
 dependencies {
+    implementation 'com.cloudinary:cloudinary-android:3.0.2'
+
     implementation platform('com.google.firebase:firebase-bom:34.3.0')
 
-    // Firebase Firestore : données des produits
     implementation 'com.google.firebase:firebase-firestore'
-
-    // Firebase Storage : photos des produits
     implementation 'com.google.firebase:firebase-storage'
-
-    // Firebase Analytics
     implementation 'com.google.firebase:firebase-analytics'
 }
