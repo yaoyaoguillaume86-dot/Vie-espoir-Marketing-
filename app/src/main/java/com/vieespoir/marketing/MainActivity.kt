@@ -586,7 +586,7 @@ private fun afficherAccueil() {
             }
         )
     }
-
+}
     val recherche =  
         EditText(this).apply {  
 
