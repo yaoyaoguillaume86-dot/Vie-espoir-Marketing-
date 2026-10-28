@@ -855,68 +855,174 @@ private fun chargerProduitsFirebase() {
       // ========================================================
 // AFFICHER LES PRODUITS SUR L'ACCUEIL
 // ========================================================
-
+ 
 private fun afficherProduitsAccueil() {
-
-    if (!::zoneProduits.isInitialized) {
-        return
-    }
+    if (!::zoneProduits.isInitialized) return
 
     zoneProduits.removeAllViews()
 
     if (produits.isEmpty()) {
-
         zoneProduits.addView(
             texte(
                 "Aucun produit disponible pour le moment.",
-                17f
+                16f
             ).apply {
                 gravity = Gravity.CENTER
-
-                setPadding(
-                    10,
-                    30,
-                    10,
-                    30
-                )
+                setPadding(12, 30, 12, 30)
             }
         )
-
         return
     }
 
-    for (produit in produits) {
+    // Regrouper les produits qui appartiennent à la même catégorie
+    val groupes = produits.groupBy { produit ->
+        produit.categorie.trim()
+            .ifEmpty { "Autres produits" }
+    }
 
-        ajouterCarteProduit(
-            zoneProduits,
-            produit
+    for ((categorie, listeProduits) in groupes) {
+
+        // Titre de la catégorie
+        val titreCategorie = TextView(this).apply {
+            text = categorie
+            textSize = 20f
+            setTextColor(VERT)
+            typeface = Typeface.DEFAULT_BOLD
+            setPadding(8, 18, 8, 8)
+        }
+
+        zoneProduits.addView(titreCategorie)
+
+        // Une rangée horizontale par catégorie
+        val defilement = HorizontalScrollView(this).apply {
+            isHorizontalScrollBarEnabled = false
+            isFillViewport = false
+            clipToPadding = false
+        }
+
+        val rangeeProduits = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+
+        // Afficher tous les produits de cette catégorie dans la même rangée
+        for (produit in listeProduits) {
+            ajouterCarteProduit(
+                parent = rangeeProduits,
+                produit = produit,
+                compact = true
+            )
+        }
+
+        defilement.addView(rangeeProduits)
+
+        zoneProduits.addView(
+            defilement,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
         )
     }
-}        
+}
 
- 
+   
+            
 // ========================================================
 // CARTE PRODUIT — AFFICHAGE COMPLET AVEC PHOTOS INTERNET
 // ========================================================
 
 private fun ajouterCarteProduit(
     parent: LinearLayout,
-    produit: Produit
+    produit: Produit,
+    compact: Boolean = false
 ) {
+    val largeurCarte = if (compact) {
+        (resources.displayMetrics.density * 220).toInt()
+    } else {
+        ViewGroup.LayoutParams.MATCH_PARENT
+    }
 
     val carte = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
-        setPadding(12, 12, 12, 12)
+        setPadding(8, 8, 8, 8)
         setBackgroundColor(Color.WHITE)
 
         layoutParams = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
+            largeurCarte,
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
-            setMargins(3, 8, 3, 8)
+            setMargins(4, 6, 8, 6)
+        }
+
+        isClickable = true
+        isFocusable = true
+
+        setOnClickListener {
+            afficherDetailProduit(produit)
         }
     }
 
+    // Photo principale du produit
+    val imageProduit = ImageView(this).apply {
+        layoutParams = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            if (compact) {
+                (resources.displayMetrics.density * 150).toInt()
+            } else {
+                (resources.displayMetrics.density * 250).toInt()
+            }
+        )
+
+        scaleType = ImageView.ScaleType.CENTER_CROP
+        setBackgroundColor(Color.LTGRAY)
+        contentDescription = "Photo de ${produit.nom}"
+    }
+
+    val premiereImage = produit.images.firstOrNull()
+
+    if (!premiereImage.isNullOrBlank()) {
+        chargerImageProduit(imageProduit, premiereImage)
+    }
+
+    carte.addView(imageProduit)
+
+    // Nom du produit
+    carte.addView(
+        TextView(this).apply {
+            text = produit.nom
+            textSize = 16f
+            setTextColor(Color.BLACK)
+            typeface = Typeface.DEFAULT_BOLD
+            maxLines = 2
+            ellipsize = android.text.TextUtils.TruncateAt.END
+            setPadding(0, 8, 0, 4)
+        }
+    )
+
+    // Prix
+    carte.addView(
+        TextView(this).apply {
+            text = "${produit.prix} FCFA"
+            textSize = 16f
+            setTextColor(VERT)
+            typeface = Typeface.DEFAULT_BOLD
+            setPadding(0, 2, 0, 6)
+        }
+    )
+
+    // Nombre de photos disponibles
+    if (produit.images.size > 1) {
+        carte.addView(
+            TextView(this).apply {
+                text = "${produit.images.size} photos disponibles"
+                textSize = 12f
+                setTextColor(Color.DKGRAY)
+            }
+        )
+    }
+
+    parent.addView(carte)
+}
     // ====================================================
     // IMAGE PRINCIPALE
     // ====================================================
