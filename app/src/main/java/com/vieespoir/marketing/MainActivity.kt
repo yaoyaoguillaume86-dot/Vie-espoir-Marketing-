@@ -5212,14 +5212,106 @@ private fun formaterNombre(
 // SAUVEGARDE PRODUITS  
 // ========================================================  
 
-
 private fun sauvegarderProduits() {
 
-    // 1. Conserver la sauvegarde locale existante
+    // 1. Sauvegarde locale immédiate
+    sauvegarderProduitsLocalement()
+
+    val donneesProduits = produits.toList()
+
+    if (donneesProduits.isEmpty()) return
+
+    // 2. Envoyer les photos sur Cloudinary en arrière-plan
+    Thread {
+        for (produit in donneesProduits) {
+            try {
+                val imagesEnLigne = mutableListOf<String>()
+
+                for (image in produit.images.toList()) {
+                    val url = if (
+                        image.startsWith("https://") ||
+                        image.startsWith("http://")
+                    ) {
+                        // Image déjà en ligne
+                        image
+                    } else {
+                        // Envoyer la photo locale à Cloudinary
+                        envoyerPhotoCloudinary(image)
+                    }
+
+                    imagesEnLigne.add(url)
+                }
+
+                // 3. Enregistrer uniquement les URL accessibles en ligne
+                val donnees = hashMapOf<String, Any>(
+                    "id" to produit.id,
+                    "nom" to produit.nom,
+                    "prix" to produit.prix,
+                    "categorie" to produit.categorie,
+                    "stock" to produit.stock,
+                    "description" to produit.description,
+                    "images" to imagesEnLigne,
+                    "vendeur" to produit.vendeur,
+                    "entreprise" to produit.entreprise
+                )
+
+                db.collection("Produits")
+                    .document(produit.id)
+                    .set(donnees)
+                    .addOnSuccessListener {
+
+                        // Mettre à jour les chemins des photos
+                        // dans le produit en mémoire.
+                        produit.images.clear()
+                        produit.images.addAll(imagesEnLigne)
+
+                        // Sauvegarder les URL localement
+                        sauvegarderProduitsLocalement()
+
+                        android.util.Log.d(
+                            "FIREBASE_PRODUITS",
+                            "Produit et photos enregistrés : ${produit.nom}"
+                        )
+                    }
+                    .addOnFailureListener { erreur ->
+                        android.util.Log.e(
+                            "FIREBASE_PRODUITS",
+                            "Erreur Firebase : ${produit.nom}",
+                            erreur
+                        )
+
+                        runOnUiThread {
+                            toast("Erreur Firebase : ${erreur.localizedMessage}")
+                        }
+                    }
+
+            } catch (erreur: Exception) {
+                android.util.Log.e(
+                    "CLOUDINARY_PHOTOS",
+                    "Échec d'envoi des photos : ${produit.nom}",
+                    erreur
+                )
+
+                runOnUiThread {
+                    toast(
+                        "Erreur d'envoi des photos de ${produit.nom}"
+                    )
+                }
+            }
+        }
+    }.start()
+}
+
+
+// ========================================================
+// SAUVEGARDE LOCALE UNIQUEMENT
+// ========================================================
+
+private fun sauvegarderProduitsLocalement() {
+
     val tableau = org.json.JSONArray()
 
     for (produit in produits) {
-
         val images = org.json.JSONArray()
 
         for (image in produit.images) {
@@ -5244,50 +5336,8 @@ private fun sauvegarderProduits() {
     prefs.edit()
         .putString(PRODUCTS_KEY, tableau.toString())
         .apply()
-
-    // 2. Envoyer les produits vers Firebase
-    val donneesProduits = produits.toList()
-
-    if (donneesProduits.isEmpty()) {
-        return
-    }
-
-    for (produit in donneesProduits) {
-
-        val donnees = hashMapOf<String, Any>(
-            "id" to produit.id,
-            "nom" to produit.nom,
-            "prix" to produit.prix,
-            "categorie" to produit.categorie,
-            "stock" to produit.stock,
-            "description" to produit.description,
-            "images" to produit.images,
-            "vendeur" to produit.vendeur,
-            "entreprise" to produit.entreprise
-        )
-
-        db.collection("Produits")
-            .document(produit.id)
-            .set(donnees)
-            .addOnSuccessListener {
-                android.util.Log.d(
-                    "FIREBASE_PRODUITS",
-                    "Produit enregistré : ${produit.nom}"
-                )
-            }
-            .addOnFailureListener { erreur ->
-                android.util.Log.e(
-                    "FIREBASE_PRODUITS",
-                    "Échec d'enregistrement : ${produit.nom}",
-                    erreur
-                )
-
-                toast(
-                    "Erreur Firebase : ${erreur.localizedMessage}"
-                )
-            }
-    }
 }
+
 
 
 // ========================================================  
