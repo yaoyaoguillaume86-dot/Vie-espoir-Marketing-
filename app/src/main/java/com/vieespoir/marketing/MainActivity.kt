@@ -26,6 +26,8 @@ import java.util.Locale
 import com.google.firebase.firestore.FirebaseFirestore
 import java.net.HttpURLConnection
 import java.net.URL
+import android.graphics.BitmapFactory
+
 // ==========================================
 // ÉCRAN DE BIENVENUE
 // ==========================================
