@@ -1024,33 +1024,29 @@ private fun ajouterCarteProduit(
     parent.addView(carte)
 }
     // ====================================================
-    // IMAGE PRINCIPALE
-    // ====================================================
+  // IMAGE PRINCIPALE
+val imagePrincipale = produit.images.firstOrNull()
 
-    val imagePrincipale = produit.images.firstOrNull()
+val image = ImageView(this).apply {
+    layoutParams = LinearLayout.LayoutParams(
+        ViewGroup.LayoutParams.MATCH_PARENT,
+        if (compact) 150 else 250
+    )
 
-    val image = ImageView(this).apply {
-        layoutParams = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            250
-        )
+    scaleType = ImageView.ScaleType.CENTER_CROP
+    setBackgroundColor(Color.WHITE)
+}
 
-        scaleType = ImageView.ScaleType.CENTER_CROP
-        contentDescription = "Photo de ${produit.nom}"
-    }
+if (!imagePrincipale.isNullOrBlank()) {
+    chargerImageProduit(image, imagePrincipale)
+} else {
+    image.setImageResource(
+        android.R.drawable.ic_menu_gallery
+    )
+}
 
-    if (!imagePrincipale.isNullOrBlank()) {
-        chargerImageProduit(
-            image,
-            imagePrincipale
-        )
-    } else {
-        image.setImageResource(
-            android.R.drawable.ic_menu_gallery
-        )
-    }
+carte.addView(image)  
 
-    carte.addView(image)
 
     // ====================================================
     // MINIATURES DES AUTRES PHOTOS
