@@ -6178,97 +6178,49 @@ private fun chargerDonnees() {
         }  
     }  
 
-    // ====================================================  
-    // COMPTES  
-    // ====================================================  
+    // ====================================================
+    // COMPTES
+    // ====================================================
 
-    val comptesJson =  
-        prefs.getString(  
-            ACCOUNTS_KEY,  
-            null  
-        )  
+    val comptesJson = prefs.getString(
+        ACCOUNTS_KEY,
+        null
+    )
 
-    if (  
-        !comptesJson.isNullOrEmpty()  
-    ) {  
+    if (!comptesJson.isNullOrEmpty()) {
+        try {
+            val tableau = JSONArray(comptesJson)
 
-        try {  
+            for (i in 0 until tableau.length()) {
+                val objet = tableau.getJSONObject(i)
 
-            val tableau =  
-                JSONArray(  
-                    comptesJson  
-                )  
+                comptes.add(
+                    Compte(
+                        id = objet.optString("id"),
+                        nom = objet.optString("nom"),
+                        entreprise = objet.optString("entreprise"),
+                        email = objet.optString("email"),
+                        telephone = objet.optString("telephone"),
+                        adresse = objet.optString("adresse"),
+                        motDePasse = objet.optString("motDePasse"),
+                        type = objet.optString("type", "VENDEUR"),
+                        dateCreation = objet.optLong(
+                            "dateCreation",
+                            System.currentTimeMillis()
+                        ),
+                        valide = objet.optBoolean("valide", false)
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            android.util.Log.e(
+                "CHARGEMENT_COMPTES",
+                "Erreur de lecture des comptes",
+                e
+            )
+        }
+    }
 
-            for (  
-                i in 0 until  
-                    tableau.length()  
-            ) {  
-
-                val objet =  
-                    tableau  
-                        .getJSONObject(i)  
-
-                comptes.add(  
-                    Compte(  
-                        id =  
-                            objet.optString(  
-                                "id"  
-                            ),  
-
-                        nom =  
-                            objet.optString(  
-                                "nom"  
-                            ),  
-
-                        entreprise =  
-                            objet.optString(  
-                                "entreprise"  
-                            ),  
-
-                        email =  
-                            objet.optString(  
-                                "email"  
-                            ),  
-
-                        telephone =  
-                            objet.optString(  
-                                "telephone"  
-                            ),  
-
-                        adresse =  
-                            objet.optString(  
-                                "adresse"  
-                            ),  
-
-                        motDePasse =  
-                            objet.optString(  
-                                "motDePasse"  
-                            ),  
-
-                        type =  
-                            objet.optString(  
-                                "type",  
-                                "VENDEUR"  
-                            ),  
-
-                        dateCreation =  
-                            objet.optLong(  
-                                "dateCreation",  
-                                System.currentTimeMillis()  
-                            ),  
-
-                        valide =  
-                            objet.optBoolean(  
-                                "valide",  
-                                false  
-                            )  
-                    )  
-                )  
-            }  
-
-        } catch (_: Exception) {  
-        }  
-    }  
 
     // ====================================================  
     // EVENEMENTS  
