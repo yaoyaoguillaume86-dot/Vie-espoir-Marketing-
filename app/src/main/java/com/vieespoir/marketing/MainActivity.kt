@@ -892,303 +892,264 @@ private fun afficherProduitsAccueil() {
     }
 }        
 
-// ========================================================  
-// CARTE PRODUIT  
-// ========================================================  
+ 
+// ========================================================
+// CARTE PRODUIT — AFFICHAGE COMPLET AVEC PHOTOS INTERNET
+// ========================================================
 
-private fun ajouterCarteProduit(  
-    parent: LinearLayout,  
-    produit: Produit  
-) {  
+private fun ajouterCarteProduit(
+    parent: LinearLayout,
+    produit: Produit
+) {
 
-    val carte =  
-        LinearLayout(this).apply {  
+    val carte = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(12, 12, 12, 12)
+        setBackgroundColor(Color.WHITE)
 
-            orientation =  
-                LinearLayout.VERTICAL  
+        layoutParams = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
+            setMargins(3, 8, 3, 8)
+        }
+    }
 
-            setPadding(  
-                12,  
-                12,  
-                12,  
-                12  
-            )  
+    // ====================================================
+    // IMAGE PRINCIPALE
+    // ====================================================
 
-            setBackgroundColor(  
-                Color.WHITE  
-            )  
+    val imagePrincipale = produit.images.firstOrNull()
 
-            layoutParams =  
-                LinearLayout.LayoutParams(  
-                    ViewGroup.LayoutParams.MATCH_PARENT,  
-                    ViewGroup.LayoutParams.WRAP_CONTENT  
-                ).apply {  
+    val image = ImageView(this).apply {
+        layoutParams = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            250
+        )
 
-                    setMargins(  
-                        3,  
-                        8,  
-                        3,  
-                        8  
-                    )  
-                }  
-        }  
+        scaleType = ImageView.ScaleType.CENTER_CROP
+        contentDescription = "Photo de ${produit.nom}"
+    }
 
-    // ====================================================  
-    // IMAGE PRINCIPALE  
-    // ====================================================  
+    if (!imagePrincipale.isNullOrBlank()) {
+        chargerImageProduit(
+            image,
+            imagePrincipale
+        )
+    } else {
+        image.setImageResource(
+            android.R.drawable.ic_menu_gallery
+        )
+    }
 
-    val imagePrincipale =  
-        if (produit.images.isNotEmpty()) {  
-            produit.images[0]  
-        } else {  
-            ""  
-        }  
+    carte.addView(image)
 
-    if (imagePrincipale.isNotEmpty()) {  
+    // ====================================================
+    // MINIATURES DES AUTRES PHOTOS
+    // ====================================================
 
-        try {  
+    if (produit.images.size > 1) {
 
-            val image =  
-                ImageView(this).apply {  
+        val miniatures = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(0, 5, 0, 5)
+        }
 
-                    layoutParams =  
-                        LinearLayout.LayoutParams(  
-                            ViewGroup.LayoutParams.MATCH_PARENT,  
-                            250  
-                        )  
+        for (chemin in produit.images) {
 
-                    scaleType =  
-                        ImageView.ScaleType.CENTER_CROP  
+            val miniature = ImageView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    65,
+                    65
+                ).apply {
+                    setMargins(3, 3, 3, 3)
+                }
 
-                    setImageURI(  
-                        Uri.parse(  
-                            imagePrincipale  
-                        )  
-                    )  
-                }  
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                contentDescription = "Photo de ${produit.nom}"
 
-            carte.addView(image)  
+                setOnClickListener {
+                    val grandeImage = ImageView(this@MainActivity)
 
-        } catch (_: Exception) {  
-        }  
-    }  
+                    grandeImage.adjustViewBounds = true
+                    grandeImage.scaleType = ImageView.ScaleType.FIT_CENTER
 
-    // ====================================================  
-    // MINIATURES  
-    // ====================================================  
+                    chargerImageProduit(
+                        grandeImage,
+                        chemin
+                    )
 
-    if (produit.images.size > 1) {  
+                    AlertDialog.Builder(this@MainActivity)
+                        .setTitle(produit.nom)
+                        .setView(grandeImage)
+                        .setPositiveButton("Fermer", null)
+                        .show()
+                }
+            }
 
-        val miniatures =  
-            LinearLayout(this).apply {  
+            chargerImageProduit(
+                miniature,
+                chemin
+            )
 
-                orientation =  
-                    LinearLayout.HORIZONTAL  
+            miniatures.addView(miniature)
+        }
 
-                gravity =  
-                    Gravity.CENTER  
+        carte.addView(miniatures)
+    }
 
-                setPadding(  
-                    0,  
-                    5,  
-                    0,  
-                    5  
-                )  
-            }  
+    // ====================================================
+    // NOM DU PRODUIT
+    // ====================================================
 
-        for (chemin in produit.images) {  
+    carte.addView(
+        texte(
+            produit.nom,
+            21f,
+            VERT
+        ).apply {
+            typeface = Typeface.DEFAULT_BOLD
+        }
+    )
 
-            try {  
+    // ====================================================
+    // PRIX
+    // ====================================================
 
-                val miniature =  
-                    ImageView(this).apply {  
+    val prix = produit.prix
+        .replace(" ", "")
+        .toIntOrNull() ?: 0
 
-                        layoutParams =  
-                            LinearLayout.LayoutParams(  
-                                65,  
-                                65  
-                            ).apply {  
+    carte.addView(
+        texte(
+            "${formaterNombre(prix)} FCFA",
+            19f,
+            VERT
+        ).apply {
+            typeface = Typeface.DEFAULT_BOLD
+        }
+    )
 
-                                setMargins(  
-                                    3,  
-                                    3,  
-                                    3,  
-                                    3  
-                                )  
-                            }  
+    // ====================================================
+    // ENTREPRISE
+    // ====================================================
 
-                        scaleType =  
-                            ImageView.ScaleType.CENTER_CROP  
+    if (produit.entreprise.isNotEmpty()) {
+        carte.addView(
+            texte(
+                "🏢 ${produit.entreprise}",
+                14f,
+                OR
+            )
+        )
+    }
 
-                        setImageURI(  
-                            Uri.parse(  
-                                chemin  
-                            )  
-                        )  
-                    }  
+    // ====================================================
+    // CATÉGORIE
+    // ====================================================
 
-                miniatures.addView(  
-                    miniature  
-                )  
+    carte.addView(
+        texte(
+            "🏷️ ${produit.categorie}",
+            14f,
+            Color.GRAY
+        )
+    )
 
-            } catch (_: Exception) {  
-            }  
-        }  
+    // ====================================================
+    // STOCK
+    // ====================================================
 
-        carte.addView(  
-            miniatures  
-        )  
-    }  
+    carte.addView(
+        texte(
+            if (produit.stock > 0) {
+                "📦 Stock : ${produit.stock}"
+            } else {
+                "⚠️ Produit indisponible"
+            },
+            14f,
+            if (produit.stock > 0) VERT else Color.RED
+        )
+    )
 
-    carte.addView(  
-        texte(  
-            produit.nom,  
-            21f,  
-            VERT  
-        ).apply {  
+    // ====================================================
+    // DESCRIPTION
+    // ====================================================
 
-            typeface =  
-                Typeface.DEFAULT_BOLD  
-        }  
-    )  
+    if (produit.description.isNotEmpty()) {
+        carte.addView(
+            texte(
+                produit.description,
+                14f,
+                Color.DKGRAY
+            )
+        )
+    }
 
-    val prix =  
-        produit.prix  
-            .replace(" ", "")  
-            .toIntOrNull()  
-            ?: 0  
+    // ====================================================
+    // AJOUTER AU PANIER
+    // ====================================================
 
-    carte.addView(  
-        texte(  
-            "${formaterNombre(prix)} FCFA",  
-            19f,  
-            VERT  
-        ).apply {  
+    carte.addView(
+        boutonVert("🛒 Ajouter au panier") {
 
-            typeface =  
-                Typeface.DEFAULT_BOLD  
-        }  
-    )  
+            if (produit.stock <= 0) {
+                toast("Produit indisponible")
+                return@boutonVert
+            }
 
-    if (produit.entreprise.isNotEmpty()) {  
+            ajouterAuPanier(produit)
+        }
+    )
 
-        carte.addView(  
-            texte(  
-                "🏢 ${produit.entreprise}",  
-                14f,  
-                OR  
-            )  
-        )  
-    }  
+    // ====================================================
+    // VOIR LES DÉTAILS
+    // ====================================================
 
-    carte.addView(  
-        texte(  
-            "🏷️ ${produit.categorie}",  
-            14f,  
-            Color.GRAY  
-        )  
-    )  
+    carte.addView(
+        bouton("👁️ Voir le produit") {
+            afficherDetailProduit(produit)
+        }
+    )
 
-    carte.addView(  
-        texte(  
-            if (produit.stock > 0) {  
-                "📦 Stock : ${produit.stock}"  
-            } else {  
-                "⚠️ Produit indisponible"  
-            },  
-            14f,  
-            if (produit.stock > 0) {  
-                VERT  
-            } else {  
-                Color.RED  
-            }  
-        )  
-    )  
+    // ====================================================
+    // PARTAGER LE PRODUIT
+    // ====================================================
 
-    if (produit.description.isNotEmpty()) {  
+    carte.addView(
+        bouton("📤 Partager") {
+            partagerProduit(produit)
+        }
+    )
 
-        carte.addView(  
-            texte(  
-                produit.description,  
-                14f,  
-                Color.DKGRAY  
-            )  
-        )  
-    }  
+    // ====================================================
+    // GESTION PAR LE VENDEUR
+    // ====================================================
 
-    carte.addView(  
-        boutonVert(  
-            "🛒 Ajouter au panier"  
-        ) {  
+    val compte = compteActuel()
 
-            if (produit.stock <= 0) {  
+    if (
+        compte != null &&
+        compte.type == "VENDEUR" &&
+        compte.valide
+    ) {
 
-                toast(  
-                    "Produit indisponible"  
-                )  
+        val appartient =
+            produit.vendeur == compte.nom ||
+            produit.entreprise == compte.entreprise
 
-                return@boutonVert  
-            }  
+        if (appartient) {
+            carte.addView(
+                bouton("✏️ Modifier / gérer") {
+                    afficherModifierProduit(produit)
+                }
+            )
+        }
+    }
 
-            ajouterAuPanier(  
-                produit  
-            )  
-        }  
-    )  
-
-    carte.addView(  
-        bouton(  
-            "👁️ Voir le produit"  
-        ) {  
-
-            afficherDetailProduit(  
-                produit  
-            )  
-        }  
-    )  
-
-    carte.addView(  
-        bouton(  
-            "📤 Partager"  
-        ) {  
-
-            partagerProduit(  
-                produit  
-            )  
-        }  
-    )  
-
-    val compte =  
-        compteActuel()  
-
-    if (  
-        compte != null &&  
-        compte.type == "VENDEUR" &&  
-        compte.valide  
-    ) {  
-
-        val appartient =  
-            produit.vendeur == compte.nom ||  
-            produit.entreprise == compte.entreprise  
-
-        if (appartient) {  
-
-            carte.addView(  
-                bouton(  
-                    "✏️ Modifier / gérer"  
-                ) {  
-
-                    afficherModifierProduit(  
-                        produit  
-                    )  
-                }  
-            )  
-        }  
-    }  
-
-    parent.addView(carte)  
-}  
-
+    parent.addView(carte)
+}
 // ========================================================  
 // DETAIL PRODUIT  
 // ========================================================  
