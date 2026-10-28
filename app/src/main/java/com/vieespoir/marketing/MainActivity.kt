@@ -2915,7 +2915,7 @@ private fun chargerImageProduit(
         }.start()
     } else {
         try {
-            imageView.setImageURI(Uri.parse(chemin))
+       chargerImageProduit(this, chemin)
         } catch (erreur: Exception) {
             imageView.setImageResource(android.R.drawable.ic_menu_gallery)
         }
