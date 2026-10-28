@@ -1024,28 +1024,114 @@ private fun ajouterCarteProduit(
     parent.addView(carte)
 }
     // ====================================================
-  // IMAGE PRINCIPALE
-val imagePrincipale = produit.images.firstOrNull()
+  //
 
-val image = ImageView(this).apply {
-    layoutParams = LinearLayout.LayoutParams(
-        ViewGroup.LayoutParams.MATCH_PARENT,
-        if (compact) 150 else 250
+private fun ajouterCarteProduit(
+    parent: LinearLayout,
+    produit: Produit,
+    compact: Boolean = false
+) {
+    // CONVERSION DES DIMENSIONS EN DP
+    val densite = resources.displayMetrics.density
+
+    fun dp(valeur: Int): Int {
+        return (valeur * densite).toInt()
+    }
+
+    // CARTE DU PRODUIT
+    val carte = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(dp(10), dp(10), dp(10), dp(10))
+        setBackgroundColor(Color.WHITE)
+
+        layoutParams = LinearLayout.LayoutParams(
+            if (compact) dp(220)
+            else ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
+            setMargins(dp(6), dp(6), dp(6), dp(6))
+        }
+
+        isClickable = true
+        isFocusable = true
+    }
+
+    // IMAGE PRINCIPALE
+    val imagePrincipale = produit.images.firstOrNull()
+
+    val image = ImageView(this).apply {
+        layoutParams = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            dp(if (compact) 150 else 250)
+        )
+
+        scaleType = ImageView.ScaleType.CENTER_CROP
+        setBackgroundColor(Color.WHITE)
+        contentDescription = "Photo de ${produit.nom}"
+    }
+
+    if (!imagePrincipale.isNullOrBlank()) {
+        chargerImageProduit(image, imagePrincipale)
+    } else {
+        image.setImageResource(
+            android.R.drawable.ic_menu_gallery
+        )
+    }
+
+    carte.addView(image)
+
+    // INDICATION DU NOMBRE DE PHOTOS
+    if (produit.images.size > 1) {
+        carte.addView(
+            TextView(this).apply {
+                text = "📷 ${produit.images.size} photos — faites défiler dans le détail"
+                textSize = 12f
+                setTextColor(Color.DKGRAY)
+                setPadding(0, dp(5), 0, dp(5))
+            }
+        )
+    }
+
+    // NOM DU PRODUIT
+    carte.addView(
+        texte(
+            produit.nom,
+            18f,
+            VERT
+        ).apply {
+            typeface = Typeface.DEFAULT_BOLD
+            setPadding(0, dp(6), 0, dp(4))
+        }
     )
 
-    scaleType = ImageView.ScaleType.CENTER_CROP
-    setBackgroundColor(Color.WHITE)
-}
+    // PRIX DU PRODUIT
+    val prix = produit.prix
+        .replace(" ", "")
+        .toIntOrNull() ?: 0
 
-if (!imagePrincipale.isNullOrBlank()) {
-    chargerImageProduit(image, imagePrincipale)
-} else {
-    image.setImageResource(
-        android.R.drawable.ic_menu_gallery
+    carte.addView(
+        texte(
+            "${formatterNombre(prix)} FCFA",
+            19f,
+            VERT
+        ).apply {
+            typeface = Typeface.DEFAULT_BOLD
+            setPadding(0, dp(4), 0, dp(8))
+        }
     )
-}
 
-carte.addView(image)  
+    // OUVRIR LE DÉTAIL DU PRODUIT AU CLIC
+    carte.setOnClickListener {
+        afficherDetailProduit(produit)
+    }
+
+    image.setOnClickListener {
+        afficherDetailProduit(produit)
+    }
+
+    // AJOUTER LA CARTE AU CONTENEUR
+    parent.addView(carte)
+}
 
 
     // ====================================================
