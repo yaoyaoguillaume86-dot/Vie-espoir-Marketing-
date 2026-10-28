@@ -2855,6 +2855,73 @@ private fun envoyerPhotoCloudinary(chemin: String): String {
 }
 
 
+private fun chargerImageProduit(
+    imageView: ImageView,
+    chemin: String
+) {
+    imageView.tag = chemin
+
+    if (chemin.isBlank()) {
+        imageView.setImageResource(android.R.drawable.ic_menu_gallery)
+        return
+    }
+
+    if (chemin.startsWith("https://") || chemin.startsWith("http://")) {
+        imageView.setImageResource(android.R.drawable.ic_menu_gallery)
+
+        Thread {
+            var connexion: HttpURLConnection? = null
+            try {
+                connexion = URL(chemin).openConnection() as HttpURLConnection
+                connexion.connectTimeout = 15000
+                connexion.readTimeout = 20000
+                connexion.connect()
+
+                if (connexion.responseCode !in 200..299) {
+                    throw Exception("Erreur HTTP ${connexion.responseCode}")
+                }
+
+                val bitmap = connexion.inputStream.use { flux ->
+                    BitmapFactory.decodeStream(flux)
+                }
+
+                runOnUiThread {
+                    if (imageView.tag == chemin) {
+                        if (bitmap != null) {
+                            imageView.setImageBitmap(bitmap)
+                        } else {
+                            imageView.setImageResource(
+                                android.R.drawable.ic_menu_gallery
+                            )
+                        }
+                    }
+                }
+            } catch (erreur: Exception) {
+                android.util.Log.e(
+                    "IMAGE_PRODUIT",
+                    "Échec du chargement de l'image",
+                    erreur
+                )
+                runOnUiThread {
+                    if (imageView.tag == chemin) {
+                        imageView.setImageResource(
+                            android.R.drawable.ic_menu_gallery
+                        )
+                    }
+                }
+            } finally {
+                connexion?.disconnect()
+            }
+        }.start()
+    } else {
+        try {
+            imageView.setImageURI(Uri.parse(chemin))
+        } catch (erreur: Exception) {
+            imageView.setImageResource(android.R.drawable.ic_menu_gallery)
+        }
+    }
+}
+
 // ========================================================  
 // MENU  
 // ========================================================  
