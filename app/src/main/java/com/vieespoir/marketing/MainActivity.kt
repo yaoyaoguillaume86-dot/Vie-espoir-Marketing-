@@ -2730,131 +2730,6 @@ override fun onActivityResult(
     }
 }
 
-private fun ajouterImageProduit(chemin: String) {
-    if (!imagesProduit.contains(chemin)) {
-        imagesProduit.add(chemin)
-    }
-
-    if (::galeriePhotos.isInitialized) {
-        val image = ImageView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                75,
-                75
-            ).apply {
-                setMargins(4, 4, 4, 4)
-            }
-
-            scaleType = ImageView.ScaleType.CENTER_CROP
-            setImageURI(Uri.parse(chemin))
-        }
-
-        galeriePhotos.addView(image)
-    }
-}
-
-private fun sauvegarderBitmap(bitmap: Bitmap): String {
-    val fichier = File(
-        filesDir,
-        "produit_${System.currentTimeMillis()}.jpg"
-    )
-
-    FileOutputStream(fichier).use { sortie ->
-        bitmap.compress(
-            Bitmap.CompressFormat.JPEG,
-            90,
-            sortie
-        )
-    }
-
-    return Uri.fromFile(fichier).toString()
-}
-
-// Envoi d'une photo vers Cloudinary.
-// Cette fonction doit être appelée sur un thread d'arrière-plan.
-private fun envoyerPhotoCloudinary(chemin: String): String {
-    val uri = Uri.parse(chemin)
-
-    val nomFichier = "photo_${System.currentTimeMillis()}.jpg"
-    val boundary = "----VieEspoir${System.currentTimeMillis()}"
-
-    val connexion = java.net.URL(
-        "https://api.cloudinary.com/v1_1/wxpenkfy/image/upload"
-    ).openConnection() as java.net.HttpURLConnection
-
-    try {
-        connexion.requestMethod = "POST"
-        connexion.doOutput = true
-        connexion.connectTimeout = 30000
-        connexion.readTimeout = 60000
-        connexion.setRequestProperty(
-            "Content-Type",
-            "multipart/form-data; boundary=$boundary"
-        )
-
-        connexion.outputStream.use { sortie ->
-            fun ecrireTexte(texte: String) {
-                sortie.write(texte.toByteArray(Charsets.UTF_8))
-            }
-
-            ecrireTexte("--$boundary\r\n")
-            ecrireTexte(
-                "Content-Disposition: form-data; name=\"upload_preset\"\r\n\r\n"
-            )
-            ecrireTexte("vie_espoir_products\r\n")
-
-            ecrireTexte("--$boundary\r\n")
-            ecrireTexte(
-                "Content-Disposition: form-data; name=\"file\"; filename=\"$nomFichier\"\r\n"
-            )
-            ecrireTexte("Content-Type: image/jpeg\r\n\r\n")
-
-            val flux = if (uri.scheme == "content") {
-                contentResolver.openInputStream(uri)
-            } else {
-                val fichier = File(uri.path ?: "")
-                if (fichier.exists()) {
-                    fichier.inputStream()
-                } else {
-                    null
-                }
-            } ?: throw Exception("Photo inaccessible : $chemin")
-
-            flux.use { entree ->
-                entree.copyTo(sortie)
-            }
-
-            ecrireTexte("\r\n--$boundary--\r\n")
-        }
-
-        val code = connexion.responseCode
-        val fluxReponse = if (code in 200..299) {
-            connexion.inputStream
-        } else {
-            connexion.errorStream
-        }
-
-        val reponse = fluxReponse.bufferedReader().use {
-            it.readText()
-        }
-
-        if (code !in 200..299) {
-            throw Exception("Cloudinary ($code) : $reponse")
-        }
-
-        val json = org.json.JSONObject(reponse)
-        val url = json.optString("secure_url")
-
-        if (!url.startsWith("https://")) {
-            throw Exception("Cloudinary n'a pas renvoyé d'URL valide.")
-        }
-
-        return url
-    } finally {
-        connexion.disconnect()
-    }
-}
-
-
 private fun chargerImageProduit(
     imageView: ImageView,
     chemin: String
@@ -2862,46 +2737,54 @@ private fun chargerImageProduit(
     imageView.tag = chemin
 
     if (chemin.isBlank()) {
-        imageView.setImageResource(android.R.drawable.ic_menu_gallery)
+        imageView.setImageResource(
+            android.R.drawable.ic_menu_gallery
+        )
         return
     }
 
-    if (chemin.startsWith("https://") || chemin.startsWith("http://")) {
-        imageView.setImageResource(android.R.drawable.ic_menu_gallery)
+    // PHOTO HÉBERGÉE EN LIGNE : CLOUDINARY
+    if (chemin.startsWith("https://") ||
+        chemin.startsWith("http://")) {
+
+        imageView.setImageResource(
+            android.R.drawable.ic_menu_gallery
+        )
 
         Thread {
             var connexion: HttpURLConnection? = null
+
             try {
-                connexion = URL(chemin).openConnection() as HttpURLConnection
+                connexion = URL(chemin)
+                    .openConnection() as HttpURLConnection
+
                 connexion.connectTimeout = 15000
                 connexion.readTimeout = 20000
                 connexion.connect()
 
                 if (connexion.responseCode !in 200..299) {
-                    throw Exception("Erreur HTTP ${connexion.responseCode}")
+                    throw Exception(
+                        "Erreur HTTP ${connexion.responseCode}"
+                    )
                 }
 
-                val bitmap = connexion.inputStream.use { flux ->
-                    BitmapFactory.decodeStream(flux)
-                }
+                val bitmap = connexion.inputStream.use {
+                    BitmapFactory.decodeStream(it)
+                } ?: throw Exception("Image illisible")
 
                 runOnUiThread {
                     if (imageView.tag == chemin) {
-                        if (bitmap != null) {
-                            imageView.setImageBitmap(bitmap)
-                        } else {
-                            imageView.setImageResource(
-                                android.R.drawable.ic_menu_gallery
-                            )
-                        }
+                        imageView.setImageBitmap(bitmap)
                     }
                 }
-            } catch (erreur: Exception) {
+
+            } catch (e: Exception) {
                 android.util.Log.e(
                     "IMAGE_PRODUIT",
-                    "Échec du chargement de l'image",
-                    erreur
+                    "Impossible de charger : $chemin",
+                    e
                 )
+
                 runOnUiThread {
                     if (imageView.tag == chemin) {
                         imageView.setImageResource(
@@ -2909,17 +2792,72 @@ private fun chargerImageProduit(
                         )
                     }
                 }
+
             } finally {
                 connexion?.disconnect()
             }
         }.start()
-    } else {
-        try {
-       chargerImageProduit(this, chemin)
-        } catch (erreur: Exception) {
-            imageView.setImageResource(android.R.drawable.ic_menu_gallery)
-        }
+
+        return
     }
+
+    // PHOTO LOCALE : GALERIE OU FICHIER DE L'APPLICATION
+    Thread {
+        try {
+            val uri = Uri.parse(chemin)
+
+            val bitmap = when (uri.scheme) {
+                "content" -> contentResolver
+                    .openInputStream(uri)
+                    ?.use { BitmapFactory.decodeStream(it) }
+
+                "file" -> {
+                    val fichier = File(uri.path ?: "")
+                    if (fichier.exists()) {
+                        BitmapFactory.decodeFile(fichier.absolutePath)
+                    } else {
+                        null
+                    }
+                }
+
+                else -> {
+                    val fichier = File(chemin)
+                    if (fichier.exists()) {
+                        BitmapFactory.decodeFile(fichier.absolutePath)
+                    } else {
+                        null
+                    }
+                }
+            }
+
+            runOnUiThread {
+                if (imageView.tag == chemin) {
+                    if (bitmap != null) {
+                        imageView.setImageBitmap(bitmap)
+                    } else {
+                        imageView.setImageResource(
+                            android.R.drawable.ic_menu_gallery
+                        )
+                    }
+                }
+            }
+
+        } catch (e: Exception) {
+            android.util.Log.e(
+                "IMAGE_PRODUIT",
+                "Erreur de lecture de la photo locale",
+                e
+            )
+
+            runOnUiThread {
+                if (imageView.tag == chemin) {
+                    imageView.setImageResource(
+                        android.R.drawable.ic_menu_gallery
+                    )
+                }
+            }
+        }
+    }.start()
 }
 
 // ========================================================  
