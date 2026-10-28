@@ -576,21 +576,20 @@ private fun afficherAccueil() {
 
     if (compte != null) {
 
-        val nomCompte = compte.nom
+        val compte = compteActuel()
 
-        root.addView(
-            texte(
-                "👋 Bienvenue $nomCompte",
-                17f,
-                VERT
-            ).apply {
-                gravity = Gravity.CENTER
-                typeface = Typeface.DEFAULT_BOLD
-            }
-        )
-    }
+if (compte != null) {
+    root.addView(
+        texte(
+            "👋 Bienvenue",
+            17f,
+            VERT
+        ).apply {
+            gravity = Gravity.CENTER
+            typeface = Typeface.DEFAULT_BOLD
+        }
+    )
 }
-
     val recherche =  
         EditText(this).apply {  
 
