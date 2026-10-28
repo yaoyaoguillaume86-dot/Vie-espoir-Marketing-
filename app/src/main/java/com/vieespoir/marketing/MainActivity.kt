@@ -570,29 +570,26 @@ private fun afficherAccueil() {
         }  
     )  
 
-    if (compteConnecteId.isNotEmpty()) {  
+     if (compteConnecteId.isNotEmpty()) {
 
-        val compte =  
-            compteActuel()  
+    val compte = compteActuel()
 
-        if (compte != null) {  
+    if (compte != null) {
 
-            root.addView(  
-                texte(  
-                    "👋 Bienvenue ${compte.nom}",  
-                    17f,  
-                    VERT  
-                ).apply {  
+        val nomCompte = compte.nom
 
-                    gravity =  
-                        Gravity.CENTER  
-
-                    typeface =  
-                        Typeface.DEFAULT_BOLD  
-                }  
-            )  
-        }  
-    }  
+        root.addView(
+            texte(
+                "👋 Bienvenue $nomCompte",
+                17f,
+                VERT
+            ).apply {
+                gravity = Gravity.CENTER
+                typeface = Typeface.DEFAULT_BOLD
+            }
+        )
+    }
+}
 
     val recherche =  
         EditText(this).apply {  
