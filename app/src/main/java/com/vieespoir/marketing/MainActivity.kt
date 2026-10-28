@@ -1050,58 +1050,31 @@ carte.addView(image)
 
     // ====================================================
     // MINIATURES DES AUTRES PHOTOS
-    // ====================================================
+if (produit.images.size > 1) {
+    val miniatures = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER
+    }
 
-    if (produit.images.size > 1) {
-
-        val miniatures = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            setPadding(0, 5, 0, 5)
-        }
-
-        for (chemin in produit.images) {
-
-            val miniature = ImageView(this).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    65,
-                    65
-                ).apply {
-                    setMargins(3, 3, 3, 3)
-                }
-
-                scaleType = ImageView.ScaleType.CENTER_CROP
-                contentDescription = "Photo de ${produit.nom}"
-
-                setOnClickListener {
-                    val grandeImage = ImageView(this@MainActivity)
-
-                    grandeImage.adjustViewBounds = true
-                    grandeImage.scaleType = ImageView.ScaleType.FIT_CENTER
-
-                    chargerImageProduit(
-                        grandeImage,
-                        chemin
-                    )
-
-                    AlertDialog.Builder(this@MainActivity)
-                        .setTitle(produit.nom)
-                        .setView(grandeImage)
-                        .setPositiveButton("Fermer", null)
-                        .show()
-                }
+    for (chemin in produit.images.drop(1)) {
+        val miniature = ImageView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                65,
+                65
+            ).apply {
+                setMargins(4, 4, 4, 4)
             }
 
-            chargerImageProduit(
-                miniature,
-                chemin
-            )
-
-            miniatures.addView(miniature)
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            setBackgroundColor(Color.WHITE)
         }
 
-        carte.addView(miniatures)
+        chargerImageProduit(miniature, chemin)
+        miniatures.addView(miniature)
     }
+
+    carte.addView(miniatures)
+}
 
     // ====================================================
     // NOM DU PRODUIT
