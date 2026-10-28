@@ -2667,9 +2667,8 @@ override fun onRequestPermissionsResult(
 }  
 
 // ========================================================  
-// RESULTAT PHOTO  
-// ========================================================  
-
+ // RESULTAT PHOTO : GALERIE ET CAMERA
+ // ========================================================
 
 override fun onActivityResult(
     requestCode: Int,
@@ -2682,6 +2681,7 @@ override fun onActivityResult(
 
     if (requestCode == MULTI_GALLERY_REQUEST) {
         val clipData = data?.clipData
+        val imagesAjoutees = mutableListOf<String>()
 
         if (clipData != null) {
             for (i in 0 until clipData.itemCount) {
@@ -2693,10 +2693,11 @@ override fun onActivityResult(
                         Intent.FLAG_GRANT_READ_URI_PERMISSION
                     )
                 } catch (_: Exception) {
-                    // L'accès temporaire peut suffire pour la sélection actuelle.
+                    // Certaines galeries n'autorisent pas
+                    // la conservation persistante de l'URI.
                 }
 
-                ajouterImageProduit(uri.toString())
+                imagesAjoutees.add(uri.toString())
             }
         } else {
             data?.data?.let { uri ->
@@ -2708,11 +2709,21 @@ override fun onActivityResult(
                 } catch (_: Exception) {
                 }
 
-                ajouterImageProduit(uri.toString())
+                imagesAjoutees.add(uri.toString())
             }
         }
 
-        toast("Photo(s) sélectionnée(s)")
+        imagesAjoutees.forEach { chemin ->
+            ajouterImageProduit(chemin)
+        }
+
+        toast(
+            if (imagesAjoutees.isEmpty()) {
+                "Aucune photo sélectionnée"
+            } else {
+                "${imagesAjoutees.size} photo(s) sélectionnée(s)"
+            }
+        )
     }
 
     if (requestCode == CAMERA_REQUEST) {
@@ -2722,13 +2733,181 @@ override fun onActivityResult(
             try {
                 val chemin = sauvegarderBitmap(bitmap)
                 ajouterImageProduit(chemin)
-                toast("Photo sélectionnée")
-            } catch (_: Exception) {
+                toast("Photo enregistrée")
+            } catch (e: Exception) {
+                android.util.Log.e(
+                    "PHOTO_PRODUIT",
+                    "Erreur d'enregistrement de la photo",
+                    e
+                )
                 toast("Impossible d'enregistrer la photo")
             }
+        } else {
+            toast("Aucune photo reçue de la caméra")
         }
     }
 }
+
+
+// ========================================================
+// AJOUTER UNE IMAGE A LA GALERIE DU FORMULAIRE
+// ========================================================
+
+private fun ajouterImageProduit(chemin: String) {
+    if (chemin.isBlank()) return
+
+    if (!imagesProduit.contains(chemin)) {
+        imagesProduit.add(chemin)
+    }
+
+    if (::galeriePhotos.isInitialized) {
+        val image = ImageView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                75,
+                75
+            ).apply {
+                setMargins(4, 4, 4, 4)
+            }
+
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            contentDescription = "Photo du produit"
+
+            chargerImageProduit(this, chemin)
+        }
+
+        galeriePhotos.addView(image)
+    }
+}
+
+
+// ========================================================
+// SAUVEGARDER UNE PHOTO PRISE AVEC LA CAMERA
+// ========================================================
+
+private fun sauvegarderBitmap(bitmap: Bitmap): String {
+    val fichier = File(
+        filesDir,
+        "produit_${System.currentTimeMillis()}.jpg"
+    )
+
+    FileOutputStream(fichier).use { sortie ->
+        if (!bitmap.compress(
+                Bitmap.CompressFormat.JPEG,
+                90,
+                sortie
+            )
+        ) {
+            throw Exception("Échec de compression de la photo")
+        }
+    }
+
+    return Uri.fromFile(fichier).toString()
+}
+
+
+// ========================================================
+// ENVOYER UNE PHOTO VERS CLOUDINARY
+// Exécuter cette fonction sur un thread d'arrière-plan.
+// ========================================================
+
+private fun envoyerPhotoCloudinary(chemin: String): String {
+    val uri = Uri.parse(chemin)
+
+    val boundary = "----VieEspoir${System.currentTimeMillis()}"
+    val nomFichier = "photo_${System.currentTimeMillis()}.jpg"
+
+    val connexion = URL(
+        "https://api.cloudinary.com/v1_1/wxpenkfy/image/upload"
+    ).openConnection() as HttpURLConnection
+
+    try {
+        connexion.requestMethod = "POST"
+        connexion.doOutput = true
+        connexion.connectTimeout = 30000
+        connexion.readTimeout = 60000
+
+        connexion.setRequestProperty(
+            "Content-Type",
+            "multipart/form-data; boundary=$boundary"
+        )
+
+        connexion.outputStream.use { sortie ->
+
+            fun ecrireTexte(texte: String) {
+                sortie.write(texte.toByteArray(Charsets.UTF_8))
+            }
+
+            ecrireTexte("--$boundary\r\n")
+            ecrireTexte(
+                "Content-Disposition: form-data; name=\"upload_preset\"\r\n\r\n"
+            )
+            ecrireTexte("vie_espoir_products\r\n")
+
+            ecrireTexte("--$boundary\r\n")
+            ecrireTexte(
+                "Content-Disposition: form-data; name=\"file\"; filename=\"$nomFichier\"\r\n"
+            )
+            ecrireTexte(
+                "Content-Type: image/jpeg\r\n\r\n"
+            )
+
+            val entree = when (uri.scheme) {
+                "content" -> contentResolver.openInputStream(uri)
+
+                "file" -> {
+                    val fichier = File(uri.path ?: "")
+                    if (fichier.exists()) fichier.inputStream() else null
+                }
+
+                else -> {
+                    val fichier = File(chemin)
+                    if (fichier.exists()) fichier.inputStream() else null
+                }
+            } ?: throw Exception(
+                "Photo inaccessible : $chemin"
+            )
+
+            entree.use {
+                it.copyTo(sortie)
+            }
+
+            ecrireTexte("\r\n--$boundary--\r\n")
+        }
+
+        val code = connexion.responseCode
+
+        val fluxReponse = if (code in 200..299) {
+            connexion.inputStream
+        } else {
+            connexion.errorStream
+        } ?: throw Exception("Réponse Cloudinary vide : HTTP $code")
+
+        val reponse = fluxReponse.bufferedReader().use {
+            it.readText()
+        }
+
+        if (code !in 200..299) {
+            throw Exception("Cloudinary HTTP $code : $reponse")
+        }
+
+        val json = org.json.JSONObject(reponse)
+        val url = json.optString("secure_url")
+
+        if (!url.startsWith("https://")) {
+            throw Exception("URL Cloudinary invalide")
+        }
+
+        return url
+
+    } finally {
+        connexion.disconnect()
+    }
+}
+
+
+// ========================================================
+// CHARGER UNE IMAGE LOCALE OU HEBERGEE EN LIGNE
+// ========================================================
 
 private fun chargerImageProduit(
     imageView: ImageView,
@@ -2743,92 +2922,64 @@ private fun chargerImageProduit(
         return
     }
 
-    // PHOTO HÉBERGÉE EN LIGNE : CLOUDINARY
-    if (chemin.startsWith("https://") ||
-        chemin.startsWith("http://")) {
+    imageView.setImageResource(
+        android.R.drawable.ic_menu_gallery
+    )
 
-        imageView.setImageResource(
-            android.R.drawable.ic_menu_gallery
-        )
+    Thread {
+        var connexion: HttpURLConnection? = null
 
-        Thread {
-            var connexion: HttpURLConnection? = null
+        try {
+            val bitmap: Bitmap? =
+                if (
+                    chemin.startsWith("https://") ||
+                    chemin.startsWith("http://")
+                ) {
+                    connexion = URL(chemin)
+                        .openConnection() as HttpURLConnection
 
-            try {
-                connexion = URL(chemin)
-                    .openConnection() as HttpURLConnection
+                    connexion.connectTimeout = 15000
+                    connexion.readTimeout = 20000
+                    connexion.connect()
 
-                connexion.connectTimeout = 15000
-                connexion.readTimeout = 20000
-                connexion.connect()
-
-                if (connexion.responseCode !in 200..299) {
-                    throw Exception(
-                        "Erreur HTTP ${connexion.responseCode}"
-                    )
-                }
-
-                val bitmap = connexion.inputStream.use {
-                    BitmapFactory.decodeStream(it)
-                } ?: throw Exception("Image illisible")
-
-                runOnUiThread {
-                    if (imageView.tag == chemin) {
-                        imageView.setImageBitmap(bitmap)
-                    }
-                }
-
-            } catch (e: Exception) {
-                android.util.Log.e(
-                    "IMAGE_PRODUIT",
-                    "Impossible de charger : $chemin",
-                    e
-                )
-
-                runOnUiThread {
-                    if (imageView.tag == chemin) {
-                        imageView.setImageResource(
-                            android.R.drawable.ic_menu_gallery
+                    if (connexion.responseCode !in 200..299) {
+                        throw Exception(
+                            "Erreur HTTP ${connexion.responseCode}"
                         )
                     }
-                }
 
-            } finally {
-                connexion?.disconnect()
-            }
-        }.start()
+                    connexion.inputStream.use {
+                        BitmapFactory.decodeStream(it)
+                    }
+                } else {
+                    val uri = Uri.parse(chemin)
 
-        return
-    }
+                    when (uri.scheme) {
+                        "content" -> contentResolver
+                            .openInputStream(uri)
+                            ?.use {
+                                BitmapFactory.decodeStream(it)
+                            }
 
-    // PHOTO LOCALE : GALERIE OU FICHIER DE L'APPLICATION
-    Thread {
-        try {
-            val uri = Uri.parse(chemin)
+                        "file" -> {
+                            val fichier = File(uri.path ?: "")
+                            if (fichier.exists()) {
+                                BitmapFactory.decodeFile(
+                                    fichier.absolutePath
+                                )
+                            } else null
+                        }
 
-            val bitmap = when (uri.scheme) {
-                "content" -> contentResolver
-                    .openInputStream(uri)
-                    ?.use { BitmapFactory.decodeStream(it) }
-
-                "file" -> {
-                    val fichier = File(uri.path ?: "")
-                    if (fichier.exists()) {
-                        BitmapFactory.decodeFile(fichier.absolutePath)
-                    } else {
-                        null
+                        else -> {
+                            val fichier = File(chemin)
+                            if (fichier.exists()) {
+                                BitmapFactory.decodeFile(
+                                    fichier.absolutePath
+                                )
+                            } else null
+                        }
                     }
                 }
-
-                else -> {
-                    val fichier = File(chemin)
-                    if (fichier.exists()) {
-                        BitmapFactory.decodeFile(fichier.absolutePath)
-                    } else {
-                        null
-                    }
-                }
-            }
 
             runOnUiThread {
                 if (imageView.tag == chemin) {
@@ -2845,7 +2996,7 @@ private fun chargerImageProduit(
         } catch (e: Exception) {
             android.util.Log.e(
                 "IMAGE_PRODUIT",
-                "Erreur de lecture de la photo locale",
+                "Erreur de chargement : $chemin",
                 e
             )
 
@@ -2856,6 +3007,9 @@ private fun chargerImageProduit(
                     )
                 }
             }
+
+        } finally {
+            connexion?.disconnect()
         }
     }.start()
 }
@@ -5208,20 +5362,18 @@ private fun formaterNombre(
     )  
 }  
 
-// ========================================================  
-// SAUVEGARDE PRODUITS  
-// ========================================================  
+
+ // ========================================================
+ // SAUVEGARDE DES PRODUITS
+ // ========================================================
 
 private fun sauvegarderProduits() {
-
-    // 1. Sauvegarde locale immédiate
     sauvegarderProduitsLocalement()
 
     val donneesProduits = produits.toList()
 
     if (donneesProduits.isEmpty()) return
 
-    // 2. Envoyer les photos sur Cloudinary en arrière-plan
     Thread {
         for (produit in donneesProduits) {
             try {
@@ -5232,17 +5384,14 @@ private fun sauvegarderProduits() {
                         image.startsWith("https://") ||
                         image.startsWith("http://")
                     ) {
-                        // Image déjà en ligne
                         image
                     } else {
-                        // Envoyer la photo locale à Cloudinary
                         envoyerPhotoCloudinary(image)
                     }
 
                     imagesEnLigne.add(url)
                 }
 
-                // 3. Enregistrer uniquement les URL accessibles en ligne
                 val donnees = hashMapOf<String, Any>(
                     "id" to produit.id,
                     "nom" to produit.nom,
@@ -5259,18 +5408,19 @@ private fun sauvegarderProduits() {
                     .document(produit.id)
                     .set(donnees)
                     .addOnSuccessListener {
-
-                        // Mettre à jour les chemins des photos
-                        // dans le produit en mémoire.
+                        // Mettre à jour les images dans le produit.
                         produit.images.clear()
                         produit.images.addAll(imagesEnLigne)
 
-                        // Sauvegarder les URL localement
                         sauvegarderProduitsLocalement()
 
                         android.util.Log.d(
                             "FIREBASE_PRODUITS",
-                            "Produit et photos enregistrés : ${produit.nom}"
+                            "Produit enregistré : ${produit.nom}"
+                        )
+
+                        toast(
+                            "Produit enregistré : ${produit.nom}"
                         )
                     }
                     .addOnFailureListener { erreur ->
@@ -5280,21 +5430,21 @@ private fun sauvegarderProduits() {
                             erreur
                         )
 
-                        runOnUiThread {
-                            toast("Erreur Firebase : ${erreur.localizedMessage}")
-                        }
+                        toast(
+                            "Erreur Firebase : ${erreur.localizedMessage}"
+                        )
                     }
 
-            } catch (erreur: Exception) {
+            } catch (e: Exception) {
                 android.util.Log.e(
                     "CLOUDINARY_PHOTOS",
-                    "Échec d'envoi des photos : ${produit.nom}",
-                    erreur
+                    "Échec pour ${produit.nom}",
+                    e
                 )
 
                 runOnUiThread {
                     toast(
-                        "Erreur d'envoi des photos de ${produit.nom}"
+                        "Échec d'envoi des photos de ${produit.nom}"
                     )
                 }
             }
@@ -5308,7 +5458,6 @@ private fun sauvegarderProduits() {
 // ========================================================
 
 private fun sauvegarderProduitsLocalement() {
-
     val tableau = org.json.JSONArray()
 
     for (produit in produits) {
