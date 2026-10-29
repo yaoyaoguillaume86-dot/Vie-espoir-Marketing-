@@ -23,7 +23,8 @@ import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Locale
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestore 
+import com.google.firebase.firestore.ListenerRegistration
 import java.net.HttpURLConnection
 import java.net.URL
 import android.graphics.BitmapFactory
@@ -678,173 +679,165 @@ private fun afficherAccueil() {
 
 // ========================================================  
 // PRODUITS ACCUEIL  
-//// ========================================================
-// CHARGER LES PRODUITS DEPUIS FIREBASE
-// Teste les deux noms de collection sans exiger d'images
+//
 // ========================================================
-
+// CHARGEMENT AUTOMATIQUE DES PRODUITS FIREBASE
+// VIE ESPOIR MARKETING
+// ========================================================
 
 private fun chargerProduitsFirebase() {
 
+    // Arrêter l'ancien écouteur pour éviter les doublons
+    ecouteurProduits?.remove()
+    ecouteurProduits = null
+
     android.util.Log.d(
         "FIREBASE_PRODUITS",
-        "Début du diagnostic Firebase"
+        "Démarrage de la synchronisation automatique"
     )
 
-    fun lireCollection(nomCollection: String) {
+    // Écouter automatiquement les modifications Firebase
+    ecouteurProduits = db.collection("Produits")
+        .addSnapshotListener { result, erreur ->
 
-        db.collection(nomCollection)
-            .get()
-            .addOnSuccessListener { result ->
-
-                android.util.Log.d(
-                    "FIREBASE_PRODUITS",
-                    "Collection $nomCollection : ${result.size()} document(s)"
-                )
-
-                for (document in result.documents) {
-                    android.util.Log.d(
-                        "FIREBASE_PRODUITS",
-                        "$nomCollection / ${document.id} : ${document.data}"
-                    )
-                }
-
-                if (result.isEmpty && nomCollection == "Produits") {
-                    lireCollection("produits")
-                    return@addOnSuccessListener
-                }
-
-                if (result.isEmpty) {
-                    toast(
-                        "Aucun document dans Produits ou produits."
-                    )
-                    return@addOnSuccessListener
-                }
-
-                produits.clear()
-
-                for (document in result.documents) {
-
-                    val donnees = document.data ?: continue
-
-                    val nom = (
-                        donnees["nom"]
-                            ?: donnees["Nom"]
-                            ?: donnees["name"]
-                    )?.toString()?.trim().orEmpty()
-
-                    if (nom.isEmpty()) {
-                        android.util.Log.w(
-                            "FIREBASE_PRODUITS",
-                            "Document ${document.id} ignoré : nom absent"
-                        )
-                        continue
-                    }
-
-                    val prixValeur =
-                        donnees["prix"] ?: donnees["Prix"]
-
-                    val prix = when (prixValeur) {
-                        is Number -> prixValeur.toInt().toString()
-                        is String -> prixValeur
-                        else -> "0"
-                    }
-
-                    val categorie = (
-                        donnees["categorie"]
-                            ?: donnees["category"]
-                    )?.toString() ?: "Autres"
-
-                    val stock = when (val valeur = donnees["stock"]) {
-                        is Number -> valeur.toInt()
-                        is String -> valeur.toIntOrNull() ?: 0
-                        else -> 0
-                    }
-
-                    val description =
-                        donnees["description"]?.toString() ?: ""
-
-                    val vendeur =
-                        donnees["vendeur"]?.toString() ?: ""
-
-                    val entreprise =
-                        donnees["entreprise"]?.toString() ?: ""
-
-                    val images = mutableListOf<String>()
-                    val imagesFirebase = donnees["images"]
-
-                    if (imagesFirebase is List<*>) {
-                        imagesFirebase.forEach { image ->
-                            if (image is String && image.isNotBlank()) {
-                                images.add(image)
-                            }
-                        }
-                    }
-
-                    val ancienneImage = donnees["image"]?.toString()
-
-                    if (
-                        images.isEmpty() &&
-                        !ancienneImage.isNullOrBlank()
-                    ) {
-                        images.add(ancienneImage)
-                    }
-
-                    produits.add(
-                        Produit(
-                            id = document.id,
-                            nom = nom,
-                            prix = prix,
-                            categorie = categorie,
-                            stock = stock,
-                            description = description,
-                            images = images,
-                            vendeur = vendeur,
-                            entreprise = entreprise
-                        )
-                    )
-                }
-
-                android.util.Log.d(
-                    "FIREBASE_PRODUITS",
-                    "Nombre de produits chargés : ${produits.size}"
-                )
-
-                produits.forEach { produit ->
-                    android.util.Log.d(
-                        "FIREBASE_PRODUITS",
-                        "Produit : ${produit.nom}, prix : ${produit.prix}"
-                    )
-                }
-
-                afficherProduitsAccueil()
-
-                toast(
-                    "${produits.size} produit(s) récupéré(s) dans $nomCollection"
-                )
-
-                android.util.Log.d(
-                    "FIREBASE_PRODUITS",
-                    "Produits affichables : ${produits.size}"
-                )
-            }
-            .addOnFailureListener { erreur ->
+            if (erreur != null) {
 
                 android.util.Log.e(
                     "FIREBASE_PRODUITS",
-                    "Erreur de lecture dans $nomCollection",
+                    "Erreur de synchronisation",
                     erreur
                 )
 
                 toast(
-                    "Erreur Firebase ($nomCollection) : ${erreur.localizedMessage}"
+                    "Erreur Firebase : ${erreur.localizedMessage}"
                 )
+
+                return@addSnapshotListener
             }
-    }
 
-    lireCollection("Produits")
+            if (result == null) {
+                return@addSnapshotListener
+            }
+
+            val produitsRecus = ArrayList<Produit>()
+
+            for (document in result.documents) {
+
+                val donnees = document.data ?: continue
+
+                // NOM DU PRODUIT
+                val nom = (
+                    donnees["nom"]
+                        ?: donnees["Nom"]
+                        ?: donnees["name"]
+                )?.toString()?.trim().orEmpty()
+
+                if (nom.isEmpty()) {
+                    continue
+                }
+
+                // PRIX DU PRODUIT
+                val prixValeur =
+                    donnees["prix"] ?: donnees["Prix"]
+
+                val prix = when (prixValeur) {
+                    is Number -> prixValeur.toInt().toString()
+                    is String -> prixValeur
+                    else -> "0"
+                }
+
+                // CATÉGORIE
+                val categorie = (
+                    donnees["categorie"]
+                        ?: donnees["category"]
+                )?.toString() ?: "Autres produits"
+
+                // STOCK
+                val stock = when (
+                    val valeur = donnees["stock"]
+                ) {
+                    is Number -> valeur.toInt()
+                    is String -> valeur.toIntOrNull() ?: 0
+                    else -> 0
+                }
+
+                // RÉCUPÉRER TOUTES LES PHOTOS
+                val images = mutableListOf<String>()
+
+                val imagesFirebase = donnees["images"]
+
+                if (imagesFirebase is List<*>) {
+
+                    for (image in imagesFirebase) {
+
+                        if (
+                            image is String &&
+                            image.isNotBlank()
+                        ) {
+                            images.add(image)
+                        }
+                    }
+                }
+
+                // Compatibilité avec une ancienne photo unique
+                val ancienneImage =
+                    donnees["image"]?.toString()
+
+                if (
+                    images.isEmpty() &&
+                    !ancienneImage.isNullOrBlank()
+                ) {
+                    images.add(ancienneImage)
+                }
+
+                // DESCRIPTION
+                val description =
+                    donnees["description"]?.toString() ?: ""
+
+                // VENDEUR
+                val vendeur =
+                    donnees["vendeur"]?.toString() ?: ""
+
+                // ENTREPRISE
+                val entreprise =
+                    donnees["entreprise"]?.toString() ?: ""
+
+                // CRÉER LE PRODUIT
+                val produit = Produit(
+                    id = (donnees["id"]?.toString())
+                        ?.takeIf { it.isNotBlank() }
+                        ?: document.id,
+                    nom = nom,
+                    prix = prix,
+                    categorie = categorie,
+                    stock = stock,
+                    description = description,
+                    images = images,
+                    vendeur = vendeur,
+                    entreprise = entreprise
+                )
+
+                produitsRecus.add(produit)
+            }
+
+            // ACTUALISER LA LISTE DES PRODUITS
+            produits.clear()
+            produits.addAll(produitsRecus)
+
+            android.util.Log.d(
+                "FIREBASE_PRODUITS",
+                "Produits synchronisés : ${produits.size}"
+            )
+
+            // ACTUALISER L'ACCUEIL AUTOMATIQUEMENT
+            if (
+                ::zoneProduits.isInitialized &&
+                zoneProduits.isAttachedToWindow
+            ) {
+                afficherProduitsAccueil()
+            }
+        }
 }
-
 
  // ========================================================
  // AFFICHER LES PRODUITS SUR L'ACCUEIL
