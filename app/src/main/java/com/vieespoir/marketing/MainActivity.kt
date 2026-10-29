@@ -935,11 +935,11 @@ private fun ajouterCarteProduit(
         (valeur * densite).toInt()
 
     val largeurCarte = if (compact) {
-        (resources.displayMetrics.widthPixels / densite / 2)
-            .toInt() - 28
-    } else {
-        ViewGroup.LayoutParams.MATCH_PARENT
-    }
+    (resources.displayMetrics.widthPixels / densite / 2)
+        .toInt() - 24
+} else {
+    ViewGroup.LayoutParams.MATCH_PARENT
+}
 
     val carte = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
