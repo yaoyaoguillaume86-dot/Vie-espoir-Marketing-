@@ -1110,7 +1110,10 @@ private fun ajouterCarteProduit(
 
     parent.addView(carte)
 }
-
+private fun formaterNombre(nombre: Int): String {
+    return "%,d".format(java.util.Locale.FRANCE, nombre)
+        .replace(',', ' ')
+}
 // ========================================================  
 // DETAIL PRODUIT  
 // ========================================================  
