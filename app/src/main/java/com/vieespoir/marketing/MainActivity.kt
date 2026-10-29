@@ -5309,20 +5309,7 @@ private fun enregistrerEvenement(
 // ========================================================  
 // FORMATAGE  
 // ========================================================  
-
-private fun formaterNombre(  
-    nombre: Int  
-): String {  
-
-    return String.format(  
-        Locale.FRANCE,  
-        "%,d",  
-        nombre  
-    ).replace(  
-        ',',  
-        ' '  
-    )  
-}  
+ 
 
 
  // ========================================================
