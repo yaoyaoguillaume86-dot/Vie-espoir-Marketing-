@@ -1022,20 +1022,51 @@ private fun ajouterCarteProduit(
 
     carte.addView(image)
 
-    // INDICATEUR DU NOMBRE DE PHOTOS
+
+    // GALERIE DES PHOTOS DU PRODUIT
     if (produit.images.size > 1) {
-        carte.addView(
-            TextView(this).apply {
-                text = "📷 ${produit.images.size} photos • Voir le produit"
-                textSize = 10f
-                setTextColor(Color.DKGRAY)
-                gravity = Gravity.CENTER
-                setPadding(0, dp(5), 0, dp(5))
-                setOnClickListener {
-                    afficherDetailProduit(produit)
+
+        val miniatures = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+
+        val defilementPhotos = HorizontalScrollView(this).apply {
+            isHorizontalScrollBarEnabled = false
+            addView(
+                miniatures,
+                ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            )
+        }
+
+        for ((index, chemin) in produit.images.withIndex()) {
+
+            val miniature = ImageView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    dp(48),
+                    dp(48)
+                ).apply {
+                    setMargins(dp(3), dp(3), dp(3), dp(3))
                 }
+
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                contentDescription = "Photo ${index + 1}"
+                setBackgroundColor(Color.LTGRAY)
             }
-        )
+
+            chargerImageProduit(miniature, chemin)
+
+            miniature.setOnClickListener {
+                chargerImageProduit(image, chemin)
+            }
+
+            miniatures.addView(miniature)
+        }
+
+        carte.addView(defilementPhotos)
     }
 
     // NOM DU PRODUIT
