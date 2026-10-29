@@ -684,7 +684,7 @@ private fun afficherAccueil() {
 // CHARGEMENT AUTOMATIQUE DES PRODUITS FIREBASE
 // VIE ESPOIR MARKETING
 // ========================================================
-
+private var ecouteurProduits: ListenerRegistration? = null
 private fun chargerProduitsFirebase() {
 
     // Arrêter l'ancien écouteur pour éviter les doublons
@@ -838,7 +838,15 @@ private fun chargerProduitsFirebase() {
             }
         }
 }
+// ========================================================
+// FERMETURE DE LA SYNCHRONISATION FIREBASE
+// ========================================================
 
+override fun onDestroy() {
+    ecouteurProduits?.remove()
+    ecouteurProduits = null
+    super.onDestroy()
+}
  // ========================================================
  // AFFICHER LES PRODUITS SUR L'ACCUEIL
  // Présentation en deux colonnes, style boutique en ligne
