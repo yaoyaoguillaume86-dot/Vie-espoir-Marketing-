@@ -1193,7 +1193,12 @@ private fun ajouterCarteProduit(
     }
 
     carte.addView(image)
+// OUVRIR LES DETAILS DU PRODUIT
+// EN APPUYANT SUR LA CARTE
 
+carte.setOnClickListener {
+    afficherDetailProduit(produit)
+}
     // ========================================================
     // MINIATURES SOUS LA PHOTO PRINCIPALE
     // ========================================================
