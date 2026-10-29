@@ -934,27 +934,26 @@ private fun ajouterCarteProduit(
     fun dp(valeur: Int): Int =
         (valeur * densite).toInt()
 
+    val largeurCarte = if (compact) {
+        (resources.displayMetrics.widthPixels / densite / 2)
+            .toInt() - 28
+    } else {
+        ViewGroup.LayoutParams.MATCH_PARENT
+    }
+
     val carte = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
-        setPadding(dp(10), dp(10), dp(10), dp(10))
+        setPadding(dp(8), dp(8), dp(8), dp(8))
         setBackgroundColor(Color.WHITE)
 
         layoutParams = LinearLayout.LayoutParams(
-            if (compact) dp(220)
-            else ViewGroup.LayoutParams.MATCH_PARENT,
+            largeurCarte,
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
-            setMargins(dp(6), dp(6), dp(6), dp(6))
-        }
-
-        isClickable = true
-        isFocusable = true
-        setOnClickListener {
-            afficherDetailProduit(produit)
+            setMargins(dp(5), dp(6), dp(5), dp(6))
         }
     }
 
-    // PHOTO PRINCIPALE
     val image = ImageView(this).apply {
         layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -981,7 +980,6 @@ private fun ajouterCarteProduit(
 
     carte.addView(image)
 
-    // MINIATURES DES AUTRES PHOTOS
     if (produit.images.size > 1) {
         val miniatures = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -991,12 +989,11 @@ private fun ajouterCarteProduit(
         for (chemin in produit.images.drop(1)) {
             val miniature = ImageView(this).apply {
                 layoutParams = LinearLayout.LayoutParams(
-                    dp(65),
-                    dp(65)
+                    dp(48),
+                    dp(48)
                 ).apply {
-                    setMargins(dp(4), dp(4), dp(4), dp(4))
+                    setMargins(dp(3), dp(4), dp(3), dp(4))
                 }
-
                 scaleType = ImageView.ScaleType.CENTER_CROP
                 setBackgroundColor(Color.LTGRAY)
                 contentDescription = "Autre photo de ${produit.nom}"
@@ -1014,32 +1011,28 @@ private fun ajouterCarteProduit(
         carte.addView(miniatures)
     }
 
-    // NOM
     carte.addView(
-        texte(produit.nom, 18f, VERT).apply {
+        texte(produit.nom, 16f, VERT).apply {
             typeface = Typeface.DEFAULT_BOLD
         }
     )
 
-    // PRIX
     val prix = produit.prix
         .replace(" ", "")
         .toIntOrNull() ?: 0
 
     carte.addView(
-        texte("${formaterNombre(prix)} FCFA", 19f, VERT)
+        texte("${formaterNombre(prix)} FCFA", 17f, VERT)
     )
 
-    // ENTREPRISE
     if (produit.entreprise.isNotBlank()) {
         carte.addView(
-            texte("🏢 ${produit.entreprise}", 14f, OR)
+            texte("🏢 ${produit.entreprise}", 12f, OR)
         )
     }
 
-    // CATÉGORIE ET STOCK
     carte.addView(
-        texte("🏷️ ${produit.categorie}", 14f, Color.GRAY)
+        texte("🏷️ ${produit.categorie}", 12f, Color.GRAY)
     )
 
     carte.addView(
@@ -1047,47 +1040,41 @@ private fun ajouterCarteProduit(
             if (produit.stock > 0) {
                 "📦 Stock : ${produit.stock}"
             } else {
-                "⚠️ Produit indisponible"
+                "⚠️ Indisponible"
             },
-            14f,
+            12f,
             if (produit.stock > 0) VERT else Color.RED
         )
     )
 
-    // DESCRIPTION
     if (produit.description.isNotBlank()) {
         carte.addView(
-            texte(produit.description, 14f, Color.DKGRAY)
+            texte(produit.description, 12f, Color.DKGRAY)
         )
     }
 
-    // AJOUT AU PANIER
     carte.addView(
         boutonVert("🛒 Ajouter au panier") {
             if (produit.stock <= 0) {
                 toast("Produit indisponible")
                 return@boutonVert
             }
-
             ajouterAuPanier(produit)
         }
     )
 
-    // DÉTAIL
     carte.addView(
         bouton("👁️ Voir le produit") {
             afficherDetailProduit(produit)
         }
     )
 
-    // PARTAGE
     carte.addView(
         bouton("📤 Partager") {
             partagerProduit(produit)
         }
     )
 
-    // GESTION PAR LE VENDEUR
     val compte = compteActuel()
 
     if (
@@ -1110,6 +1097,7 @@ private fun ajouterCarteProduit(
 
     parent.addView(carte)
 }
+
 private fun formaterNombre(nombre: Int): String {
     return "%,d".format(java.util.Locale.FRANCE, nombre)
         .replace(',', ' ')
