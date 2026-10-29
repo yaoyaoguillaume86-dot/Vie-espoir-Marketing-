@@ -1063,17 +1063,7 @@ private fun ajouterCarteProduit(
         }
     )
 
-    carte.addView(
-        bouton("👁️ Voir le produit") {
-            afficherDetailProduit(produit)
-        }
-    )
-
-    carte.addView(
-        bouton("📤 Partager") {
-            partagerProduit(produit)
-        }
-    )
+     
 
     val compte = compteActuel()
 
