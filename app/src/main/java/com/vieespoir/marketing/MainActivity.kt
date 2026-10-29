@@ -1383,214 +1383,395 @@ private fun formaterNombre(nombre: Int): String {
         .replace(',', ' ')
 }
 
-    
-// ========================================================  
-// DETAIL PRODUIT  
-// ========================================================  
+ // ========================================================
+// DETAIL PRODUIT - GALERIE DE PHOTOS
+// VIE ESPOIR MARKETING
+// ========================================================
 
-private fun afficherDetailProduit(  
-    produit: Produit  
-) {  
+private fun afficherDetailProduit(produit: Produit) {
 
-    val root =  
-        layoutBase()  
+    val root = layoutBase()
 
-    root.addView(  
-        titre(  
-            "🛍️ ${produit.nom}"  
-        )  
-    )  
+    val densite = resources.displayMetrics.density
 
-    if (produit.images.isNotEmpty()) {  
+    fun dp(valeur: Int): Int {
+        return (valeur * densite).toInt()
+    }
 
-        val galerie =  
-            LinearLayout(this).apply {  
+    root.addView(
+        titre("🛍️ ${produit.nom}")
+    )
 
-                orientation =  
-                    LinearLayout.HORIZONTAL  
+    // ====================================================
+    // RECUPERER TOUTES LES PHOTOS
+    // ====================================================
 
-                gravity =  
-                    Gravity.CENTER  
-            }  
+    val photos = produit.images.filter {
+        it.isNotBlank()
+    }
 
-        for (chemin in produit.images) {  
+    if (photos.isNotEmpty()) {
 
-            try {  
+        var position = 0
 
-                val image =  
-                    ImageView(this).apply {  
+        // GRANDE PHOTO
+        val grandePhoto = ImageView(this).apply {
 
-                        layoutParams =  
-                            LinearLayout.LayoutParams(  
-                                90,  
-                                90  
-                            ).apply {  
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(300)
+            )
 
-                                setMargins(  
-                                    4,  
-                                    4,  
-                                    4,  
-                                    4  
-                                )  
-                            }  
+            scaleType = ImageView.ScaleType.FIT_CENTER
 
-                        scaleType =  
-                            ImageView.ScaleType.CENTER_CROP  
+            setBackgroundColor(Color.WHITE)
 
-                        setImageURI(  
-                            Uri.parse(  
-                                chemin  
-                            )  
-                        )  
+            contentDescription = "Photo de ${produit.nom}"
+        }
 
-                        setOnClickListener {  
+        // COMPTEUR DE PHOTOS
+        val compteur = texte(
+            "",
+            15f,
+            VERT
+        ).apply {
 
-                            val grand =  
-                                ImageView(  
-                                    this@MainActivity  
-                                )  
+            gravity = Gravity.CENTER
 
-                            grand.setImageURI(  
-                                Uri.parse(  
-                                    chemin  
-                                )  
-                            )  
+            typeface = Typeface.DEFAULT_BOLD
+        }
 
-                            grand.adjustViewBounds =  
-                                true  
+        // AFFICHER LA PHOTO SELECTIONNEE
+        fun afficherPhoto() {
 
-                            AlertDialog.Builder(  
-                                this@MainActivity  
-                            )  
-                                .setView(grand)  
-                                .setPositiveButton(  
-                                    "Fermer",  
-                                    null  
-                                )  
-                                .show()  
-                        }  
-                    }  
+            compteur.text =
+                "📷 Photo ${position + 1} sur ${photos.size}"
 
-                galerie.addView(  
-                    image  
-                )  
+            chargerImageProduit(
+                grandePhoto,
+                photos[position]
+            )
+        }
 
-            } catch (_: Exception) {  
-            }  
-        }  
+        root.addView(grandePhoto)
 
-        root.addView(  
-            galerie  
-        )  
-    }  
+        root.addView(compteur)
 
-    root.addView(  
-        texte(  
-            "💰 ${  
-                formaterNombre(  
-                    produit.prix.toIntOrNull()  
-                        ?: 0  
-                )  
-            } FCFA",  
-            21f,  
-            VERT  
-        ).apply {  
+        // ====================================================
+        // BOUTONS PRECEDENTE ET SUIVANTE
+        // ====================================================
 
-            gravity =  
-                Gravity.CENTER  
+        val navigation = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
 
-            typeface =  
-                Typeface.DEFAULT_BOLD  
-        }  
-    )  
+        val boutonPrecedent = bouton("◀ Précédente") {
 
-    root.addView(  
-        texte(  
-            "🏢 ${  
-                produit.entreprise.ifEmpty {  
-                    "Vendeur"  
-                }  
-            }",  
-            16f,  
-            OR  
-        ).apply {  
+            position =
+                (position - 1 + photos.size) % photos.size
 
-            gravity =  
-                Gravity.CENTER  
-        }  
-    )  
+            afficherPhoto()
+        }
 
-    root.addView(  
-        texte(  
-            produit.description.ifEmpty {  
-                "Aucune description."  
-            },  
-            16f  
-        )  
-    )  
+        val boutonSuivant = bouton("Suivante ▶") {
 
-    root.addView(  
-        texte(  
-            if (produit.stock > 0) {  
-                "📦 Stock disponible : ${produit.stock}"  
-            } else {  
-                "⚠️ Produit indisponible"  
-            },  
-            16f,  
-            if (produit.stock > 0) {  
-                VERT  
-            } else {  
-                Color.RED  
-            }  
-        ).apply {  
-            gravity = Gravity.CENTER  
-        }  
-    )  
+            position =
+                (position + 1) % photos.size
 
-    root.addView(  
-        boutonVert(  
-            "🛒 Ajouter au panier"  
-        ) {  
+            afficherPhoto()
+        }
 
-            if (produit.stock <= 0) {  
+        navigation.addView(
+            boutonPrecedent,
+            LinearLayout.LayoutParams(
+                0,
+                dp(48),
+                1f
+            )
+        )
 
-                toast(  
-                    "Produit indisponible"  
-                )  
+        navigation.addView(
+            boutonSuivant,
+            LinearLayout.LayoutParams(
+                0,
+                dp(48),
+                1f
+            )
+        )
 
-            } else {  
+        root.addView(navigation)
 
-                ajouterAuPanier(  
-                    produit  
-                )  
-            }  
-        }  
-    )  
+        // ====================================================
+        // MINIATURES DES PHOTOS
+        // ====================================================
 
-    root.addView(  
-        bouton(  
-            "📤 Partager"  
-        ) {  
+        root.addView(
+            texte(
+                "🖼️ Autres photos du produit",
+                16f,
+                VERT
+            )
+        )
 
-            partagerProduit(  
-                produit  
-            )  
-        }  
-    )  
+        val miniatures = LinearLayout(this).apply {
 
-    root.addView(  
-        bouton(  
-            "⬅️ Retour"  
-        ) {  
+            orientation = LinearLayout.HORIZONTAL
 
-            onBackPressed()  
-        }  
-    )  
+            gravity = Gravity.CENTER_VERTICAL
+        }
 
-    setContentView(  
-        scroll(root)  
-    )  
-}  
+        for ((index, chemin) in photos.withIndex()) {
+
+            val miniature = ImageView(this).apply {
+
+                layoutParams = LinearLayout.LayoutParams(
+                    dp(75),
+                    dp(75)
+                ).apply {
+
+                    setMargins(
+                        dp(4),
+                        dp(4),
+                        dp(4),
+                        dp(4)
+                    )
+                }
+
+                scaleType = ImageView.ScaleType.CENTER_CROP
+
+                setBackgroundColor(Color.LTGRAY)
+
+                contentDescription =
+                    "Photo ${index + 1} de ${produit.nom}"
+            }
+
+            chargerImageProduit(
+                miniature,
+                chemin
+            )
+
+            miniature.setOnClickListener {
+
+                position = index
+
+                afficherPhoto()
+            }
+
+            miniatures.addView(miniature)
+        }
+
+        val defilement = HorizontalScrollView(this).apply {
+
+            isHorizontalScrollBarEnabled = false
+
+            addView(miniatures)
+        }
+
+        root.addView(defilement)
+
+        // ====================================================
+        // GLISSER LA PHOTO A GAUCHE OU A DROITE
+        // ====================================================
+
+        grandePhoto.setOnTouchListener(
+            object : View.OnTouchListener {
+
+                private var debutX = 0f
+                private var debutY = 0f
+
+                override fun onTouch(
+                    vue: View,
+                    evenement: android.view.MotionEvent
+                ): Boolean {
+
+                    when (evenement.action) {
+
+                        android.view.MotionEvent.ACTION_DOWN -> {
+
+                            debutX = evenement.x
+                            debutY = evenement.y
+
+                            return true
+                        }
+
+                        android.view.MotionEvent.ACTION_UP -> {
+
+                            val differenceX =
+                                evenement.x - debutX
+
+                            val differenceY =
+                                evenement.y - debutY
+
+                            if (
+                                kotlin.math.abs(differenceX) > dp(45) &&
+                                kotlin.math.abs(differenceX) >
+                                kotlin.math.abs(differenceY)
+                            ) {
+
+                                position = if (differenceX < 0) {
+
+                                    (position + 1) % photos.size
+
+                                } else {
+
+                                    (position - 1 + photos.size) %
+                                        photos.size
+                                }
+
+                                afficherPhoto()
+                            }
+
+                            return true
+                        }
+                    }
+
+                    return true
+                }
+            }
+        )
+
+        // AFFICHER LA PREMIERE PHOTO
+        afficherPhoto()
+
+    } else {
+
+        root.addView(
+            texte(
+                "📷 Aucune photo disponible pour ce produit.",
+                16f,
+                Color.GRAY
+            )
+        )
+    }
+
+    // ====================================================
+    // PRIX
+    // ====================================================
+
+    val prix = produit.prix
+        .replace(" ", "")
+        .replace(",", "")
+        .toIntOrNull() ?: 0
+
+    root.addView(
+        texte(
+            "💰 ${formaterNombre(prix)} FCFA",
+            21f,
+            VERT
+        ).apply {
+
+            gravity = Gravity.CENTER
+
+            typeface = Typeface.DEFAULT_BOLD
+        }
+    )
+
+    // ====================================================
+    // ENTREPRISE
+    // ====================================================
+
+    root.addView(
+        texte(
+            "🏢 ${
+                produit.entreprise.ifEmpty {
+                    "Vendeur"
+                }
+            }",
+            16f,
+            OR
+        ).apply {
+
+            gravity = Gravity.CENTER
+        }
+    )
+
+    // ====================================================
+    // CATEGORIE
+    // ====================================================
+
+    root.addView(
+        texte(
+            "🏷️ ${produit.categorie}",
+            15f,
+            Color.DKGRAY
+        )
+    )
+
+    // ====================================================
+    // DESCRIPTION
+    // ====================================================
+
+    root.addView(
+        texte(
+            produit.description.ifEmpty {
+                "Aucune description disponible."
+            },
+            16f
+        )
+    )
+
+    // ====================================================
+    // STOCK
+    // ====================================================
+
+    root.addView(
+        texte(
+            if (produit.stock > 0) {
+                "📦 Stock disponible : ${produit.stock}"
+            } else {
+                "⚠️ Produit indisponible"
+            },
+            16f,
+            if (produit.stock > 0) VERT else Color.RED
+        )
+    )
+
+    // ====================================================
+    // AJOUTER AU PANIER
+    // ====================================================
+
+    root.addView(
+        boutonVert("🛒 Ajouter au panier") {
+
+            if (produit.stock <= 0) {
+
+                toast("Produit indisponible")
+
+            } else {
+
+                ajouterAuPanier(produit)
+            }
+        }
+    )
+
+    // ====================================================
+    // PARTAGER LE PRODUIT
+    // ====================================================
+
+    root.addView(
+        bouton("📤 Partager le produit") {
+
+            partagerProduit(produit)
+        }
+    )
+
+    // ====================================================
+    // RETOUR
+    // ====================================================
+
+    root.addView(
+        bouton("⬅️ Retour") {
+
+            onBackPressed()
+        }
+    )
+
+    // AFFICHER L'ECRAN
+    setContentView(
+        scroll(root)
+    )
+}
 
 // ========================================================  
 // PANIER  
