@@ -962,8 +962,9 @@ private fun afficherProduitsAccueil() {
 
    
     
+
  // ========================================================
- // CARTE PRODUIT — VERSION CORRIGÉE
+ // CARTE PRODUIT — ACCUEIL STYLE BOUTIQUE EN LIGNE
  // ========================================================
 
 private fun ajouterCarteProduit(
@@ -973,36 +974,37 @@ private fun ajouterCarteProduit(
 ) {
     val densite = resources.displayMetrics.density
 
-    fun dp(valeur: Int): Int =
-        (valeur * densite).toInt()
-
-    val largeurCarte = if (compact) {
-    (resources.displayMetrics.widthPixels / densite / 2)
-        .toInt() - 24
-} else {
-    ViewGroup.LayoutParams.MATCH_PARENT
-}
+    fun dp(v: Int) = (v * densite).toInt()
 
     val carte = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
-        setPadding(dp(8), dp(8), dp(8), dp(8))
-        setBackgroundColor(Color.WHITE)
+        setPadding(dp(7), dp(7), dp(7), dp(8))
+        setBackground(
+            android.graphics.drawable.GradientDrawable().apply {
+                setColor(Color.WHITE)
+                cornerRadius = dp(10).toFloat()
+                setStroke(dp(1), Color.LTGRAY)
+            }
+        )
+
+        elevation = dp(2).toFloat()
 
         layoutParams = LinearLayout.LayoutParams(
-            largeurCarte,
+            ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
-            setMargins(dp(5), dp(6), dp(5), dp(6))
+            setMargins(dp(2), dp(3), dp(2), dp(5))
         }
     }
 
+    // PHOTO PRINCIPALE
     val image = ImageView(this).apply {
         layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            dp(if (compact) 150 else 250)
+            dp(if (compact) 145 else 230)
         )
-        scaleType = ImageView.ScaleType.CENTER_CROP
-        setBackgroundColor(Color.LTGRAY)
+        scaleType = ImageView.ScaleType.FIT_CENTER
+        setBackgroundColor(Color.WHITE)
         contentDescription = "Photo de ${produit.nom}"
     }
 
@@ -1011,9 +1013,7 @@ private fun ajouterCarteProduit(
     if (!premiereImage.isNullOrBlank()) {
         chargerImageProduit(image, premiereImage)
     } else {
-        image.setImageResource(
-            android.R.drawable.ic_menu_gallery
-        )
+        image.setImageResource(android.R.drawable.ic_menu_gallery)
     }
 
     image.setOnClickListener {
@@ -1022,91 +1022,109 @@ private fun ajouterCarteProduit(
 
     carte.addView(image)
 
+    // INDICATEUR DU NOMBRE DE PHOTOS
     if (produit.images.size > 1) {
-        val miniatures = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-        }
-
-        for (chemin in produit.images.drop(1)) {
-            val miniature = ImageView(this).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    dp(48),
-                    dp(48)
-                ).apply {
-                    setMargins(dp(3), dp(4), dp(3), dp(4))
-                }
-                scaleType = ImageView.ScaleType.CENTER_CROP
-                setBackgroundColor(Color.LTGRAY)
-                contentDescription = "Autre photo de ${produit.nom}"
-            }
-
-            chargerImageProduit(miniature, chemin)
-
-            miniature.setOnClickListener {
-                afficherDetailProduit(produit)
-            }
-
-            miniatures.addView(miniature)
-        }
-
-        carte.addView(miniatures)
-    }
-
-    carte.addView(
-        texte(produit.nom, 16f, VERT).apply {
-            typeface = Typeface.DEFAULT_BOLD
-        }
-    )
-
-    val prix = produit.prix
-        .replace(" ", "")
-        .toIntOrNull() ?: 0
-
-    carte.addView(
-        texte("${formaterNombre(prix)} FCFA", 17f, VERT)
-    )
-
-    if (produit.entreprise.isNotBlank()) {
         carte.addView(
-            texte("🏢 ${produit.entreprise}", 12f, OR)
+            TextView(this).apply {
+                text = "📷 ${produit.images.size} photos • Voir le produit"
+                textSize = 10f
+                setTextColor(Color.DKGRAY)
+                gravity = Gravity.CENTER
+                setPadding(0, dp(5), 0, dp(5))
+                setOnClickListener {
+                    afficherDetailProduit(produit)
+                }
+            }
         )
     }
 
+    // NOM DU PRODUIT
     carte.addView(
-        texte("🏷️ ${produit.categorie}", 12f, Color.GRAY)
+        texte(produit.nom, if (compact) 14f else 17f, Color.BLACK)
+            .apply {
+                typeface = Typeface.DEFAULT_BOLD
+                maxLines = 2
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                setPadding(0, dp(5), 0, dp(3))
+                setOnClickListener {
+                    afficherDetailProduit(produit)
+                }
+            }
     )
 
+    // PRIX
+    val prix = produit.prix
+        .replace(" ", "")
+        .replace(",", "")
+        .toIntOrNull() ?: 0
+
+    carte.addView(
+        texte(
+            "${formaterNombre(prix)} FCFA",
+            if (compact) 16f else 19f,
+            VERT
+        ).apply {
+            typeface = Typeface.DEFAULT_BOLD
+            setPadding(0, dp(3), 0, dp(5))
+        }
+    )
+
+    // VENDEUR
+    if (produit.entreprise.isNotBlank()) {
+        carte.addView(
+            texte("🏢 ${produit.entreprise}", 11f, OR).apply {
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+            }
+        )
+    }
+
+    // CATÉGORIE
+    carte.addView(
+        texte("🏷️ ${produit.categorie}", 11f, Color.GRAY).apply {
+            maxLines = 1
+            ellipsize = android.text.TextUtils.TruncateAt.END
+        }
+    )
+
+    // STOCK
     carte.addView(
         texte(
             if (produit.stock > 0) {
                 "📦 Stock : ${produit.stock}"
             } else {
-                "⚠️ Indisponible"
+                "Indisponible"
             },
-            12f,
+            11f,
             if (produit.stock > 0) VERT else Color.RED
         )
     )
 
-    if (produit.description.isNotBlank()) {
+    // DESCRIPTION COURTE SUR L'ACCUEIL
+    if (!compact && produit.description.isNotBlank()) {
         carte.addView(
-            texte(produit.description, 12f, Color.DKGRAY)
+            texte(produit.description, 12f, Color.DKGRAY).apply {
+                maxLines = 3
+                ellipsize = android.text.TextUtils.TruncateAt.END
+            }
         )
     }
 
+    // AJOUT AU PANIER
     carte.addView(
-        boutonVert("🛒 Ajouter au panier") {
+        boutonVert(
+            if (compact) "🛒 Ajouter" else "🛒 Ajouter au panier"
+        ) {
             if (produit.stock <= 0) {
                 toast("Produit indisponible")
                 return@boutonVert
             }
+
             ajouterAuPanier(produit)
         }
     )
 
-     
-
+    // GESTION DES PRODUITS DU VENDEUR
     val compte = compteActuel()
 
     if (
@@ -1129,6 +1147,7 @@ private fun ajouterCarteProduit(
 
     parent.addView(carte)
 }
+
 
 private fun formaterNombre(nombre: Int): String {
     return "%,d".format(java.util.Locale.FRANCE, nombre)
