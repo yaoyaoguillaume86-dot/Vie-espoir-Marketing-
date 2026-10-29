@@ -845,21 +845,35 @@ private fun chargerProduitsFirebase() {
     lireCollection("Produits")
 }
 
-      // ========================================================
-// AFFICHER LES PRODUITS SUR L'ACCUEIL
-// ========================================================
- 
+
+ // ========================================================
+ // AFFICHER LES PRODUITS SUR L'ACCUEIL
+ // Présentation en deux colonnes, style boutique en ligne
+ // ========================================================
+
 private fun afficherProduitsAccueil() {
     if (!::zoneProduits.isInitialized) return
 
     zoneProduits.removeAllViews()
+
+    val densite = resources.displayMetrics.density
+
+    fun dp(valeur: Int): Int =
+        (valeur * densite).toInt()
+
+    // Marges générales de l'accueil
+    zoneProduits.setPadding(
+        dp(10), dp(4), dp(10), dp(16)
+    )
+
+    zoneProduits.clipToPadding = false
 
     if (produits.isEmpty()) {
         zoneProduits.addView(
             texte("Aucun produit disponible pour le moment.", 16f)
                 .apply {
                     gravity = Gravity.CENTER
-                    setPadding(12, 30, 12, 30)
+                    setPadding(dp(12), dp(30), dp(12), dp(30))
                 }
         )
         return
@@ -872,45 +886,65 @@ private fun afficherProduitsAccueil() {
 
     for ((categorie, listeProduits) in groupes) {
 
+        // Titre de la catégorie
         val titreCategorie = TextView(this).apply {
-            text = categorie
+            text = categorie.replaceFirstChar {
+                if (it.isLowerCase()) it.titlecase() else it.toString()
+            }
             textSize = 20f
             setTextColor(VERT)
             typeface = Typeface.DEFAULT_BOLD
-            setPadding(8, 18, 8, 8)
+            setPadding(dp(4), dp(20), dp(4), dp(10))
         }
 
-        zoneProduits.addView(titreCategorie)
+        zoneProduits.addView(
+            titreCategorie,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        )
 
-        // Afficher les produits deux par deux
+        // Deux produits par rangée
         for (paire in listeProduits.chunked(2)) {
 
             val rangeeProduits = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.TOP
+                weightSum = 2f
             }
 
             for (produit in paire) {
+                val carteConteneur = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(dp(4), dp(4), dp(4), dp(8))
+                }
+
+                rangeeProduits.addView(
+                    carteConteneur,
+                    LinearLayout.LayoutParams(
+                        0,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        1f
+                    )
+                )
+
+                // Réutilise ta carte existante et ses fonctionnalités
                 ajouterCarteProduit(
-                    parent = rangeeProduits,
+                    parent = carteConteneur,
                     produit = produit,
                     compact = true
                 )
             }
 
-            // Ajouter un espace si la dernière rangée
-            // ne contient qu'un seul produit
+            // Garder la deuxième colonne vide si nécessaire
             if (paire.size == 1) {
-                val densite = resources.displayMetrics.density
-                val largeurVide =
-                    (resources.displayMetrics.widthPixels / 2) -
-                    (16 * densite).toInt()
-
                 rangeeProduits.addView(
                     View(this),
                     LinearLayout.LayoutParams(
-                        largeurVide.coerceAtLeast(0),
-                        1
+                        0,
+                        1,
+                        1f
                     )
                 )
             }
@@ -925,7 +959,6 @@ private fun afficherProduitsAccueil() {
         }
     }
 }
-
 
    
     
