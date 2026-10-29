@@ -856,18 +856,15 @@ private fun afficherProduitsAccueil() {
 
     if (produits.isEmpty()) {
         zoneProduits.addView(
-            texte(
-                "Aucun produit disponible pour le moment.",
-                16f
-            ).apply {
-                gravity = Gravity.CENTER
-                setPadding(12, 30, 12, 30)
-            }
+            texte("Aucun produit disponible pour le moment.", 16f)
+                .apply {
+                    gravity = Gravity.CENTER
+                    setPadding(12, 30, 12, 30)
+                }
         )
         return
     }
 
-    // Regrouper les produits qui appartiennent à la même catégorie
     val groupes = produits.groupBy { produit ->
         produit.categorie.trim()
             .ifEmpty { "Autres produits" }
@@ -875,7 +872,6 @@ private fun afficherProduitsAccueil() {
 
     for ((categorie, listeProduits) in groupes) {
 
-        // Titre de la catégorie
         val titreCategorie = TextView(this).apply {
             text = categorie
             textSize = 20f
@@ -886,37 +882,50 @@ private fun afficherProduitsAccueil() {
 
         zoneProduits.addView(titreCategorie)
 
-        // Une rangée horizontale par catégorie
-        val defilement = HorizontalScrollView(this).apply {
-            isHorizontalScrollBarEnabled = false
-            isFillViewport = false
-            clipToPadding = false
-        }
+        // Afficher les produits deux par deux
+        for (paire in listeProduits.chunked(2)) {
 
-        val rangeeProduits = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-        }
+            val rangeeProduits = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.TOP
+            }
 
-        // Afficher tous les produits de cette catégorie dans la même rangée
-        for (produit in listeProduits) {
-            ajouterCarteProduit(
-                parent = rangeeProduits,
-                produit = produit,
-                compact = true
+            for (produit in paire) {
+                ajouterCarteProduit(
+                    parent = rangeeProduits,
+                    produit = produit,
+                    compact = true
+                )
+            }
+
+            // Ajouter un espace si la dernière rangée
+            // ne contient qu'un seul produit
+            if (paire.size == 1) {
+                val densite = resources.displayMetrics.density
+                val largeurVide =
+                    (resources.displayMetrics.widthPixels / 2) -
+                    (16 * densite).toInt()
+
+                rangeeProduits.addView(
+                    View(this),
+                    LinearLayout.LayoutParams(
+                        largeurVide.coerceAtLeast(0),
+                        1
+                    )
+                )
+            }
+
+            zoneProduits.addView(
+                rangeeProduits,
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
             )
         }
-
-        defilement.addView(rangeeProduits)
-
-        zoneProduits.addView(
-            defilement,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-        )
     }
 }
+
 
    
     
