@@ -28,7 +28,8 @@ import com.google.firebase.firestore.ListenerRegistration
 import java.net.HttpURLConnection
 import java.net.URL
 import android.graphics.BitmapFactory
-
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.SetOptions
 // ==========================================
 // ÉCRAN DE BIENVENUE
 // ==========================================
@@ -3687,359 +3688,263 @@ private fun afficherMenu() {
         .show()  
 }  
 
-// ========================================================  
-// CREATION COMPTE  
-// ========================================================  
-
-private fun afficherCreationCompte() {  
-
-    val root =  
-        layoutBase()  
-
-    root.addView(  
-        titre(  
-            "➕ Créer mon compte"  
-        )  
-    )  
-
-    val nom =  
-        EditText(this).apply {  
-            hint =  
-                "Nom complet"  
-        }  
-
-    val entreprise =  
-        EditText(this).apply {  
-            hint =  
-                "Nom de l'entreprise / boutique"  
-        }  
-
-    val email =  
-        EditText(this).apply {  
-
-            hint =  
-                "Adresse e-mail"  
-
-            inputType =  
-                InputType.TYPE_CLASS_TEXT or  
-                InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS  
-        }  
-
-    val phone =  
-        EditText(this).apply {  
-
-            hint =  
-                "Téléphone"  
-
-            inputType =  
-                InputType.TYPE_CLASS_PHONE  
-        }  
-
-    val adresse =  
-        EditText(this).apply {  
-
-            hint =  
-                "Adresse"  
-        }  
-
-    val password =  
-        EditText(this).apply {  
-
-            hint =  
-                "Mot de passe"  
-
-            inputType =  
-                InputType.TYPE_CLASS_TEXT or  
-                InputType.TYPE_TEXT_VARIATION_PASSWORD  
-        }  
-
-    root.addView(nom)  
-    root.addView(entreprise)  
-    root.addView(email)  
-    root.addView(phone)  
-    root.addView(adresse)  
-    root.addView(password)  
-
-    root.addView(  
-        texte(  
-            "🎁 Nouveau vendeur : 7 jours gratuits.",  
-            16f,  
-            VERT  
-        ).apply {  
-
-            gravity =  
-                Gravity.CENTER  
-        }  
-    )  
-
-    root.addView(  
-        boutonVert(  
-            "✅ Créer mon compte"  
-        ) {  
-
-            val n =  
-                nom.text  
-                    .toString()  
-                    .trim()  
-
-            val ent =  
-                entreprise.text  
-                    .toString()  
-                    .trim()  
-
-            val e =  
-                email.text  
-                    .toString()  
-                    .trim()  
-
-            val p =  
-                phone.text  
-                    .toString()  
-                    .trim()  
-
-            val a =  
-                adresse.text  
-                    .toString()  
-                    .trim()  
-
-            val mdp =  
-                password.text  
-                    .toString()  
-
-            if (  
-                n.isEmpty() ||  
-                ent.isEmpty() ||  
-                e.isEmpty() ||  
-                p.isEmpty() ||  
-                a.isEmpty() ||  
-                mdp.isEmpty()  
-            ) {  
-
-                toast(  
-                    "Tous les champs sont obligatoires"  
-                )  
-
-                return@boutonVert  
-            }  
-
-            if (  
-                !android.util.Patterns.EMAIL_ADDRESS  
-                    .matcher(e)  
-                    .matches()  
-            ) {  
-
-                toast(  
-                    "Adresse e-mail invalide"  
-                )  
-
-                return@boutonVert  
-            }  
-
-            if (  
-                comptes.any {  
-                    it.email.equals(  
-                        e,  
-                        ignoreCase = true  
-                    )  
-                }  
-            ) {  
-
-                toast(  
-                    "Cet e-mail est déjà utilisé"  
-                )  
-
-                return@boutonVert  
-            }  
-
-            val compte =  
-                Compte(  
-                    id =  
-                        System.currentTimeMillis()  
-                            .toString(),  
-
-                    nom =  
-                        n,  
-
-                    entreprise =  
-                        ent,  
-
-                    email =  
-                        e,  
-
-                    telephone =  
-                        p,  
-
-                    adresse =  
-                        a,  
-
-                    motDePasse =  
-                        mdp,  
-
-                    type =  
-                        "VENDEUR",  
-
-                    dateCreation =  
-                        System.currentTimeMillis(),  
-
-                    valide =  
-                        true  
-                )  
-
-            comptes.add(  
-                compte  
-            )  
-
-            compteConnecteId =  
-                compte.id  
-
-            prefs.edit()  
-                .putString(  
-                    CONNECTED_ACCOUNT,  
-                    compte.id  
-                )  
-                .apply()  
-
-            sauvegarderComptes()  
-
-            enregistrerEvenement(  
-                "Nouveau vendeur inscrit : $n — $ent"  
-            )  
-
-            toast(  
-                "Compte créé. Vous avez 7 jours gratuits."  
-            )  
-
-            afficherEspaceVendeur()  
-        }  
-    )  
-
-    root.addView(  
-        bouton(  
-            "🔐 J'ai déjà un compte"  
-        ) {  
-
-            afficherConnexion()  
-        }  
-    )  
-
-    setContentView(  
-        scroll(root)  
-    )  
-}  
-
-// ========================================================  
-// CONNEXION  
-// ========================================================  
-
-private fun afficherConnexion() {  
-
-    val root =  
-        layoutBase()  
-
-    root.addView(  
-        titre(  
-            "🔐 Connexion"  
-        )  
-    )  
-
-    val email =  
-        EditText(this).apply {  
-
-            hint =  
-                "E-mail"  
-
-            inputType =  
-                InputType.TYPE_CLASS_TEXT or  
-                InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS  
-        }  
-
-    val password =  
-        EditText(this).apply {  
-
-            hint =  
-                "Mot de passe"  
-
-            inputType =  
-                InputType.TYPE_CLASS_TEXT or  
-                InputType.TYPE_TEXT_VARIATION_PASSWORD  
-        }  
-
-    root.addView(email)  
-    root.addView(password)  
-
-    root.addView(  
-        boutonVert(  
-            "🔓 Se connecter"  
-        ) {  
-
-            val e =  
-                email.text  
-                    .toString()  
-                    .trim()  
-
-            val mdp =  
-                password.text  
-                    .toString()  
-
-            val compte =  
-                comptes.find {  
-
-                    it.email.equals(  
-                        e,  
-                        ignoreCase = true  
-                    ) &&  
-                    it.motDePasse == mdp  
-                }  
-
-            if (compte == null) {  
-
-                toast(  
-                    "E-mail ou mot de passe incorrect"  
-                )  
-
-                return@boutonVert  
-            }  
-
-            compteConnecteId =  
-                compte.id  
-
-            prefs.edit()  
-                .putString(  
-                    CONNECTED_ACCOUNT,  
-                    compte.id  
-                )  
-                .apply()  
-
-            toast(  
-                "Connexion réussie"  
-            )  
-
-            afficherEspaceVendeur()  
-        }  
-    )  
-
-    root.addView(  
-        bouton(  
-            "🔑 Mot de passe oublié ?"  
-        ) {  
-
-            afficherMotDePasseOublie()  
-        }  
-    )  
-
-    root.addView(  
-        bouton(  
-            "➕ Créer un nouveau compte"  
-        ) {  
-
-            afficherCreationCompte()  
-        }  
-    )  
-
-    setContentView(  
-        scroll(root)  
-    )  
-}  
+// ========================================================
+// CREATION COMPTE AVEC FIREBASE
+// ========================================================
+
+private fun afficherCreationCompte() {
+
+    val root = layoutBase()
+
+    root.addView(titre("➕ Créer mon compte"))
+
+    val nom = EditText(this).apply {
+        hint = "Nom complet"
+    }
+
+    val entreprise = EditText(this).apply {
+        hint = "Nom de l'entreprise / boutique"
+    }
+
+    val email = EditText(this).apply {
+        hint = "Adresse e-mail"
+        inputType = InputType.TYPE_CLASS_TEXT or
+                InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+    }
+
+    val phone = EditText(this).apply {
+        hint = "Téléphone"
+        inputType = InputType.TYPE_CLASS_PHONE
+    }
+
+    val adresse = EditText(this).apply {
+        hint = "Adresse"
+    }
+
+    val password = EditText(this).apply {
+        hint = "Mot de passe"
+        inputType = InputType.TYPE_CLASS_TEXT or
+                InputType.TYPE_TEXT_VARIATION_PASSWORD
+    }
+
+    root.addView(nom)
+    root.addView(entreprise)
+    root.addView(email)
+    root.addView(phone)
+    root.addView(adresse)
+    root.addView(password)
+
+    root.addView(
+        texte(
+            "🎁 Nouveau vendeur : 7 jours gratuits.",
+            16f,
+            VERT
+        ).apply {
+            gravity = Gravity.CENTER
+        }
+    )
+
+    val boutonInscription = boutonVert(
+        "✅ Créer mon compte"
+    ) {
+
+        val n = nom.text.toString().trim()
+        val ent = entreprise.text.toString().trim()
+        val e = email.text.toString().trim()
+        val p = phone.text.toString().trim()
+        val a = adresse.text.toString().trim()
+        val mdp = password.text.toString()
+
+        if (
+            n.isEmpty() ||
+            ent.isEmpty() ||
+            e.isEmpty() ||
+            p.isEmpty() ||
+            a.isEmpty() ||
+            mdp.isEmpty()
+        ) {
+            toast("Tous les champs sont obligatoires")
+            return@boutonVert
+        }
+
+        if (!android.util.Patterns.EMAIL_ADDRESS
+                .matcher(e).matches()
+        ) {
+            toast("Adresse e-mail invalide")
+            return@boutonVert
+        }
+
+        if (mdp.length < 6) {
+            toast("Le mot de passe doit contenir au moins 6 caractères")
+            return@boutonVert
+        }
+
+        boutonInscription@ run {
+
+            val auth = FirebaseAuth.getInstance()
+
+            auth.createUserWithEmailAndPassword(e, mdp)
+                .addOnSuccessListener { resultat ->
+
+                    val uid = resultat.user?.uid
+
+                    if (uid == null) {
+                        toast("Erreur de création du compte")
+                        return@addOnSuccessListener
+                    }
+
+                    val date = System.currentTimeMillis()
+
+                    val donnees = hashMapOf<String, Any>(
+                        "id" to uid,
+                        "nom" to n,
+                        "entreprise" to ent,
+                        "email" to e,
+                        "telephone" to p,
+                        "adresse" to a,
+                        "type" to "VENDEUR",
+                        "dateCreation" to date,
+                        "valide" to true
+                    )
+
+                    db.collection("Comptes")
+                        .document(uid)
+                        .set(donnees)
+                        .addOnSuccessListener {
+
+                            compteConnecteId = uid
+
+                            prefs.edit()
+                                .putString(CONNECTED_ACCOUNT, uid)
+                                .apply()
+
+                            toast("Compte créé avec succès")
+
+                            afficherEspaceVendeur()
+                        }
+                        .addOnFailureListener { erreur ->
+
+                            toast(
+                                "Compte créé, mais profil non enregistré : ${erreur.message}"
+                            )
+                        }
+                }
+                .addOnFailureListener { erreur ->
+
+                    toast(
+                        "Inscription impossible : ${erreur.message}"
+                    )
+                }
+        }
+    }
+
+    root.addView(boutonInscription)
+
+    root.addView(
+        bouton("🔐 J'ai déjà un compte") {
+            afficherConnexion()
+        }
+    )
+
+    setContentView(scroll(root))
+}
+// ========================================================
+// CONNEXION FIREBASE
+// ========================================================
+
+private fun afficherConnexion() {
+
+    val root = layoutBase()
+
+    root.addView(titre("🔐 Connexion"))
+
+    val email = EditText(this).apply {
+        hint = "E-mail"
+        inputType = InputType.TYPE_CLASS_TEXT or
+                InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+    }
+
+    val password = EditText(this).apply {
+        hint = "Mot de passe"
+        inputType = InputType.TYPE_CLASS_TEXT or
+                InputType.TYPE_TEXT_VARIATION_PASSWORD
+    }
+
+    root.addView(email)
+    root.addView(password)
+
+    root.addView(
+        boutonVert("🔓 Se connecter") {
+
+            val e = email.text.toString().trim()
+            val mdp = password.text.toString()
+
+            if (e.isEmpty() || mdp.isEmpty()) {
+                toast("Saisissez votre e-mail et mot de passe")
+                return@boutonVert
+            }
+
+            FirebaseAuth.getInstance()
+                .signInWithEmailAndPassword(e, mdp)
+                .addOnSuccessListener { resultat ->
+
+                    val uid = resultat.user?.uid
+
+                    if (uid == null) {
+                        toast("Compte introuvable")
+                        return@addOnSuccessListener
+                    }
+
+                    db.collection("Comptes")
+                        .document(uid)
+                        .get()
+                        .addOnSuccessListener { document ->
+
+                            if (!document.exists()) {
+                                toast("Profil vendeur introuvable")
+                                return@addOnSuccessListener
+                            }
+
+                            compteConnecteId = uid
+
+                            prefs.edit()
+                                .putString(CONNECTED_ACCOUNT, uid)
+                                .apply()
+
+                            toast("Connexion réussie")
+
+                            afficherEspaceVendeur()
+                        }
+                        .addOnFailureListener { erreur ->
+
+                            toast(
+                                "Erreur de chargement du profil : ${erreur.message}"
+                            )
+                        }
+                }
+                .addOnFailureListener { erreur ->
+
+                    toast(
+                        "Connexion impossible : ${erreur.message}"
+                    )
+                }
+        }
+    )
+
+    root.addView(
+        bouton("🔑 Mot de passe oublié ?") {
+            afficherMotDePasseOublie()
+        }
+    )
+
+    root.addView(
+        bouton("➕ Créer un nouveau compte") {
+            afficherCreationCompte()
+        }
+    )
+
+    setContentView(scroll(root))
+}
 
 // ========================================================  
 // MOT DE PASSE OUBLIE  
