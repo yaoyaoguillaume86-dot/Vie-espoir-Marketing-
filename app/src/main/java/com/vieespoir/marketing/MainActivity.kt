@@ -3779,7 +3779,7 @@ private fun afficherCreationCompte() {
             return@boutonVert
         }
 
-        boutonInscription@ run {
+     run {
 
             val auth = FirebaseAuth.getInstance()
 
