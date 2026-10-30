@@ -960,12 +960,11 @@ private fun afficherProduitsAccueil() {
         }
     }
 }
-
-   
- // ========================================================
- // CARTE PRODUIT — ACCUEIL STYLE BOUTIQUE EN LIGNE
- // AVEC GALERIE DE PHOTOS INTEGREE
- // ========================================================
+// ========================================================
+// CARTE PRODUIT — STYLE JUMIA
+// VIE ESPOIR MARKETING
+// GALERIE PAR GLISSEMENT SANS FLECHES
+// ========================================================
 
 private fun ajouterCarteProduit(
     parent: LinearLayout,
@@ -973,19 +972,31 @@ private fun ajouterCarteProduit(
     compact: Boolean = false
 ) {
     val densite = resources.displayMetrics.density
-    fun dp(v: Int) = (v * densite).toInt()
 
-    val photos = produit.images.filter { it.isNotBlank() }
+    fun dp(v: Int): Int =
+        (v * densite).toInt()
+
+    val photos = produit.images.filter {
+        it.isNotBlank()
+    }
+
+    // ========================================================
+    // CARTE BLANCHE
+    // ========================================================
 
     val carte = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
-        setPadding(dp(7), dp(7), dp(7), dp(8))
 
-        background = android.graphics.drawable.GradientDrawable().apply {
-            setColor(Color.WHITE)
-            cornerRadius = dp(10).toFloat()
-            setStroke(dp(1), Color.LTGRAY)
-        }
+        setPadding(
+            dp(5), dp(5), dp(5), dp(7)
+        )
+
+        background =
+            android.graphics.drawable.GradientDrawable().apply {
+                setColor(Color.WHITE)
+                cornerRadius = dp(9).toFloat()
+                setStroke(dp(1), Color.LTGRAY)
+            }
 
         elevation = dp(2).toFloat()
 
@@ -1004,187 +1015,219 @@ private fun ajouterCarteProduit(
     val image = ImageView(this).apply {
         layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            dp(if (compact) 145 else 230)
+            dp(170)
         )
+
         scaleType = ImageView.ScaleType.FIT_CENTER
         setBackgroundColor(Color.WHITE)
-        contentDescription = "Photos de ${produit.nom}"
+
+        contentDescription =
+            "Photos de ${produit.nom}"
     }
 
-    if (photos.isNotEmpty()) {
-        chargerImageProduit(image, photos[0])
-    } else {
-        image.setImageResource(
-            android.R.drawable.ic_menu_gallery
-        )
+    var positionAccueil = 0
+
+    fun afficherPhotoAccueil() {
+        if (photos.isNotEmpty()) {
+            image.setImageDrawable(null)
+            chargerImageProduit(
+                image,
+                photos[positionAccueil]
+            )
+        } else {
+            image.setImageResource(
+                android.R.drawable.ic_menu_gallery
+            )
+        }
     }
 
-    // OUVRIR LA GALERIE EN APPUYANT SUR LA PHOTO
-    image.setOnClickListener {
+    afficherPhotoAccueil()
+
+    // ========================================================
+    // GRANDE GALERIE SANS FLECHES
+    // ========================================================
+
+    fun ouvrirGalerie() {
+
         if (photos.isEmpty()) {
             toast("Aucune photo disponible")
-            return@setOnClickListener
+            return
         }
 
-        val dialogue = AlertDialog.Builder(this).create()
+        val dialogue =
+            AlertDialog.Builder(this).create()
 
         val racine = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(10), dp(10), dp(10), dp(10))
+            setPadding(
+                dp(10), dp(10), dp(10), dp(10)
+            )
             setBackgroundColor(Color.WHITE)
         }
 
-        val titre = texte(produit.nom, 18f, VERT).apply {
+        val titre = texte(
+            produit.nom,
+            18f,
+            VERT
+        ).apply {
             gravity = Gravity.CENTER
             typeface = Typeface.DEFAULT_BOLD
             setPadding(0, dp(5), 0, dp(10))
         }
 
-        val compteur = texte("", 14f, Color.DKGRAY).apply {
+        val grandePhoto = ImageView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(320)
+            )
+
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            setBackgroundColor(Color.WHITE)
+            contentDescription = "Galerie de ${produit.nom}"
+        }
+
+        val compteur = texte(
+            "",
+            14f,
+            Color.DKGRAY
+        ).apply {
             gravity = Gravity.CENTER
             setPadding(0, dp(8), 0, dp(8))
         }
 
-        val grandePhoto = ImageView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(360)
-            )
-            scaleType = ImageView.ScaleType.FIT_CENTER
-            setBackgroundColor(Color.WHITE)
-        }
-
-        var position = 0
+        var position = positionAccueil
 
         fun afficherPhoto() {
-            compteur.text = "Photo ${position + 1} sur ${photos.size}"
-            chargerImageProduit(grandePhoto, photos[position])
+            compteur.text =
+                "Photo ${position + 1} sur ${photos.size}"
+
+            grandePhoto.setImageDrawable(null)
+
+            chargerImageProduit(
+                grandePhoto,
+                photos[position]
+            )
         }
 
-        val navigation = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-        }
+        // ========================================================
+        // GLISSEMENT DANS LA GRANDE GALERIE
+        // ========================================================
 
-        val precedent = bouton("◀ Précédente") {
-            position = (position - 1 + photos.size) % photos.size
-            afficherPhoto()
-        }
+        grandePhoto.setOnTouchListener(
+            object : View.OnTouchListener {
 
-        val suivant = bouton("Suivante ▶") {
-            position = (position + 1) % photos.size
-            afficherPhoto()
-        }
+                private var debutX = 0f
+                private var debutY = 0f
 
-        navigation.addView(
-            precedent,
-            LinearLayout.LayoutParams(0, dp(48), 1f).apply {
-                setMargins(dp(3), dp(3), dp(3), dp(3))
+                override fun onTouch(
+                    vue: View,
+                    evenement: android.view.MotionEvent
+                ): Boolean {
+
+                    when (evenement.actionMasked) {
+
+                        android.view.MotionEvent.ACTION_DOWN -> {
+                            debutX = evenement.x
+                            debutY = evenement.y
+                            return true
+                        }
+
+                        android.view.MotionEvent.ACTION_UP -> {
+                            val dx = evenement.x - debutX
+                            val dy = evenement.y - debutY
+
+                            if (
+                                kotlin.math.abs(dx) > dp(45) &&
+                                kotlin.math.abs(dx) >
+                                kotlin.math.abs(dy)
+                            ) {
+                                position = if (dx < 0) {
+                                    (position + 1) % photos.size
+                                } else {
+                                    (position - 1 + photos.size) % photos.size
+                                }
+
+                                afficherPhoto()
+                            }
+
+                            return true
+                        }
+
+                        android.view.MotionEvent.ACTION_CANCEL -> {
+                            return true
+                        }
+                    }
+
+                    return true
+                }
             }
         )
 
-        navigation.addView(
-            suivant,
-            LinearLayout.LayoutParams(0, dp(48), 1f).apply {
-                setMargins(dp(3), dp(3), dp(3), dp(3))
-            }
-        )
+        // ========================================================
+        // MINIATURES DANS LA GRANDE GALERIE
+        // ========================================================
 
-        // MINIATURES DANS LA GALERIE
-        val rangeeMiniatures = LinearLayout(this).apply {
+        val miniatures = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
 
-        val defilement = HorizontalScrollView(this).apply {
-            isHorizontalScrollBarEnabled = false
-            addView(
-                rangeeMiniatures,
-                ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
-            )
-        }
-
-        for ((index, chemin) in photos.withIndex()) {
-            val miniature = ImageView(this).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    dp(58),
-                    dp(58)
-                ).apply {
-                    setMargins(dp(3), dp(3), dp(3), dp(3))
-                }
-                scaleType = ImageView.ScaleType.CENTER_CROP
-                setBackgroundColor(Color.LTGRAY)
-                contentDescription = "Photo ${index + 1}"
+        val defilement =
+            HorizontalScrollView(this).apply {
+                isHorizontalScrollBarEnabled = false
+                addView(miniatures)
             }
 
-            chargerImageProduit(miniature, chemin)
+        for ((index, chemin) in photos.withIndex()) {
+
+            val miniature = ImageView(this).apply {
+
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        dp(55),
+                        dp(55)
+                    ).apply {
+                        setMargins(
+                            dp(3), dp(3),
+                            dp(3), dp(3)
+                        )
+                    }
+
+                scaleType =
+                    ImageView.ScaleType.CENTER_CROP
+
+                setBackgroundColor(Color.LTGRAY)
+
+                contentDescription =
+                    "Photo ${index + 1}"
+            }
+
+            chargerImageProduit(
+                miniature,
+                chemin
+            )
 
             miniature.setOnClickListener {
                 position = index
                 afficherPhoto()
             }
 
-            rangeeMiniatures.addView(miniature)
+            miniatures.addView(miniature)
         }
 
-        // GESTION DU GLISSEMENT GAUCHE / DROITE
-        grandePhoto.setOnTouchListener(object : View.OnTouchListener {
-            private var debutX = 0f
-            private var debutY = 0f
-
-            override fun onTouch(
-                vue: View,
-                evenement: android.view.MotionEvent
-            ): Boolean {
-                when (evenement.action) {
-                    android.view.MotionEvent.ACTION_DOWN -> {
-                        debutX = evenement.x
-                        debutY = evenement.y
-                        return true
-                    }
-
-                    android.view.MotionEvent.ACTION_UP -> {
-                        val dx = evenement.x - debutX
-                        val dy = evenement.y - debutY
-
-                        if (
-                            kotlin.math.abs(dx) > dp(45) &&
-                            kotlin.math.abs(dx) >
-                            kotlin.math.abs(dy)
-                        ) {
-                            position = if (dx < 0) {
-                                (position + 1) % photos.size
-                            } else {
-                                (position - 1 + photos.size) % photos.size
-                            }
-
-                            afficherPhoto()
-                        }
-                        return true
-                    }
-                }
-
-                return true
-            }
-        })
+        // ========================================================
+        // CONTENU DE LA GALERIE
+        // ========================================================
 
         racine.addView(titre)
-        racine.addView(
-            grandePhoto,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(360)
-            )
-        )
+        racine.addView(grandePhoto)
         racine.addView(compteur)
         racine.addView(defilement)
-        racine.addView(navigation)
 
         dialogue.setView(racine)
+
         afficherPhoto()
+
         dialogue.show()
 
         dialogue.window?.setLayout(
@@ -1193,57 +1236,76 @@ private fun ajouterCarteProduit(
         )
     }
 
-    carte.addView(image)
-// OUVRIR LES DETAILS DU PRODUIT
-// EN APPUYANT SUR LA CARTE
-
-carte.setOnClickListener {
-    afficherDetailProduit(produit)
-}
     // ========================================================
-    // MINIATURES SOUS LA PHOTO PRINCIPALE
+    // GLISSEMENT DIRECTEMENT SUR L'ACCUEIL
     // ========================================================
 
-    if (photos.size > 1) {
-        val miniatures = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-        }
+    image.setOnTouchListener(
+        object : View.OnTouchListener {
 
-        val defilementPhotos = HorizontalScrollView(this).apply {
-            isHorizontalScrollBarEnabled = false
-            addView(
-                miniatures,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-        }
+            private var debutX = 0f
+            private var debutY = 0f
 
-        for ((index, chemin) in photos.withIndex()) {
-            val miniature = ImageView(this).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    dp(48),
-                    dp(48)
-                ).apply {
-                    setMargins(dp(3), dp(3), dp(3), dp(3))
+            override fun onTouch(
+                vue: View,
+                evenement: android.view.MotionEvent
+            ): Boolean {
+
+                when (evenement.actionMasked) {
+
+                    android.view.MotionEvent.ACTION_DOWN -> {
+                        debutX = evenement.x
+                        debutY = evenement.y
+                        return true
+                    }
+
+                    android.view.MotionEvent.ACTION_UP -> {
+
+                        val dx = evenement.x - debutX
+                        val dy = evenement.y - debutY
+
+                        if (
+                            photos.size > 1 &&
+                            kotlin.math.abs(dx) > dp(45) &&
+                            kotlin.math.abs(dx) >
+                            kotlin.math.abs(dy)
+                        ) {
+                            positionAccueil = if (dx < 0) {
+                                (positionAccueil + 1) % photos.size
+                            } else {
+                                (positionAccueil - 1 + photos.size) % photos.size
+                            }
+
+                            afficherPhotoAccueil()
+
+                        } else if (
+                            kotlin.math.abs(dx) < dp(15) &&
+                            kotlin.math.abs(dy) < dp(15)
+                        ) {
+                            ouvrirGalerie()
+                        }
+
+                        return true
+                    }
+
+                    android.view.MotionEvent.ACTION_CANCEL -> {
+                        return true
+                    }
                 }
 
-                scaleType = ImageView.ScaleType.CENTER_CROP
-                setBackgroundColor(Color.LTGRAY)
-                contentDescription = "Photo ${index + 1}"
+                return true
             }
-
-            chargerImageProduit(miniature, chemin)
-
-            miniature.setOnClickListener {
-                image.setImageDrawable(null)
-                chargerImageProduit(image, chemin)
-            }
-
-            miniatures.addView(miniature)
         }
+    )
 
-        carte.addView(defilementPhotos)
+    carte.addView(image)
+
+    // ========================================================
+    // OUVRIR LES DETAILS DU PRODUIT
+    // ========================================================
+
+    carte.setOnClickListener {
+        afficherDetailProduit(produit)
     }
 
     // ========================================================
@@ -1253,18 +1315,22 @@ carte.setOnClickListener {
     carte.addView(
         texte(
             produit.nom,
-            if (compact) 14f else 17f,
+            14f,
             Color.BLACK
         ).apply {
-            typeface = Typeface.DEFAULT_BOLD
             maxLines = 2
-            ellipsize = android.text.TextUtils.TruncateAt.END
-            setPadding(0, dp(5), 0, dp(3))
+
+            ellipsize =
+                android.text.TextUtils.TruncateAt.END
+
+            setPadding(
+                0, dp(5), 0, dp(3)
+            )
         }
     )
 
     // ========================================================
-    // PRIX
+    // PRIX DU PRODUIT
     // ========================================================
 
     val prix = produit.prix
@@ -1275,35 +1341,14 @@ carte.setOnClickListener {
     carte.addView(
         texte(
             "${formaterNombre(prix)} FCFA",
-            if (compact) 16f else 19f,
-            VERT
+            17f,
+            Color.BLACK
         ).apply {
             typeface = Typeface.DEFAULT_BOLD
-            setPadding(0, dp(3), 0, dp(5))
-        }
-    )
 
-    // ========================================================
-    // VENDEUR
-    // ========================================================
-
-    if (produit.entreprise.isNotBlank()) {
-        carte.addView(
-            texte("🏢 ${produit.entreprise}", 11f, OR).apply {
-                maxLines = 1
-                ellipsize = android.text.TextUtils.TruncateAt.END
-            }
-        )
-    }
-
-    // ========================================================
-    // CATEGORIE
-    // ========================================================
-
-    carte.addView(
-        texte("🏷️ ${produit.categorie}", 11f, Color.GRAY).apply {
-            maxLines = 1
-            ellipsize = android.text.TextUtils.TruncateAt.END
+            setPadding(
+                0, dp(3), 0, dp(4)
+            )
         }
     )
 
@@ -1324,34 +1369,84 @@ carte.setOnClickListener {
     )
 
     // ========================================================
-    // DESCRIPTION
+    // BOUTONS PANIER ET PARTAGE
     // ========================================================
 
-    if (!compact && produit.description.isNotBlank()) {
-        carte.addView(
-            texte(produit.description, 12f, Color.DKGRAY).apply {
-                maxLines = 3
-                ellipsize = android.text.TextUtils.TruncateAt.END
-            }
+    val actions = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+    }
+
+    val panier = boutonVert("🛒") {
+
+        if (produit.stock <= 0) {
+            toast("Produit indisponible")
+        } else {
+            ajouterAuPanier(produit)
+        }
+    }
+
+    val partager = bouton("📤") {
+
+        val message = """
+            🛍️ VIE ESPOIR MARKETING
+
+            📦 Produit : ${produit.nom}
+
+            💰 Prix : ${formaterNombre(prix)} FCFA
+
+            🏢 Boutique : ${produit.entreprise}
+
+            📝 ${produit.description}
+
+            📞 Contact : 0710405688
+
+            Découvrez notre boutique !
+        """.trimIndent()
+
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(
+                Intent.EXTRA_TEXT,
+                message
+            )
+        }
+
+        startActivity(
+            Intent.createChooser(
+                intent,
+                "Partager le produit"
+            )
         )
     }
 
-    // ========================================================
-    // AJOUT AU PANIER
-    // ========================================================
-
-    carte.addView(
-        boutonVert(
-            if (compact) "🛒 Ajouter" else "🛒 Ajouter au panier"
-        ) {
-            if (produit.stock <= 0) {
-                toast("Produit indisponible")
-                return@boutonVert
-            }
-
-            ajouterAuPanier(produit)
+    actions.addView(
+        panier,
+        LinearLayout.LayoutParams(
+            0,
+            dp(45),
+            1f
+        ).apply {
+            setMargins(
+                0, dp(5), dp(3), 0
+            )
         }
     )
+
+    actions.addView(
+        partager,
+        LinearLayout.LayoutParams(
+            0,
+            dp(45),
+            1f
+        ).apply {
+            setMargins(
+                dp(3), dp(5), 0, 0
+            )
+        }
+    )
+
+    carte.addView(actions)
 
     // ========================================================
     // GESTION DU VENDEUR
@@ -1364,21 +1459,28 @@ carte.setOnClickListener {
         compte.type == "VENDEUR" &&
         compte.valide
     ) {
+
         val appartient =
             produit.vendeur == compte.nom ||
             produit.entreprise == compte.entreprise
 
         if (appartient) {
+
             carte.addView(
-                bouton("✏️ Modifier / gérer") {
+                bouton("✏️ Gérer") {
                     afficherModifierProduit(produit)
                 }
             )
         }
     }
 
+    // ========================================================
+    // AJOUTER LA CARTE A L'ACCUEIL
+    // ========================================================
+
     parent.addView(carte)
 }
+ 
 
 // ========================================================
 // FORMATER LES PRIX
