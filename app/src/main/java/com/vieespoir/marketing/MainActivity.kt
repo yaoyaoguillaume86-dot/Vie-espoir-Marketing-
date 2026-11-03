@@ -3726,10 +3726,57 @@ private fun afficherCreationCompte() {
 
     setContentView(scroll(root))
 }
+// ========================================================
+// VIE ESPOIR MARKETING
+// INSCRIPTION ET CONNEXION FIREBASE
+// CLIENTS ET VENDEURS
+// ========================================================
 
 
 // ========================================================
-// FORMULAIRE D'INSCRIPTION CLIENT OU VENDEUR
+// 1. CHOIX DU TYPE DE COMPTE
+// ========================================================
+
+private fun afficherCreationCompte() {
+
+    val root = layoutBase()
+
+    root.addView(
+        titre("🦁 VIE ESPOIR MARKETING")
+    )
+
+    root.addView(
+        texte(
+            "Bienvenue ! Choisissez votre type de compte.",
+            17f,
+            VERT
+        )
+    )
+
+    root.addView(
+        boutonVert("👤 Créer un compte client") {
+            afficherFormulaireInscription("client")
+        }
+    )
+
+    root.addView(
+        boutonVert("🏪 Créer un compte vendeur") {
+            afficherFormulaireInscription("vendeur")
+        }
+    )
+
+    root.addView(
+        bouton("🔐 J'ai déjà un compte") {
+            afficherConnexion()
+        }
+    )
+
+    setContentView(scroll(root))
+}
+
+
+// ========================================================
+// 2. FORMULAIRE D'INSCRIPTION CLIENT ET VENDEUR
 // ========================================================
 
 private fun afficherFormulaireInscription(role: String) {
@@ -3752,6 +3799,10 @@ private fun afficherFormulaireInscription(role: String) {
         )
     )
 
+    // ====================================================
+    // CHAMPS DU FORMULAIRE
+    // ====================================================
+
     val nom = EditText(this).apply {
         hint = "Nom complet"
     }
@@ -3761,13 +3812,18 @@ private fun afficherFormulaireInscription(role: String) {
     }
 
     val email = EditText(this).apply {
+
         hint = "Adresse e-mail"
-        inputType = InputType.TYPE_CLASS_TEXT or
-                InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+
+        inputType =
+            InputType.TYPE_CLASS_TEXT or
+            InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
     }
 
     val telephone = EditText(this).apply {
+
         hint = "Téléphone"
+
         inputType = InputType.TYPE_CLASS_PHONE
     }
 
@@ -3776,16 +3832,26 @@ private fun afficherFormulaireInscription(role: String) {
     }
 
     val password = EditText(this).apply {
+
         hint = "Mot de passe (6 caractères minimum)"
-        inputType = InputType.TYPE_CLASS_TEXT or
-                InputType.TYPE_TEXT_VARIATION_PASSWORD
+
+        inputType =
+            InputType.TYPE_CLASS_TEXT or
+            InputType.TYPE_TEXT_VARIATION_PASSWORD
     }
 
     val confirmation = EditText(this).apply {
+
         hint = "Confirmer le mot de passe"
-        inputType = InputType.TYPE_CLASS_TEXT or
-                InputType.TYPE_TEXT_VARIATION_PASSWORD
+
+        inputType =
+            InputType.TYPE_CLASS_TEXT or
+            InputType.TYPE_TEXT_VARIATION_PASSWORD
     }
+
+    // ====================================================
+    // AFFICHAGE DES CHAMPS
+    // ====================================================
 
     root.addView(nom)
 
@@ -3799,7 +3865,12 @@ private fun afficherFormulaireInscription(role: String) {
     root.addView(password)
     root.addView(confirmation)
 
+    // ====================================================
+    // INFORMATION ABONNEMENT VENDEUR
+    // ====================================================
+
     if (estVendeur) {
+
         root.addView(
             texte(
                 "Abonnement vendeur : 5 000 F CFA/mois.",
@@ -3809,10 +3880,28 @@ private fun afficherFormulaireInscription(role: String) {
         )
     }
 
-    
-val boutonInscription = boutonVert(
-    "✅ Créer mon compte"
-) {
+    // ====================================================
+    // PROTECTION CONTRE LES DOUBLES INSCRIPTIONS
+    // ====================================================
+
+    var inscriptionEnCours = false
+
+    // ====================================================
+    // BOUTON CREER MON COMPTE
+    // ====================================================
+
+    val boutonInscription = boutonVert(
+        "✅ Créer mon compte"
+    ) {
+
+        if (inscriptionEnCours) {
+            return@boutonVert
+        }
+
+        // ================================================
+        // RECUPERATION DES INFORMATIONS
+        // ================================================
+
         val n = nom.text.toString().trim()
         val ent = entreprise.text.toString().trim()
         val e = email.text.toString().trim()
@@ -3820,6 +3909,10 @@ val boutonInscription = boutonVert(
         val a = adresse.text.toString().trim()
         val mdp = password.text.toString()
         val confirmationMdp = confirmation.text.toString()
+
+        // ================================================
+        // VERIFICATION DES CHAMPS
+        // ================================================
 
         if (
             n.isEmpty() ||
@@ -3829,30 +3922,62 @@ val boutonInscription = boutonVert(
             mdp.isEmpty() ||
             (estVendeur && ent.isEmpty())
         ) {
+
             toast("Remplissez tous les champs obligatoires")
+
             return@boutonVert
         }
 
-        if (!android.util.Patterns.EMAIL_ADDRESS
-                .matcher(e).matches()
+        // ================================================
+        // VERIFICATION DE L'ADRESSE E-MAIL
+        // ================================================
+
+        if (
+            !android.util.Patterns.EMAIL_ADDRESS
+                .matcher(e)
+                .matches()
         ) {
+
             toast("Adresse e-mail invalide")
+
             return@boutonVert
         }
+
+        // ================================================
+        // VERIFICATION DU MOT DE PASSE
+        // ================================================
 
         if (mdp.length < 6) {
-            toast("Mot de passe trop court")
+
+            toast(
+                "Le mot de passe doit contenir au moins 6 caractères"
+            )
+
             return@boutonVert
         }
 
         if (mdp != confirmationMdp) {
-            toast("Les mots de passe sont différents")
+
+            toast(
+                "Les mots de passe sont différents"
+            )
+
             return@boutonVert
         }
 
-        boutonInscription.isEnabled = false
+        // ================================================
+        // DEMARRAGE DE L'INSCRIPTION
+        // ================================================
+
+        inscriptionEnCours = true
+
+        toast("Création du compte en cours...")
 
         val auth = FirebaseAuth.getInstance()
+
+        // ================================================
+        // CREATION DU COMPTE FIREBASE AUTHENTICATION
+        // ================================================
 
         auth.createUserWithEmailAndPassword(e, mdp)
             .addOnSuccessListener { resultat ->
@@ -3860,47 +3985,95 @@ val boutonInscription = boutonVert(
                 val uid = resultat.user?.uid
 
                 if (uid == null) {
-                    boutonInscription.isEnabled = true
-                    toast("Erreur de création du compte")
+
+                    inscriptionEnCours = false
+
+                    toast(
+                        "Erreur de création du compte"
+                    )
+
                     return@addOnSuccessListener
                 }
 
+                // ========================================
+                // PREPARATION DU PROFIL FIRESTORE
+                // ========================================
+
                 val donnees = hashMapOf<String, Any>(
+
                     "id" to uid,
+
                     "nom" to n,
+
                     "entreprise" to if (estVendeur) ent else "",
+
                     "email" to e,
+
                     "telephone" to tel,
+
                     "adresse" to a,
+
                     "role" to role,
+
                     "type" to role.uppercase(),
+
                     "dateCreation" to System.currentTimeMillis(),
+
                     "valide" to !estVendeur
                 )
+
+                // ========================================
+                // ENREGISTREMENT DU PROFIL FIRESTORE
+                // ========================================
 
                 db.collection("Comptes")
                     .document(uid)
                     .set(donnees)
                     .addOnSuccessListener {
 
+                        inscriptionEnCours = false
+
+                        // =================================
+                        // ENREGISTREMENT DE LA SESSION
+                        // =================================
+
                         compteConnecteId = uid
 
                         prefs.edit()
-                            .putString(CONNECTED_ACCOUNT, uid)
+                            .putString(
+                                CONNECTED_ACCOUNT,
+                                uid
+                            )
                             .apply()
 
-                        toast("Compte créé avec succès !")
+                        toast(
+                            "Compte créé avec succès !"
+                        )
+
+                        // =================================
+                        // ORIENTATION CLIENT OU VENDEUR
+                        // =================================
 
                         if (estVendeur) {
-                            toast("Compte vendeur en attente de validation")
+
+                            toast(
+                                "Compte vendeur en attente de validation"
+                            )
+
                             afficherAccueil()
+
                         } else {
+
+                            toast(
+                                "Bienvenue sur VIE ESPOIR MARKETING"
+                            )
+
                             afficherAccueil()
                         }
                     }
                     .addOnFailureListener { erreur ->
 
-                        boutonInscription.isEnabled = true
+                        inscriptionEnCours = false
 
                         toast(
                             "Compte Firebase créé, mais profil non enregistré : ${erreur.message}"
@@ -3909,7 +4082,7 @@ val boutonInscription = boutonVert(
             }
             .addOnFailureListener { erreur ->
 
-                boutonInscription.isEnabled = true
+                inscriptionEnCours = false
 
                 toast(
                     "Inscription impossible : ${erreur.message}"
@@ -3917,16 +4090,293 @@ val boutonInscription = boutonVert(
             }
     }
 
+    // ====================================================
+    // AJOUT DU BOUTON AU FORMULAIRE
+    // ====================================================
+
     root.addView(boutonInscription)
+
+    // ====================================================
+    // BOUTON RETOUR
+    // ====================================================
 
     root.addView(
         bouton("⬅ Retour") {
+
             afficherCreationCompte()
         }
     )
 
     setContentView(scroll(root))
 }
+
+
+// ========================================================
+// 3. CONNEXION FIREBASE CLIENT ET VENDEUR
+// ========================================================
+
+private fun afficherConnexion() {
+
+    val root = layoutBase()
+
+    root.addView(
+        titre("🔐 Connexion à mon compte")
+    )
+
+    // ====================================================
+    // ADRESSE E-MAIL
+    // ====================================================
+
+    val email = EditText(this).apply {
+
+        hint = "Adresse e-mail"
+
+        inputType =
+            InputType.TYPE_CLASS_TEXT or
+            InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+    }
+
+    // ====================================================
+    // MOT DE PASSE
+    // ====================================================
+
+    val password = EditText(this).apply {
+
+        hint = "Mot de passe"
+
+        inputType =
+            InputType.TYPE_CLASS_TEXT or
+            InputType.TYPE_TEXT_VARIATION_PASSWORD
+    }
+
+    root.addView(email)
+    root.addView(password)
+
+    // ====================================================
+    // PROTECTION CONTRE LES DOUBLES CONNEXIONS
+    // ====================================================
+
+    var connexionEnCours = false
+
+    // ====================================================
+    // BOUTON SE CONNECTER
+    // ====================================================
+
+    root.addView(
+        boutonVert("🔓 Se connecter") {
+
+            if (connexionEnCours) {
+                return@boutonVert
+            }
+
+            val e = email.text.toString().trim()
+            val mdp = password.text.toString()
+
+            // ============================================
+            // VERIFICATION DES CHAMPS
+            // ============================================
+
+            if (e.isEmpty() || mdp.isEmpty()) {
+
+                toast(
+                    "Entrez votre e-mail et votre mot de passe"
+                )
+
+                return@boutonVert
+            }
+
+            if (
+                !android.util.Patterns.EMAIL_ADDRESS
+                    .matcher(e)
+                    .matches()
+            ) {
+
+                toast("Adresse e-mail invalide")
+
+                return@boutonVert
+            }
+
+            // ============================================
+            // DEMARRAGE DE LA CONNEXION
+            // ============================================
+
+            connexionEnCours = true
+
+            toast("Connexion en cours...")
+
+            // ============================================
+            // AUTHENTIFICATION FIREBASE
+            // ============================================
+
+            FirebaseAuth.getInstance()
+                .signInWithEmailAndPassword(e, mdp)
+                .addOnSuccessListener { resultat ->
+
+                    val uid = resultat.user?.uid
+
+                    if (uid == null) {
+
+                        connexionEnCours = false
+
+                        toast(
+                            "Impossible de récupérer votre compte"
+                        )
+
+                        return@addOnSuccessListener
+                    }
+
+                    // ====================================
+                    // CHARGEMENT DU PROFIL FIRESTORE
+                    // ====================================
+
+                    db.collection("Comptes")
+                        .document(uid)
+                        .get()
+                        .addOnSuccessListener { document ->
+
+                            connexionEnCours = false
+
+                            if (!document.exists()) {
+
+                                toast(
+                                    "Connexion réussie, mais profil introuvable"
+                                )
+
+                                return@addOnSuccessListener
+                            }
+
+                            // ================================
+                            // IDENTIFICATION DU ROLE
+                            // ================================
+
+                            val role = (
+                                document.getString("role")
+                                    ?: document.getString("type")
+                                    ?: "client"
+                            ).trim().lowercase()
+
+                            val valide =
+                                document.getBoolean("valide") == true
+
+                            // ================================
+                            // VERIFICATION DU ROLE
+                            // ================================
+
+                            if (
+                                role != "client" &&
+                                role != "vendeur"
+                            ) {
+
+                                toast(
+                                    "Type de compte non reconnu"
+                                )
+
+                                return@addOnSuccessListener
+                            }
+
+                            // ================================
+                            // SAUVEGARDE DE LA SESSION
+                            // ================================
+
+                            compteConnecteId = uid
+
+                            prefs.edit()
+                                .putString(
+                                    CONNECTED_ACCOUNT,
+                                    uid
+                                )
+                                .apply()
+
+                            // ================================
+                            // CONNEXION VENDEUR
+                            // ================================
+
+                            if (role == "vendeur") {
+
+                                if (valide) {
+
+                                    toast(
+                                        "Bienvenue dans votre espace vendeur"
+                                    )
+
+                                    afficherEspaceVendeur()
+
+                                } else {
+
+                                    toast(
+                                        "Votre compte vendeur attend une validation"
+                                    )
+
+                                    afficherAccueil()
+                                }
+
+                            } else {
+
+                                // ============================
+                                // CONNEXION CLIENT
+                                // ============================
+
+                                toast(
+                                    "Bienvenue sur VIE ESPOIR MARKETING"
+                                )
+
+                                afficherAccueil()
+                            }
+                        }
+                        .addOnFailureListener { erreur ->
+
+                            connexionEnCours = false
+
+                            toast(
+                                "Erreur de chargement du profil : ${erreur.message}"
+                            )
+                        }
+                }
+                .addOnFailureListener { erreur ->
+
+                    connexionEnCours = false
+
+                    toast(
+                        "Connexion impossible : ${erreur.message}"
+                    )
+                }
+        }
+    )
+
+    // ====================================================
+    // MOT DE PASSE OUBLIE
+    // ====================================================
+
+    root.addView(
+        bouton("🔑 Mot de passe oublié ?") {
+
+            afficherMotDePasseOublie()
+        }
+    )
+
+    // ====================================================
+    // CREER UN NOUVEAU COMPTE
+    // ====================================================
+
+    root.addView(
+        bouton("➕ Créer un nouveau compte") {
+
+            afficherCreationCompte()
+        }
+    )
+
+    // ====================================================
+    // AFFICHAGE DE LA PAGE
+    // ====================================================
+
+    setContentView(scroll(root))
+}
+
+// ========================================================
+// FIN DU CODE INSCRIPTION ET CONNEXION
+// VIE ESPOIR MARKETING
+// ========================================================
+
 // ========================================================
 // VIE ESPOIR MARKETING
 // CONNEXION FIREBASE CLIENT ET VENDEUR
