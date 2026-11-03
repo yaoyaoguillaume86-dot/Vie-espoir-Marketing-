@@ -5303,10 +5303,7 @@ private fun afficherConnexionAdmin() {
 // FIN DE LA CONNEXION ADMINISTRATEUR
 // ========================================================
               
-    
-
      
-}  
 // ========================================================
 // VIE ESPOIR MARKETING
 // ADMINISTRATION - VENDEURS FIREBASE
