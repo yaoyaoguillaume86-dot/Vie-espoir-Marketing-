@@ -5302,7 +5302,86 @@ private fun afficherConnexionAdmin() {
 // ========================================================
 // FIN DE LA CONNEXION ADMINISTRATEUR
 // ========================================================
-              
+  // ========================================================
+// VIE ESPOIR MARKETING
+// TABLEAU DE BORD ADMINISTRATEUR
+// ========================================================
+
+private fun afficherAdministration() {
+
+    val utilisateur =
+        com.google.firebase.auth.FirebaseAuth
+            .getInstance()
+            .currentUser
+
+    val uidAdministrateur =
+        "1kpZWN50IHhvz4y4OxS60MVjckx1"
+
+    // Vérification de l'administrateur
+    if (
+        utilisateur == null ||
+        utilisateur.uid != uidAdministrateur
+    ) {
+        adminConnecte = false
+        afficherConnexionAdmin()
+        return
+    }
+
+    adminConnecte = true
+
+    // Création du tableau de bord
+    val root = layoutBase()
+
+    root.addView(
+        titre("👑 Administration VIE ESPOIR MARKETING")
+    )
+
+    root.addView(
+        texte(
+            "Bienvenue dans votre espace administrateur.",
+            17f,
+            VERT
+        )
+    )
+
+    // Gestion des vendeurs
+    root.addView(
+        bouton("👥 Voir les vendeurs") {
+            afficherVendeursAdmin()
+        }
+    )
+
+    // Gestion des commandes
+    root.addView(
+        bouton("📦 Voir les commandes") {
+            afficherCommandesAdmin()
+        }
+    )
+
+    // Notifications administrateur
+    root.addView(
+        bouton("🔔 Voir les notifications") {
+            afficherEvenementsAdmin()
+        }
+    )
+
+    // Retour à l'accueil
+    root.addView(
+        bouton("⬅ Retour à l'accueil") {
+            adminConnecte = false
+            afficherAccueil()
+        }
+    )
+
+    // Affichage
+    setContentView(
+        scroll(root)
+    )
+}
+
+// ========================================================
+// FIN DU TABLEAU DE BORD ADMINISTRATEUR
+// ========================================================            
      
 // ========================================================
 // VIE ESPOIR MARKETING
