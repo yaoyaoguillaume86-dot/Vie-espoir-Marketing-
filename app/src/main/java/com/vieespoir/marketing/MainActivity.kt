@@ -3681,12 +3681,12 @@ private fun afficherMenu() {
                 "🔐 Administration" ->  
                     afficherConnexionAdmin()  
 
-                "🚪 Quitter" ->  
-                    confirmerQuitter()  
-            }  
-        }  
-        
-} 
+                               "🚪 Quitter" ->
+                    confirmerQuitter()
+            }
+        }
+        .show()
+}
   // ========================================================
 // VIE ESPOIR MARKETING
 // CREATION DE COMPTE ET CONNEXION FIREBASE
