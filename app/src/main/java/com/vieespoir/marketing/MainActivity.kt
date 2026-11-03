@@ -5224,7 +5224,24 @@ private fun afficherStock() {
 // ADMINISTRATION  
 // ========================================================  
 
-private fun afficherConnexionAdmin() {  
+private fun afficherConnexionAdmin() {  val utilisateurFirebase =
+    com.google.firebase.auth.FirebaseAuth
+        .getInstance()
+        .currentUser
+
+android.app.AlertDialog.Builder(this)
+    .setTitle("Diagnostic administrateur Firebase")
+    .setMessage(
+        if (utilisateurFirebase == null) {
+            "Aucun utilisateur connecté à Firebase."
+        } else {
+            "UID connecté : ${utilisateurFirebase.uid}\n\n" +
+            "Compte administrateur attendu : " +
+            "1kpZWN50IHhvz4y4OxS60MVjckx1"
+        }
+    )
+    .setPositiveButton("OK", null)
+    .show()
 
     val email =  
         EditText(this).apply {  
