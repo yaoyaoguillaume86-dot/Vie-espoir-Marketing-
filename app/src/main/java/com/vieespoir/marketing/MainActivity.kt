@@ -5382,16 +5382,15 @@ private fun afficherAdministration() {
 // ========================================================
 // FIN DU TABLEAU DE BORD ADMINISTRATEUR
 // ========================================================            
-     
+ 
 // ========================================================
 // VIE ESPOIR MARKETING
-// ADMINISTRATION - VENDEURS FIREBASE
-// AFFICHAGE DES COMPTES VENDEURS
+// ADMINISTRATION - GESTION DES VENDEURS FIREBASE
+// BOUTONS VALIDER ET REFUSER
 // ========================================================
 
 private fun afficherVendeursAdmin() {
 
-    // Vérification de l'accès à l'interface
     if (!adminConnecte) {
         afficherConnexionAdmin()
         return
@@ -5399,16 +5398,9 @@ private fun afficherVendeursAdmin() {
 
     val root = layoutBase()
 
+    root.addView(titre("👥 Gestion des vendeurs"))
     root.addView(
-        titre("👥 Gestion des vendeurs")
-    )
-
-    root.addView(
-        texte(
-            "Chargement des vendeurs Firebase...",
-            16f,
-            VERT
-        )
+        texte("Chargement des vendeurs Firebase...", 16f, VERT)
     )
 
     root.addView(
@@ -5420,7 +5412,7 @@ private fun afficherVendeursAdmin() {
     setContentView(scroll(root))
 
     // ====================================================
-    // CHARGEMENT DES COMPTES DEPUIS FIRESTORE
+    // CHARGEMENT DES VENDEURS FIREBASE
     // ====================================================
 
     db.collection("Comptes")
@@ -5428,11 +5420,11 @@ private fun afficherVendeursAdmin() {
         .get()
         .addOnSuccessListener { resultat ->
 
+            if (isFinishing || isDestroyed) return@addOnSuccessListener
+
             val page = layoutBase()
 
-            page.addView(
-                titre("👥 Vendeurs enregistrés")
-            )
+            page.addView(titre("👥 Vendeurs enregistrés"))
 
             page.addView(
                 texte(
@@ -5443,12 +5435,8 @@ private fun afficherVendeursAdmin() {
             )
 
             if (resultat.isEmpty) {
-
                 page.addView(
-                    texte(
-                        "Aucun vendeur enregistré dans Firebase.",
-                        16f
-                    )
+                    texte("Aucun vendeur enregistré.", 16f)
                 )
             }
 
@@ -5460,39 +5448,34 @@ private fun afficherVendeursAdmin() {
 
                 val uid = document.id
 
-                val nom =
-                    document.getString("nom") ?: ""
+                val nom = document.getString("nom") ?: ""
+                val entreprise = document.getString("entreprise") ?: ""
+                val email = document.getString("email") ?: ""
+                val telephone = document.getString("telephone") ?: ""
+                val adresse = document.getString("adresse") ?: ""
 
-                val entreprise =
-                    document.getString("entreprise") ?: ""
+                val statut = document.getString("statut")
+                val valide = document.getBoolean("valide") == true
 
-                val email =
-                    document.getString("email") ?: ""
+                val refuse = statut == "refuse"
 
-                val telephone =
-                    document.getString("telephone") ?: ""
-
-                val adresse =
-                    document.getString("adresse") ?: ""
-
-                val valide =
-                    document.getBoolean("valide") == true
+                val texteStatut = when {
+                    refuse -> "❌ REFUSÉ"
+                    valide -> "✅ ACTIF"
+                    else -> "⏳ EN ATTENTE"
+                }
 
                 val bloc = LinearLayout(this).apply {
-
                     orientation = LinearLayout.VERTICAL
-
                     setPadding(12, 12, 12, 12)
-
                     setBackgroundColor(Color.WHITE)
 
-                    layoutParams =
-                        LinearLayout.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT
-                        ).apply {
-                            setMargins(0, 6, 0, 6)
-                        }
+                    layoutParams = LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        setMargins(0, 6, 0, 6)
+                    }
                 }
 
                 bloc.addView(
@@ -5508,44 +5491,129 @@ private fun afficherVendeursAdmin() {
 
                         📍 $adresse
 
-                        Statut : ${
-                            if (valide)
-                                "✅ ACTIF"
-                            else
-                                "⏳ EN ATTENTE"
-                        }
+                        Statut : $texteStatut
                         """.trimIndent(),
                         16f,
                         VERT
                     )
                 )
 
-                // ========================================
-                // AFFICHAGE DU STATUT
-                // ========================================
-
                 bloc.addView(
                     texte(
-                        if (valide) {
-                            "Ce vendeur est actuellement autorisé."
-                        } else {
-                            "Ce vendeur attend une validation."
+                        when {
+                            refuse -> "Ce vendeur a été refusé."
+                            valide -> "Ce vendeur est autorisé."
+                            else -> "Ce vendeur attend une validation."
                         },
                         15f
                     )
                 )
 
+                // ========================================
+                // BOUTON VALIDER LE VENDEUR
+                // ========================================
+
+                if (!valide || refuse) {
+
+                    bloc.addView(
+                        bouton("✅ VALIDER LE VENDEUR") {
+
+                            if (!adminConnecte) {
+                                afficherConnexionAdmin()
+                                return@bouton
+                            }
+
+                            AlertDialog.Builder(this)
+                                .setTitle("Validation vendeur")
+                                .setMessage(
+                                    "Autoriser $nom à devenir vendeur ?"
+                                )
+                                .setNegativeButton("Annuler", null)
+                                .setPositiveButton("VALIDER") { _, _ ->
+
+                                    db.collection("Comptes")
+                                        .document(uid)
+                                        .update(
+                                            mapOf(
+                                                "valide" to true,
+                                                "statut" to "actif"
+                                            )
+                                        )
+                                        .addOnSuccessListener {
+                                            toast("Vendeur validé avec succès")
+                                            afficherVendeursAdmin()
+                                        }
+                                        .addOnFailureListener { erreur ->
+                                            toast(
+                                                "Erreur : ${erreur.message}"
+                                            )
+                                        }
+                                }
+                                .show()
+                        }
+                    )
+                }
+
+                // ========================================
+                // BOUTON REFUSER LE VENDEUR
+                // ========================================
+
+                if (!refuse) {
+
+                    bloc.addView(
+                        bouton("❌ REFUSER LE VENDEUR") {
+
+                            if (!adminConnecte) {
+                                afficherConnexionAdmin()
+                                return@bouton
+                            }
+
+                            AlertDialog.Builder(this)
+                                .setTitle("Refuser le vendeur")
+                                .setMessage(
+                                    "Voulez-vous refuser $nom ?"
+                                )
+                                .setNegativeButton("Annuler", null)
+                                .setPositiveButton("REFUSER") { _, _ ->
+
+                                    db.collection("Comptes")
+                                        .document(uid)
+                                        .update(
+                                            mapOf(
+                                                "valide" to false,
+                                                "statut" to "refuse"
+                                            )
+                                        )
+                                        .addOnSuccessListener {
+                                            toast("Vendeur refusé")
+                                            afficherVendeursAdmin()
+                                        }
+                                        .addOnFailureListener { erreur ->
+                                            toast(
+                                                "Erreur : ${erreur.message}"
+                                            )
+                                        }
+                                }
+                                .show()
+                        }
+                    )
+                }
+
                 page.addView(bloc)
             }
 
+            // ============================================
+            // ACTUALISATION ET RETOUR
+            // ============================================
+
             page.addView(
-                bouton("🔄 Actualiser") {
+                bouton("🔄 ACTUALISER") {
                     afficherVendeursAdmin()
                 }
             )
 
             page.addView(
-                bouton("⬅ Retour administration") {
+                bouton("⬅ RETOUR ADMINISTRATION") {
                     afficherAdministration()
                 }
             )
@@ -5553,16 +5621,15 @@ private fun afficherVendeursAdmin() {
             setContentView(scroll(page))
         }
         .addOnFailureListener { erreur ->
-
-            toast(
-                "Erreur Firebase : ${erreur.message}"
-            )
+            toast("Erreur Firebase : ${erreur.message}")
         }
 }
 
 // ========================================================
 // FIN - GESTION DES VENDEURS FIREBASE
 // ========================================================
+
+     
 // ========================================================  
 // ADMIN COMMANDES  
 // ========================================================  
