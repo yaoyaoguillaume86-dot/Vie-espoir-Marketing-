@@ -35,3 +35,30 @@ dependencies {implementation 'com.google.firebase:firebase-auth:23.2.1'
     implementation 'com.google.firebase:firebase-storage'
     implementation 'com.google.firebase:firebase-analytics'
 }
+// ========================================================
+// LOGO OFFICIEL — VIE ESPOIR MARKETING
+// Téléchargement automatique avant compilation
+// ========================================================
+
+def logoUrl = 'https://res.cloudinary.com/wxpenkfy/image/upload/v1793664884/509b7a3707733e9c96b64d36d89a0388.png'
+
+tasks.register('installerLogoVieEspoir') {
+    doLast {
+        def dossier = file('src/main/res/mipmap-hdpi')
+        dossier.mkdirs()
+
+        def fichierLogo = new File(dossier, 'ic_launcher.png')
+
+        new URL(logoUrl).withInputStream { input ->
+            fichierLogo.withOutputStream { output ->
+                output << input
+            }
+        }
+
+        println 'Logo VIE ESPOIR MARKETING installé !'
+    }
+}
+
+tasks.named('preBuild') {
+    dependsOn('installerLogoVieEspoir')
+}
