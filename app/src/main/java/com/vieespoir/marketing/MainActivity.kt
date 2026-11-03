@@ -3685,18 +3685,72 @@ private fun afficherMenu() {
                     confirmerQuitter()  
             }  
         }  
-        .show()  
-}  
-
+        
+} 
 // ========================================================
-// CREATION COMPTE AVEC FIREBASE
+// VIE ESPOIR MARKETING
+// INSCRIPTION CLIENT ET VENDEUR AVEC FIREBASE
 // ========================================================
 
 private fun afficherCreationCompte() {
 
     val root = layoutBase()
 
-    root.addView(titre("➕ Créer mon compte"))
+    root.addView(titre("🦁 VIE ESPOIR MARKETING"))
+
+    root.addView(
+        texte(
+            "Bienvenue ! Choisissez votre type de compte.",
+            17f,
+            VERT
+        )
+    )
+
+    root.addView(
+        boutonVert("👤 Créer un compte client") {
+            afficherFormulaireInscription("client")
+        }
+    )
+
+    root.addView(
+        boutonVert("🏪 Créer un compte vendeur") {
+            afficherFormulaireInscription("vendeur")
+        }
+    )
+
+    root.addView(
+        bouton("🔐 J'ai déjà un compte") {
+            afficherConnexion()
+        }
+    )
+
+    setContentView(scroll(root))
+}
+
+
+// ========================================================
+// FORMULAIRE D'INSCRIPTION CLIENT OU VENDEUR
+// ========================================================
+
+private fun afficherFormulaireInscription(role: String) {
+
+    if (role != "client" && role != "vendeur") {
+        toast("Type de compte invalide")
+        return
+    }
+
+    val root = layoutBase()
+
+    val estVendeur = role == "vendeur"
+
+    root.addView(
+        titre(
+            if (estVendeur)
+                "🏪 Inscription vendeur"
+            else
+                "👤 Inscription client"
+        )
+    )
 
     val nom = EditText(this).apply {
         hint = "Nom complet"
@@ -3712,7 +3766,7 @@ private fun afficherCreationCompte() {
                 InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
     }
 
-    val phone = EditText(this).apply {
+    val telephone = EditText(this).apply {
         hint = "Téléphone"
         inputType = InputType.TYPE_CLASS_PHONE
     }
@@ -3722,27 +3776,38 @@ private fun afficherCreationCompte() {
     }
 
     val password = EditText(this).apply {
-        hint = "Mot de passe"
+        hint = "Mot de passe (6 caractères minimum)"
+        inputType = InputType.TYPE_CLASS_TEXT or
+                InputType.TYPE_TEXT_VARIATION_PASSWORD
+    }
+
+    val confirmation = EditText(this).apply {
+        hint = "Confirmer le mot de passe"
         inputType = InputType.TYPE_CLASS_TEXT or
                 InputType.TYPE_TEXT_VARIATION_PASSWORD
     }
 
     root.addView(nom)
-    root.addView(entreprise)
+
+    if (estVendeur) {
+        root.addView(entreprise)
+    }
+
     root.addView(email)
-    root.addView(phone)
+    root.addView(telephone)
     root.addView(adresse)
     root.addView(password)
+    root.addView(confirmation)
 
-    root.addView(
-        texte(
-            "🎁 Nouveau vendeur : 7 jours gratuits.",
-            16f,
-            VERT
-        ).apply {
-            gravity = Gravity.CENTER
-        }
-    )
+    if (estVendeur) {
+        root.addView(
+            texte(
+                "Abonnement vendeur : 5 000 F CFA/mois.",
+                16f,
+                VERT
+            )
+        )
+    }
 
     val boutonInscription = boutonVert(
         "✅ Créer mon compte"
@@ -3751,19 +3816,20 @@ private fun afficherCreationCompte() {
         val n = nom.text.toString().trim()
         val ent = entreprise.text.toString().trim()
         val e = email.text.toString().trim()
-        val p = phone.text.toString().trim()
+        val tel = telephone.text.toString().trim()
         val a = adresse.text.toString().trim()
         val mdp = password.text.toString()
+        val confirmationMdp = confirmation.text.toString()
 
         if (
             n.isEmpty() ||
-            ent.isEmpty() ||
             e.isEmpty() ||
-            p.isEmpty() ||
+            tel.isEmpty() ||
             a.isEmpty() ||
-            mdp.isEmpty()
+            mdp.isEmpty() ||
+            (estVendeur && ent.isEmpty())
         ) {
-            toast("Tous les champs sont obligatoires")
+            toast("Remplissez tous les champs obligatoires")
             return@boutonVert
         }
 
@@ -3775,74 +3841,87 @@ private fun afficherCreationCompte() {
         }
 
         if (mdp.length < 6) {
-            toast("Le mot de passe doit contenir au moins 6 caractères")
+            toast("Mot de passe trop court")
             return@boutonVert
         }
 
-     run {
-
-            val auth = FirebaseAuth.getInstance()
-
-            auth.createUserWithEmailAndPassword(e, mdp)
-                .addOnSuccessListener { resultat ->
-
-                    val uid = resultat.user?.uid
-
-                    if (uid == null) {
-                        toast("Erreur de création du compte")
-                        return@addOnSuccessListener
-                    }
-
-                    val date = System.currentTimeMillis()
-
-                    val donnees = hashMapOf<String, Any>(
-                        "id" to uid,
-                        "nom" to n,
-                        "entreprise" to ent,
-                        "email" to e,
-                        "telephone" to p,
-                        "adresse" to a,
-                        "type" to "VENDEUR",
-                        "dateCreation" to date,
-                        "valide" to true
-                    )
-
-                    db.collection("Comptes")
-                        .document(uid)
-                        .set(donnees)
-                        .addOnSuccessListener {
-
-                            compteConnecteId = uid
-
-                            prefs.edit()
-                                .putString(CONNECTED_ACCOUNT, uid)
-                                .apply()
-
-                            toast("Compte créé avec succès")
-
-                            afficherEspaceVendeur()
-                        }
-                        .addOnFailureListener { erreur ->
-
-                            toast(
-                                "Compte créé, mais profil non enregistré : ${erreur.message}"
-                            )
-                        }
-                }
-                .addOnFailureListener { erreur ->
-
-                    toast(
-                        "Inscription impossible : ${erreur.message}"
-                    )
-                }
+        if (mdp != confirmationMdp) {
+            toast("Les mots de passe sont différents")
+            return@boutonVert
         }
+
+        boutonInscription.isEnabled = false
+
+        val auth = FirebaseAuth.getInstance()
+
+        auth.createUserWithEmailAndPassword(e, mdp)
+            .addOnSuccessListener { resultat ->
+
+                val uid = resultat.user?.uid
+
+                if (uid == null) {
+                    boutonInscription.isEnabled = true
+                    toast("Erreur de création du compte")
+                    return@addOnSuccessListener
+                }
+
+                val donnees = hashMapOf<String, Any>(
+                    "id" to uid,
+                    "nom" to n,
+                    "entreprise" to if (estVendeur) ent else "",
+                    "email" to e,
+                    "telephone" to tel,
+                    "adresse" to a,
+                    "role" to role,
+                    "type" to role.uppercase(),
+                    "dateCreation" to System.currentTimeMillis(),
+                    "valide" to !estVendeur
+                )
+
+                db.collection("Comptes")
+                    .document(uid)
+                    .set(donnees)
+                    .addOnSuccessListener {
+
+                        compteConnecteId = uid
+
+                        prefs.edit()
+                            .putString(CONNECTED_ACCOUNT, uid)
+                            .apply()
+
+                        toast("Compte créé avec succès !")
+
+                        if (estVendeur) {
+                            toast("Compte vendeur en attente de validation")
+                            afficherAccueil()
+                        } else {
+                            afficherAccueil()
+                        }
+                    }
+                    .addOnFailureListener { erreur ->
+
+                        boutonInscription.isEnabled = true
+
+                        toast(
+                            "Compte Firebase créé, mais profil non enregistré : ${erreur.message}"
+                        )
+                    }
+            }
+            .addOnFailureListener { erreur ->
+
+                boutonInscription.isEnabled = true
+
+                toast(
+                    "Inscription impossible : ${erreur.message}"
+                )
+            }
     }
 
     root.addView(boutonInscription)
 
     root.addView(
-        bouton("🔐 J'ai déjà un compte") {
-            afficherConnexion()
+        bouton("⬅ Retour") {
+            afficherCreationCompte()
         }
     )
 
