@@ -3849,17 +3849,18 @@ private fun afficherCreationCompte() {
     setContentView(scroll(root))
 }
 // ========================================================
-// CONNEXION FIREBASE
+// VIE ESPOIR MARKETING
+// CONNEXION FIREBASE CLIENT ET VENDEUR
 // ========================================================
 
 private fun afficherConnexion() {
 
     val root = layoutBase()
 
-    root.addView(titre("🔐 Connexion"))
+    root.addView(titre("🔐 Connexion à mon compte"))
 
     val email = EditText(this).apply {
-        hint = "E-mail"
+        hint = "Adresse e-mail"
         inputType = InputType.TYPE_CLASS_TEXT or
                 InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
     }
@@ -3880,7 +3881,7 @@ private fun afficherConnexion() {
             val mdp = password.text.toString()
 
             if (e.isEmpty() || mdp.isEmpty()) {
-                toast("Saisissez votre e-mail et mot de passe")
+                toast("Entrez votre e-mail et votre mot de passe")
                 return@boutonVert
             }
 
@@ -3891,9 +3892,15 @@ private fun afficherConnexion() {
                     val uid = resultat.user?.uid
 
                     if (uid == null) {
-                        toast("Compte introuvable")
+                        toast("Impossible de récupérer le compte")
                         return@addOnSuccessListener
                     }
+
+                    compteConnecteId = uid
+
+                    prefs.edit()
+                        .putString(CONNECTED_ACCOUNT, uid)
+                        .apply()
 
                     db.collection("Comptes")
                         .document(uid)
@@ -3901,25 +3908,35 @@ private fun afficherConnexion() {
                         .addOnSuccessListener { document ->
 
                             if (!document.exists()) {
-                                toast("Profil vendeur introuvable")
+                                toast(
+                                    "Connexion réussie. Profil à compléter."
+                                )
+
+                                afficherAccueil()
                                 return@addOnSuccessListener
                             }
 
-                            compteConnecteId = uid
+                            val role = document
+                                .getString("role")
+                                ?.lowercase()
+                                ?.trim()
+                                ?: "client"
 
-                            prefs.edit()
-                                .putString(CONNECTED_ACCOUNT, uid)
-                                .apply()
+                            toast("Bienvenue sur Vie Espoir Marketing")
 
-                            toast("Connexion réussie")
-
-                            afficherEspaceVendeur()
+                            if (role == "vendeur") {
+                                afficherEspaceVendeur()
+                            } else {
+                                afficherAccueil()
+                            }
                         }
                         .addOnFailureListener { erreur ->
 
                             toast(
-                                "Erreur de chargement du profil : ${erreur.message}"
+                                "Profil non chargé : ${erreur.message}"
                             )
+
+                            afficherAccueil()
                         }
                 }
                 .addOnFailureListener { erreur ->
@@ -3945,7 +3962,6 @@ private fun afficherConnexion() {
 
     setContentView(scroll(root))
 }
-
 // ========================================================  
 // MOT DE PASSE OUBLIE  
 // ========================================================  
