@@ -3936,22 +3936,42 @@ private fun afficherConnexion() {
 
     val root = layoutBase()
 
-    root.addView(titre("🔐 Connexion à mon compte"))
+    root.addView(
+        titre("🔐 Connexion à mon compte")
+    )
+
+    // ====================================================
+    // CHAMP ADRESSE E-MAIL
+    // ====================================================
 
     val email = EditText(this).apply {
+
         hint = "Adresse e-mail"
-        inputType = InputType.TYPE_CLASS_TEXT or
-                InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+
+        inputType =
+            InputType.TYPE_CLASS_TEXT or
+            InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
     }
 
+    // ====================================================
+    // CHAMP MOT DE PASSE
+    // ====================================================
+
     val password = EditText(this).apply {
+
         hint = "Mot de passe"
-        inputType = InputType.TYPE_CLASS_TEXT or
-                InputType.TYPE_TEXT_VARIATION_PASSWORD
+
+        inputType =
+            InputType.TYPE_CLASS_TEXT or
+            InputType.TYPE_TEXT_VARIATION_PASSWORD
     }
 
     root.addView(email)
     root.addView(password)
+
+    // ====================================================
+    // BOUTON SE CONNECTER
+    // ====================================================
 
     root.addView(
         boutonVert("🔓 Se connecter") {
@@ -3959,10 +3979,35 @@ private fun afficherConnexion() {
             val e = email.text.toString().trim()
             val mdp = password.text.toString()
 
+            // ============================================
+            // VERIFICATION DES CHAMPS
+            // ============================================
+
             if (e.isEmpty() || mdp.isEmpty()) {
-                toast("Entrez votre e-mail et votre mot de passe")
+
+                toast(
+                    "Entrez votre e-mail et votre mot de passe"
+                )
+
                 return@boutonVert
             }
+
+            // ============================================
+            // VERIFICATION DE L'ADRESSE E-MAIL
+            // ============================================
+
+            if (!android.util.Patterns.EMAIL_ADDRESS
+                    .matcher(e).matches()
+            ) {
+
+                toast("Adresse e-mail invalide")
+
+                return@boutonVert
+            }
+
+            // ============================================
+            // CONNEXION AVEC FIREBASE AUTHENTICATION
+            // ============================================
 
             FirebaseAuth.getInstance()
                 .signInWithEmailAndPassword(e, mdp)
@@ -3971,15 +4016,17 @@ private fun afficherConnexion() {
                     val uid = resultat.user?.uid
 
                     if (uid == null) {
-                        toast("Impossible de récupérer le compte")
+
+                        toast(
+                            "Impossible de récupérer votre compte"
+                        )
+
                         return@addOnSuccessListener
                     }
 
-                    compteConnecteId = uid
-
-                    prefs.edit()
-                        .putString(CONNECTED_ACCOUNT, uid)
-                        .apply()
+                    // ====================================
+                    // RECHERCHE DU PROFIL DANS FIRESTORE
+                    // ====================================
 
                     db.collection("Comptes")
                         .document(uid)
@@ -3987,37 +4034,113 @@ private fun afficherConnexion() {
                         .addOnSuccessListener { document ->
 
                             if (!document.exists()) {
+
                                 toast(
-                                    "Connexion réussie. Profil à compléter."
+                                    "Connexion réussie, mais profil introuvable"
                                 )
 
-                                afficherAccueil()
                                 return@addOnSuccessListener
                             }
 
-                            val role = document
-                                .getString("role")
-                                ?.lowercase()
-                                ?.trim()
-                                ?: "client"
+                            // ================================
+                            // IDENTIFICATION DU TYPE DE COMPTE
+                            // ================================
 
-                            toast("Bienvenue sur Vie Espoir Marketing")
+                            val role = (
+                                document.getString("role")
+                                    ?: document.getString("type")
+                                    ?: "client"
+                            ).trim().lowercase()
+
+                            // ================================
+                            // VERIFICATION DU VENDEUR
+                            // ================================
+
+                            val valide =
+                                document.getBoolean("valide") == true
+
+                            // ================================
+                            // VERIFICATION DU ROLE
+                            // ================================
+
+                            if (
+                                role != "client" &&
+                                role != "vendeur"
+                            ) {
+
+                                toast(
+                                    "Type de compte non reconnu"
+                                )
+
+                                return@addOnSuccessListener
+                            }
+
+                            // ================================
+                            // ENREGISTREMENT DE LA SESSION
+                            // ================================
+
+                            compteConnecteId = uid
+
+                            prefs.edit()
+                                .putString(
+                                    CONNECTED_ACCOUNT,
+                                    uid
+                                )
+                                .apply()
+
+                            // ================================
+                            // CONNEXION DU VENDEUR
+                            // ================================
 
                             if (role == "vendeur") {
-                                afficherEspaceVendeur()
+
+                                if (valide) {
+
+                                    toast(
+                                        "Bienvenue dans votre espace vendeur"
+                                    )
+
+                                    afficherEspaceVendeur()
+
+                                } else {
+
+                                    toast(
+                                        "Votre compte vendeur attend une validation"
+                                    )
+
+                                    afficherAccueil()
+                                }
+
                             } else {
+
+                                // ============================
+                                // CONNEXION DU CLIENT
+                                // ============================
+
+                                toast(
+                                    "Bienvenue sur VIE ESPOIR MARKETING"
+                                )
+
                                 afficherAccueil()
                             }
                         }
+
+                        // ================================
+                        // ERREUR DE CHARGEMENT FIRESTORE
+                        // ================================
+
                         .addOnFailureListener { erreur ->
 
                             toast(
-                                "Profil non chargé : ${erreur.message}"
+                                "Erreur de chargement du profil : ${erreur.message}"
                             )
-
-                            afficherAccueil()
                         }
                 }
+
+                // ========================================
+                // ERREUR DE CONNEXION FIREBASE
+                // ========================================
+
                 .addOnFailureListener { erreur ->
 
                     toast(
@@ -4027,20 +4150,42 @@ private fun afficherConnexion() {
         }
     )
 
+    // ====================================================
+    // BOUTON MOT DE PASSE OUBLIE
+    // ====================================================
+
     root.addView(
         bouton("🔑 Mot de passe oublié ?") {
+
             afficherMotDePasseOublie()
         }
     )
 
+    // ====================================================
+    // BOUTON CREER UN NOUVEAU COMPTE
+    // ====================================================
+
     root.addView(
         bouton("➕ Créer un nouveau compte") {
+
             afficherCreationCompte()
         }
     )
 
-    setContentView(scroll(root))
+    // ====================================================
+    // AFFICHER LA PAGE DE CONNEXION
+    // ====================================================
+
+    setContentView(
+        scroll(root)
+    )
+
 }
+
+// ========================================================
+// FIN DE LA FONCTION afficherConnexion()
+// VIE ESPOIR MARKETING
+// ========================================================
 // ========================================================  
 // MOT DE PASSE OUBLIE  
 // ========================================================  
