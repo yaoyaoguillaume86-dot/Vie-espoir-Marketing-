@@ -5403,141 +5403,186 @@ private fun afficherAdministration() {
         scroll(root)  
     )  
 }  
+// ========================================================
+// VIE ESPOIR MARKETING
+// ADMINISTRATION - VENDEURS FIREBASE
+// AFFICHAGE DES COMPTES VENDEURS
+// ========================================================
 
-// ========================================================  
-// ADMIN VENDEURS  
-// ========================================================  
+private fun afficherVendeursAdmin() {
 
-private fun afficherVendeursAdmin() {  
+    // Vérification de l'accès à l'interface
+    if (!adminConnecte) {
+        afficherConnexionAdmin()
+        return
+    }
 
-    val root =  
-        layoutBase()  
+    val root = layoutBase()
 
-    root.addView(  
-        titre(  
-            "👥 Vendeurs"  
-        )  
-    )  
+    root.addView(
+        titre("👥 Gestion des vendeurs")
+    )
 
-    var nombre = 0  
+    root.addView(
+        texte(
+            "Chargement des vendeurs Firebase...",
+            16f,
+            VERT
+        )
+    )
 
-    for (compte in comptes) {  
+    root.addView(
+        bouton("⬅ Retour administration") {
+            afficherAdministration()
+        }
+    )
 
-        if (  
-            compte.type !=  
-            "VENDEUR"  
-        ) {  
-            continue  
-        }  
+    setContentView(scroll(root))
 
-        nombre++  
+    // ====================================================
+    // CHARGEMENT DES COMPTES DEPUIS FIRESTORE
+    // ====================================================
 
-        val bloc =  
-            LinearLayout(this).apply {  
+    db.collection("Comptes")
+        .whereEqualTo("role", "vendeur")
+        .get()
+        .addOnSuccessListener { resultat ->
 
-                orientation =  
-                    LinearLayout.VERTICAL  
+            val page = layoutBase()
 
-                setPadding(  
-                    12,  
-                    12,  
-                    12,  
-                    12  
-                )  
+            page.addView(
+                titre("👥 Vendeurs enregistrés")
+            )
 
-                setBackgroundColor(  
-                    Color.WHITE  
-                )  
+            page.addView(
+                texte(
+                    "Nombre de vendeurs : ${resultat.size()}",
+                    17f,
+                    VERT
+                )
+            )
 
-                layoutParams =  
-                    LinearLayout.LayoutParams(  
-                        ViewGroup.LayoutParams.MATCH_PARENT,  
-                        ViewGroup.LayoutParams.WRAP_CONTENT  
-                    ).apply {  
+            if (resultat.isEmpty) {
 
-                        setMargins(  
-                            0,  
-                            5,  
-                            0,  
-                            5  
-                        )  
-                    }  
-            }  
+                page.addView(
+                    texte(
+                        "Aucun vendeur enregistré dans Firebase.",
+                        16f
+                    )
+                )
+            }
 
-        bloc.addView(  
-            texte(  
-                """  
-                👤 ${compte.nom}  
-                  
-                🏢 ${compte.entreprise}  
-                  
-                📧 ${compte.email}  
-                  
-                📞 ${compte.telephone}  
-                  
-                📍 ${compte.adresse}  
-                  
-                Statut : ${  
-                    if (compte.valide)  
-                        "ACTIF"  
-                    else  
-                        "NON ACTIF"  
-                }  
-                """.trimIndent(),  
-                16f,  
-                VERT  
-            )  
-        )  
+            // ============================================
+            // AFFICHAGE DE CHAQUE VENDEUR
+            // ============================================
 
-        bloc.addView(  
-            boutonVert(  
-                if (compte.valide)  
-                    "⛔ Désactiver"  
-                else  
-                    "✅ Activer"  
-            ) {  
+            for (document in resultat.documents) {
 
-                compte.valide =  
-                    !compte.valide  
+                val uid = document.id
 
-                sauvegarderComptes()  
+                val nom =
+                    document.getString("nom") ?: ""
 
-                enregistrerEvenement(  
-                    if (compte.valide) {  
-                        "Vendeur activé : ${compte.entreprise}"  
-                    } else {  
-                        "Vendeur désactivé : ${compte.entreprise}"  
-                    }  
-                )  
+                val entreprise =
+                    document.getString("entreprise") ?: ""
 
-                afficherVendeursAdmin()  
-            }  
-        )  
+                val email =
+                    document.getString("email") ?: ""
 
-        root.addView(  
-            bloc  
-        )  
-    }  
+                val telephone =
+                    document.getString("telephone") ?: ""
 
-    if (nombre == 0) {  
+                val adresse =
+                    document.getString("adresse") ?: ""
 
-        root.addView(  
-            texte(  
-                "Aucun vendeur enregistré.",  
-                18f  
-            ).apply {  
+                val valide =
+                    document.getBoolean("valide") == true
 
-                gravity =  
-                    Gravity.CENTER  
-            }  
-        )  
-    }  
+                val bloc = LinearLayout(this).apply {
 
-    setContentView(  
-        scroll(root)  
-    )  
-}  
+                    orientation = LinearLayout.VERTICAL
 
+                    setPadding(12, 12, 12, 12)
+
+                    setBackgroundColor(Color.WHITE)
+
+                    layoutParams =
+                        LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT
+                        ).apply {
+                            setMargins(0, 6, 0, 6)
+                        }
+                }
+
+                bloc.addView(
+                    texte(
+                        """
+                        👤 $nom
+
+                        🏢 $entreprise
+
+                        📧 $email
+
+                        📞 $telephone
+
+                        📍 $adresse
+
+                        Statut : ${
+                            if (valide)
+                                "✅ ACTIF"
+                            else
+                                "⏳ EN ATTENTE"
+                        }
+                        """.trimIndent(),
+                        16f,
+                        VERT
+                    )
+                )
+
+                // ========================================
+                // AFFICHAGE DU STATUT
+                // ========================================
+
+                bloc.addView(
+                    texte(
+                        if (valide) {
+                            "Ce vendeur est actuellement autorisé."
+                        } else {
+                            "Ce vendeur attend une validation."
+                        },
+                        15f
+                    )
+                )
+
+                page.addView(bloc)
+            }
+
+            page.addView(
+                bouton("🔄 Actualiser") {
+                    afficherVendeursAdmin()
+                }
+            )
+
+            page.addView(
+                bouton("⬅ Retour administration") {
+                    afficherAdministration()
+                }
+            )
+
+            setContentView(scroll(page))
+        }
+        .addOnFailureListener { erreur ->
+
+            toast(
+                "Erreur Firebase : ${erreur.message}"
+            )
+        }
+}
+
+// ========================================================
+// FIN - GESTION DES VENDEURS FIREBASE
+// ========================================================
 // ========================================================  
 // ADMIN COMMANDES  
 // ========================================================  
