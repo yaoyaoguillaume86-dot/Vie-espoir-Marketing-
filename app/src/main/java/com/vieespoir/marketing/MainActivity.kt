@@ -3809,9 +3809,10 @@ private fun afficherFormulaireInscription(role: String) {
         )
     }
 
-    // Désactivation du bouton à ajouter après correction
-     {
-
+    
+val boutonInscription = boutonVert(
+    "✅ Créer mon compte"
+) {
         val n = nom.text.toString().trim()
         val ent = entreprise.text.toString().trim()
         val e = email.text.toString().trim()
