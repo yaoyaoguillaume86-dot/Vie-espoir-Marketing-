@@ -5220,205 +5220,92 @@ private fun afficherStock() {
     )  
 }  
 
-// ========================================================  
-// ADMINISTRATION  
-// ========================================================  
+// ========================================================
+// VIE ESPOIR MARKETING
+// CONNEXION ADMINISTRATEUR AVEC FIREBASE
+// ========================================================
 
-private fun afficherConnexionAdmin() {  val utilisateurFirebase =
-    com.google.firebase.auth.FirebaseAuth
-        .getInstance()
-        .currentUser
+private fun afficherConnexionAdmin() {
 
-android.app.AlertDialog.Builder(this)
-    .setTitle("Diagnostic administrateur Firebase")
-    .setMessage(
-        if (utilisateurFirebase == null) {
-            "Aucun utilisateur connecté à Firebase."
-        } else {
-            "UID connecté : ${utilisateurFirebase.uid}\n\n" +
-            "Compte administrateur attendu : " +
-            "1kpZWN50IHhvz4y4OxS60MVjckx1"
-        }
-    )
-    .setPositiveButton("OK", null)
-    .show()
+    // ====================================================
+    // 1. IDENTIFIANT OFFICIEL DE L'ADMINISTRATEUR
+    // ====================================================
 
-    val email =  
-        EditText(this).apply {  
+    val uidAdministrateur =
+        "1kpZWN50IHhvz4y4OxS60MVjckx1"
 
-            hint =  
-                "Email administrateur"  
-        }  
+    // ====================================================
+    // 2. RÉCUPÉRER LE COMPTE FIREBASE CONNECTÉ
+    // ====================================================
 
-    val password =  
-        EditText(this).apply {  
+    val utilisateur =
+        com.google.firebase.auth.FirebaseAuth
+            .getInstance()
+            .currentUser
 
-            hint =  
-                "Mot de passe administrateur"  
+    // ====================================================
+    // 3. SI AUCUN COMPTE N'EST CONNECTÉ
+    // ====================================================
 
-            inputType =  
-                InputType.TYPE_CLASS_TEXT or  
-                InputType.TYPE_TEXT_VARIATION_PASSWORD  
-        }  
+    if (utilisateur == null) {
 
-    val box =  
-        LinearLayout(this).apply {  
+        adminConnecte = false
 
-            orientation =  
-                LinearLayout.VERTICAL  
+        AlertDialog.Builder(this)
+            .setTitle("🔐 Connexion nécessaire")
+            .setMessage(
+                "Veuillez d'abord vous connecter à votre " +
+                "compte Firebase pour accéder à l'administration."
+            )
+            .setPositiveButton("Se connecter") { _, _ ->
 
-            setPadding(  
-                20,  
-                5,  
-                20,  
-                5  
-            )  
+                afficherConnexion()
+            }
+            .setNegativeButton("Annuler", null)
+            .show()
 
-            addView(email)  
-            addView(password)  
-        }  
+        return
+    }
 
-    AlertDialog.Builder(this)  
-        .setTitle(  
-            "🔐 Administration privée"  
-        )  
-        .setView(  
-            box  
-        )  
-        .setNegativeButton(  
-            "Annuler",  
-            null  
-        )  
-        .setPositiveButton(  
-            "Connexion"  
-        ) { _, _ ->  
+    // ====================================================
+    // 4. VÉRIFIER L'IDENTIFIANT ADMINISTRATEUR
+    // ====================================================
 
-            if (  
-                email.text  
-                    .toString()  
-                    .trim()  
-                    ==  
-                ADMIN_EMAIL &&  
-                password.text  
-                    .toString()  
-                    ==  
-                ADMIN_PASSWORD  
-            ) {  
+    if (utilisateur.uid == uidAdministrateur) {
 
-                adminConnecte =  
-                    true  
+        // Compte administrateur reconnu
+        adminConnecte = true
 
-                afficherAdministration()  
+        toast(
+            "Bienvenue dans l'administration VIE ESPOIR MARKETING"
+        )
 
-            } else {  
+        // Ouvrir le tableau de bord administrateur
+        afficherAdministration()
 
-                toast(  
-                    "Accès administrateur refusé"  
-                )  
-            }  
-        }  
-        .show()  
-}  
+    } else {
 
-private fun afficherAdministration() {  
+        // Compte non autorisé
+        adminConnecte = false
 
-    if (!adminConnecte) {  
+        AlertDialog.Builder(this)
+            .setTitle("⛔ Accès administrateur refusé")
+            .setMessage(
+                "Ce compte Firebase n'est pas autorisé " +
+                "à accéder à l'administration."
+            )
+            .setPositiveButton("OK", null)
+            .show()
+    }
+}
 
-        afficherConnexionAdmin()  
-
-        return  
-    }  
-
-    val root =  
-        layoutBase()  
-
-    root.addView(  
-        titre(  
-            "👑 Administration"  
-        )  
-    )  
-
-    root.addView(  
-        texte(  
-            "🔐 Espace réservé à l'administrateur",  
-            17f,  
-            VERT  
-        ).apply {  
-
-            gravity =  
-                Gravity.CENTER  
-
-            typeface =  
-                Typeface.DEFAULT_BOLD  
-        }  
-    )  
-
-    root.addView(  
-        texte(  
-            """  
-            👥 Comptes : ${comptes.size}  
+// ========================================================
+// FIN DE LA CONNEXION ADMINISTRATEUR
+// ========================================================
               
-            🛍️ Produits : ${produits.size}  
-              
-            📦 Commandes : ${commandes.size}  
-              
-            🔔 Événements : ${evenementsAdmin.size}  
-            """.trimIndent(),  
-            18f,  
-            VERT  
-        ).apply {  
+    
 
-            gravity =  
-                Gravity.CENTER  
-
-            setBackgroundColor(  
-                Color.WHITE  
-            )  
-        }  
-    )  
-
-    root.addView(  
-        boutonVert(  
-            "👥 Voir les vendeurs"  
-        ) {  
-
-            afficherVendeursAdmin()  
-        }  
-    )  
-
-    root.addView(  
-        boutonVert(  
-            "📦 Voir les commandes"  
-        ) {  
-
-            afficherCommandesAdmin()  
-        }  
-    )  
-
-    root.addView(  
-        boutonVert(  
-            "🔔 Voir les notifications"  
-        ) {  
-
-            afficherEvenementsAdmin()  
-        }  
-    )  
-
-    root.addView(  
-        bouton(  
-            "🚪 Fermer l'administration"  
-        ) {  
-
-            adminConnecte =  
-                false  
-
-            afficherAccueil()  
-        }  
-    )  
-
-    setContentView(  
-        scroll(root)  
-    )  
+     
 }  
 // ========================================================
 // VIE ESPOIR MARKETING
