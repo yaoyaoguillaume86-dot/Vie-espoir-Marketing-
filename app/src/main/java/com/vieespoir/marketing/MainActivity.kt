@@ -4045,44 +4045,33 @@ private fun afficherFormulaireInscription(role: String) {
 
                 // ========================================
                 // ENREGISTREMENT FIRESTORE
-                // ========================================
+                // =====================================
+db.collection("Comptes")
+    .document(uid)
+    .set(donnees)
+    .addOnSuccessListener {
 
-                db.collection("Comptes")
-                    .document(uid)
-                    .set(donnees)
-                    .addOnSuccessListener {
+        inscriptionEnCours = false
+        compteConnecteId = uid
 
-                        inscriptionEnCours = false
+        prefs.edit()
+            .putString(CONNECTED_ACCOUNT, uid)
+            .apply()
 
-                        compteConnecteId = uid
+        if (estVendeur) {
+            toast("Bienvenue dans votre espace vendeur")
+            afficherEspaceVendeur()
+        } else {
+            toast("Bienvenue dans votre espace client")
+            afficherAccueil()
+        }
 
-                        prefs.edit()
-                            .putString(
-                                CONNECTED_ACCOUNT,
-                                uid
-                            )
-                            .apply()
+    } // Ferme addOnSuccessListener
 
-                        toast("Compte créé avec succès !")
-
-        // ========================================================
-// VIE ESPOIR MARKETING
-// CORRECTION INSCRIPTION VENDEUR
-// REDIRECTION APRES INSCRIPTION FIREBASE
-// ========================================================
-
-if (estVendeur) {
-
-    toast("Bienvenue dans votre espace vendeur")
-
-    afficherEspaceVendeur()
-
-} else {
-
-    toast("Bienvenue dans votre espace client")
-
-    afficherAccueil()
-}
+    .addOnFailureListener { erreur ->
+        inscriptionEnCours = false
+        toast("Profil non enregistré : ${erreur.message}")
+    }
 
 // ========================================================
 // FIN CORRECTION INSCRIPTION VENDEUR
