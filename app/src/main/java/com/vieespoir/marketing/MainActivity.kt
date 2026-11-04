@@ -842,14 +842,50 @@ private fun chargerProduitsFirebase() {
                 "Produits synchronisés : ${produits.size}"
             )
 
-            // ACTUALISER L'ACCUEIL AUTOMATIQUEMENT
-            if (
-                ::zoneProduits.isInitialized &&
-                zoneProduits.isAttachedToWindow
-            ) {
-                afficherProduitsAccueil()
-            }
-        }
+            // ========================================================
+// ACTUALISER L'ACCUEIL AUTOMATIQUEMENT
+// ========================================================
+
+if (
+    ::zoneProduits.isInitialized &&
+    zoneProduits.isAttachedToWindow
+) {
+    afficherProduitsAccueil()
+}
+
+// ========================================================
+// OUVRIR AUTOMATIQUEMENT LE PRODUIT PARTAGE
+// APRES SYNCHRONISATION FIREBASE
+// VIE ESPOIR MARKETING
+// ========================================================
+
+val idAouvrir = produitIdEnAttente
+
+if (!idAouvrir.isNullOrBlank()) {
+
+    val produitTrouve = produits.find {
+        it.id.toString() == idAouvrir
+    }
+
+    if (produitTrouve != null) {
+
+        // Effacer l'attente pour éviter
+        // de rouvrir le produit à chaque mise à jour
+        produitIdEnAttente = null
+
+        afficherDetailProduit(produitTrouve)
+
+    } else {
+
+        android.util.Log.w(
+            "LIEN_PRODUIT",
+            "Produit introuvable : $idAouvrir"
+        )
+
+        produitIdEnAttente = null
+
+        toast("Ce produit est introuvable.")
+    }
 }
 // ========================================================
 // FERMETURE DE LA SYNCHRONISATION FIREBASE
