@@ -4065,15 +4065,38 @@ private fun afficherFormulaireInscription(role: String) {
 
                         toast("Compte créé avec succès !")
 
-                        if (estVendeur) {
+                        // ========================================================
+// ========================================================
+// VIE ESPOIR MARKETING
+//
+// CORRECTION INSCRIPTION VENDEUR
+// OUVERTURE AUTOMATIQUE ESPACE VENDEUR
+// ACCES AU TABLEAU DE BORD PERSONNEL
+// COMPTE VENDEUR EN ATTENTE DE VALIDATION
+//
+// ========================================================
+// ========================================================
 
-                            toast(
-                                "Compte vendeur en attente de validation"
-                            )
-                        }
+if (estVendeur) {
 
-                        afficherAccueil()
-                    }
+    toast(
+        "Bienvenue dans votre espace vendeur"
+    )
+
+    afficherEspaceVendeur()
+
+} else {
+
+    toast(
+        "Bienvenue dans votre espace client"
+    )
+
+    afficherAccueil()
+}
+
+// ========================================================
+// FIN CORRECTION INSCRIPTION VENDEUR
+// ========================================================
                     .addOnFailureListener { erreur ->
 
                         inscriptionEnCours = false
