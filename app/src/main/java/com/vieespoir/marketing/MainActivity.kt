@@ -4065,31 +4065,21 @@ private fun afficherFormulaireInscription(role: String) {
 
                         toast("Compte créé avec succès !")
 
-                        // ========================================================
-// ========================================================
+        // ========================================================
 // VIE ESPOIR MARKETING
-//
 // CORRECTION INSCRIPTION VENDEUR
-// OUVERTURE AUTOMATIQUE ESPACE VENDEUR
-// ACCES AU TABLEAU DE BORD PERSONNEL
-// COMPTE VENDEUR EN ATTENTE DE VALIDATION
-//
-// ========================================================
+// REDIRECTION APRES INSCRIPTION FIREBASE
 // ========================================================
 
 if (estVendeur) {
 
-    toast(
-        "Bienvenue dans votre espace vendeur"
-    )
+    toast("Bienvenue dans votre espace vendeur")
 
     afficherEspaceVendeur()
 
 } else {
 
-    toast(
-        "Bienvenue dans votre espace client"
-    )
+    toast("Bienvenue dans votre espace client")
 
     afficherAccueil()
 }
