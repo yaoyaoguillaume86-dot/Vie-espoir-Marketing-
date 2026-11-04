@@ -325,7 +325,11 @@ private val TEXTE = Color.rgb(35, 35, 35)
 private val prefs by lazy {  
     getSharedPreferences(PREFS, MODE_PRIVATE)  
 }  
-
+// ========================================================
+// PRODUIT PARTAGE EN ATTENTE
+// VIE ESPOIR MARKETING
+// ========================================================
+private var produitIdEnAttente: String? = null
 // ========================================================
 // DEMARRAGE DE L'APPLICATION
 // OUVERTURE DES LIENS PRODUITS
@@ -887,6 +891,17 @@ if (!idAouvrir.isNullOrBlank()) {
         toast("Ce produit est introuvable.")
     }
 }
+
+// ========================================================
+// FIN DE L'ECOUTEUR FIREBASE
+// ========================================================
+        }
+
+// ========================================================
+// FIN DE LA FONCTION chargerProduitsFirebase
+// ========================================================
+}
+
 // ========================================================
 // FERMETURE DE LA SYNCHRONISATION FIREBASE
 // ========================================================
