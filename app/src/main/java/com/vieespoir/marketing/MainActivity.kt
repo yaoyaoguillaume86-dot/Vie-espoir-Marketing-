@@ -1881,7 +1881,32 @@ private fun afficherDetailProduit(produit: Produit) {
         scroll(root)
     )
 }
+// ========================================================
+// ========================================================
+// OUVERTURE DIRECTE D'UN PRODUIT
+// VIE ESPOIR MARKETING
+// LIEN PARTAGE WHATSAPP - FACEBOOK
+// ========================================================
+// ========================================================
 
+private fun ouvrirProduitParId(
+    produitId: String
+) {
+    val produitTrouve = produits.find {
+        it.id.toString() == produitId
+    }
+
+    if (produitTrouve != null) {
+
+        afficherDetailProduit(produitTrouve)
+
+    } else {
+
+        toast(
+            "Produit introuvable. Actualisez la boutique."
+        )
+    }
+}
 // ========================================================  
 // PANIER  
 // ========================================================  
