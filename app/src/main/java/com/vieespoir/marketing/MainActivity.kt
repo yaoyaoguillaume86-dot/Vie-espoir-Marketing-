@@ -4315,7 +4315,22 @@ private fun afficherConnexion() {
                                         "Votre compte vendeur attend une validation"
                                     )
 
-                                    afficherAccueil()
+                                    // ========================================================
+// ========================================================
+// VIE ESPOIR MARKETING
+//
+// CORRECTION ACCES COMPTE VENDEUR
+// OUVERTURE ESPACE VENDEUR MEME EN ATTENTE
+// DE VALIDATION ADMINISTRATEUR
+//
+// ========================================================
+// ========================================================
+
+afficherEspaceVendeur()
+
+// ========================================================
+// FIN CORRECTION ACCES VENDEUR
+// ========================================================
                                 }
 
                             } else {
