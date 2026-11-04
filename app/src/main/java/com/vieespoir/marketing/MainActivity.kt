@@ -326,26 +326,38 @@ private val prefs by lazy {
     getSharedPreferences(PREFS, MODE_PRIVATE)  
 }  
 
-// ========================================================  
-// DÉMARRAGE  
-// ========================================================  
+// ========================================================
+// DEMARRAGE DE L'APPLICATION
+// OUVERTURE DES LIENS PRODUITS
+// VIE ESPOIR MARKETING
+// ========================================================
 
-override fun onCreate(savedInstanceState: Bundle?) {  
-    super.onCreate(savedInstanceState)  
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
 
-    window.statusBarColor = VERT_FONCE  
-    window.navigationBarColor = Color.WHITE  
+    window.statusBarColor = VERT_FONCE
+    window.navigationBarColor = Color.WHITE
 
-    chargerDonnees()  
+    chargerDonnees()
 
-    compteConnecteId =  
-        prefs.getString(  
-            CONNECTED_ACCOUNT,  
-            ""  
-        ) ?: ""  
+    compteConnecteId =
+        prefs.getString(
+            CONNECTED_ACCOUNT,
+            ""
+        ) ?: ""
+
+    // Recuperer l'identifiant du produit partage
+    produitIdEnAttente =
+        intent?.data
+            ?.takeIf {
+                it.scheme == "vieespoir" &&
+                it.host == "produit"
+            }
+            ?.lastPathSegment
 
     afficherAccueil()
-chargerProduitsFirebase()
+
+    chargerProduitsFirebase()
 }
 
 // ========================================================  
