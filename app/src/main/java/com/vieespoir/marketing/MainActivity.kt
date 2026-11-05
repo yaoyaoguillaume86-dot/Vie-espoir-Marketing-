@@ -4448,17 +4448,17 @@ private fun afficherMotDePasseOublie() {
 
 private fun afficherEspaceVendeur() {  
 
-    val compte =  
-        compteActuel()  
+    val compte =  compteActuel()
+        
 
-    if (compte == null) {
-
+if (compte == null) {
     toast(
-        "Profil vendeur introuvable dans les comptes locaux"
+        "Connexion Firebase réussie, mais profil local introuvable"
     )
-
-    afficherConnexion()
-
+    android.util.Log.e(
+        "VIE_ESPOIR",
+        "Compte local absent dans afficherEspaceVendeur"
+    )
     return
 }
 
