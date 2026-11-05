@@ -4451,12 +4451,16 @@ private fun afficherEspaceVendeur() {
     val compte =  
         compteActuel()  
 
-    if (compte == null) {  
+    if (compte == null) {
 
-        afficherConnexion()  
+    toast(
+        "Profil vendeur introuvable dans les comptes locaux"
+    )
 
-        return  
-    }  
+    afficherConnexion()
+
+    return
+}
 
     val root =  
         layoutBase()  
