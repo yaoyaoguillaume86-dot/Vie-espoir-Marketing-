@@ -180,7 +180,16 @@ data class Commande(
     val paiement: String,  
     var statut: String = "Nouvelle"  
 )  
-
+// ========================================================
+// ========================================================
+// VIE ESPOIR MARKETING
+//
+// CLASSE COMPTE CLIENT ET VENDEUR
+// PROFIL UTILISATEUR FIREBASE
+// INFORMATIONS PERSONNELLES
+//
+// ========================================================
+// ========================================================
 data class Compte(  
     val id: String,  
     var nom: String,  
@@ -4447,20 +4456,69 @@ private fun afficherMotDePasseOublie() {
 // ========================================================  
 
 private fun afficherEspaceVendeur() {  
+// ========================================================
+// VIE ESPOIR MARKETING
+// CORRECTION DU PROFIL VENDEUR
+// ========================================================
 
-    val compte =  compteActuel()
-        
+val compte = compteActuel()
 
 if (compte == null) {
-    toast(
-        "Connexion Firebase réussie, mais profil local introuvable"
-    )
-    android.util.Log.e(
-        "VIE_ESPOIR",
-        "Compte local absent dans afficherEspaceVendeur"
-    )
+
+    val uid = FirebaseAuth.getInstance()
+        .currentUser?.uid
+
+    if (uid == null) {
+        toast("Veuillez vous connecter")
+        afficherConnexion()
+        return
+    }
+
+    toast("Chargement de votre profil vendeur...")
+
+    db.collection("Comptes")
+        .document(uid)
+        .get()
+        .addOnSuccessListener { document ->
+
+            if (!document.exists()) {
+                toast(
+                    "Profil vendeur absent de Firestore"
+                )
+                return@addOnSuccessListener
+            }
+
+            val role = (
+                document.getString("role")
+                    ?: document.getString("type")
+                    ?: "client"
+            ).trim().lowercase()
+
+            if (role != "vendeur") {
+                toast("Ce compte n'est pas un compte vendeur")
+                return@addOnSuccessListener
+            }
+
+            // Le document existe, mais le profil local
+            // doit encore être synchronisé.
+            toast(
+                "Profil Firebase trouvé. Synchronisation locale nécessaire."
+            )
+
+        }
+        .addOnFailureListener { erreur ->
+
+            toast(
+                "Erreur de chargement : ${erreur.localizedMessage}"
+            )
+        }
+
     return
 }
+
+// ========================================================
+// FIN VERIFICATION DU PROFIL VENDEUR
+// ========================================================
 
     val root =  
         layoutBase()  
