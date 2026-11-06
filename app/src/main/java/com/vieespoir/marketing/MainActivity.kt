@@ -4457,24 +4457,28 @@ private fun afficherMotDePasseOublie() {
 
 private fun afficherEspaceVendeur() {  
 // ========================================================
+// ========================================================
 // VIE ESPOIR MARKETING
-// CORRECTION DU PROFIL VENDEUR
+// SYNCHRONISATION FIREBASE DU PROFIL VENDEUR
+// CORRECTION PROFIL LOCAL INTROUVABLE
+// ========================================================
 // ========================================================
 
 val compte = compteActuel()
 
 if (compte == null) {
 
-    val uid = FirebaseAuth.getInstance()
-        .currentUser?.uid
+    val utilisateur = FirebaseAuth.getInstance().currentUser
 
-    if (uid == null) {
+    if (utilisateur == null) {
         toast("Veuillez vous connecter")
         afficherConnexion()
         return
     }
 
-    toast("Chargement de votre profil vendeur...")
+    val uid = utilisateur.uid
+
+    toast("Chargement du profil vendeur...")
 
     db.collection("Comptes")
         .document(uid)
@@ -4482,39 +4486,63 @@ if (compte == null) {
         .addOnSuccessListener { document ->
 
             if (!document.exists()) {
-                toast(
-                    "Profil vendeur absent de Firestore"
-                )
+                toast("Profil vendeur absent de Firestore")
                 return@addOnSuccessListener
             }
 
             val role = (
                 document.getString("role")
                     ?: document.getString("type")
-                    ?: "client"
+                    ?: ""
             ).trim().lowercase()
 
             if (role != "vendeur") {
-                toast("Ce compte n'est pas un compte vendeur")
+                toast("Ce compte n'est pas un vendeur")
                 return@addOnSuccessListener
             }
 
-            // Le document existe, mais le profil local
-            // doit encore être synchronisé.
-            toast(
-                "Profil Firebase trouvé. Synchronisation locale nécessaire."
+            val profil = Compte(
+                id = uid,
+                nom = document.getString("nom") ?: "",
+                entreprise = document.getString("entreprise") ?: "",
+                email = document.getString("email")
+                    ?: utilisateur.email
+                    ?: "",
+                telephone = document.getString("telephone") ?: "",
+                adresse = document.getString("adresse") ?: "",
+                motDePasse = "",
+                type = "vendeur",
+                dateCreation = document.getLong("dateCreation")
+                    ?: System.currentTimeMillis(),
+                valide = document.getBoolean("valide") == true
             )
 
+            comptes.removeAll { it.id == uid }
+            comptes.add(profil)
+
+            compteConnecteId = uid
+
+            prefs.edit()
+                .putString(CONNECTED_ACCOUNT, uid)
+                .apply()
+
+            toast("Bienvenue dans votre espace vendeur")
+
+            afficherEspaceVendeur()
         }
         .addOnFailureListener { erreur ->
 
             toast(
-                "Erreur de chargement : ${erreur.localizedMessage}"
+                "Erreur Firebase : ${erreur.localizedMessage}"
             )
         }
 
     return
 }
+
+// ========================================================
+// FIN SYNCHRONISATION FIREBASE
+// ========================================================
 
 // ========================================================
 // FIN VERIFICATION DU PROFIL VENDEUR
