@@ -151,17 +151,27 @@ private val db = FirebaseFirestore.getInstance()
 // MODÈLES  
 // ========================================================  
 
-data class Produit(  
-    val id: String = System.currentTimeMillis().toString(),  
-    var nom: String,  
-    var prix: String,  
-    var categorie: String,  
-    var stock: Int = 0,  
-    var description: String = "",  
-    var images: MutableList<String> = mutableListOf(),  
-    var vendeur: String = "",  
-    var entreprise: String = ""  
-)  
+
+// ========================================================
+// VIE ESPOIR MARKETING
+// PRODUIT AVEC IDENTIFIANT UNIQUE DU VENDEUR
+// ========================================================
+
+data class Produit(
+    val id: String = System.currentTimeMillis().toString(),
+    var nom: String,
+    var prix: String,
+    var categorie: String,
+    var stock: Int = 0,
+    var description: String = "",
+    var images: MutableList<String> = mutableListOf(),
+    var vendeur: String = "",
+    var entreprise: String = "",
+
+    // Identifiant Firebase du propriétaire du produit
+    var vendeurId: String = ""
+)
+
 
 data class PanierItem(  
     val produitId: String,  
@@ -2686,6 +2696,7 @@ private fun afficherAjouterProduit() {
     val compte =  
         compteActuel()  
 
+    
     if (  
         compte == null ||  
         compte.type != "VENDEUR"  
@@ -2895,6 +2906,15 @@ private fun afficherAjouterProduit() {
             val compteVendeur =  
                 compteActuel()  
 
+val uidVendeur = FirebaseAuth.getInstance()
+    .currentUser?.uid
+
+if (uidVendeur == null) {
+    toast("Veuillez vous connecter comme vendeur")
+    afficherConnexion()
+    return@boutonVert
+}
+
             produits.add(  
                 Produit(  
                     nom =  
@@ -2927,7 +2947,7 @@ private fun afficherAjouterProduit() {
                     entreprise =  
                         compteVendeur  
                             ?.entreprise  
-                            ?: ""  
+                            ?: "",  
                 )  
             )  
 
