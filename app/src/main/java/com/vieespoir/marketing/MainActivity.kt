@@ -2946,11 +2946,11 @@ if (uidVendeur == null) {
 
                     entreprise =  
                         compteVendeur  
-                            ?.entreprise  
-                            ?: "",  
-                )  
-            )  
+                            ?.entreprise ?: "",
 
+vendeurId = uidVendeur
+)
+)
             sauvegarderProduits()  
 
             enregistrerEvenement(  
