@@ -6449,8 +6449,8 @@ private fun sauvegarderProduits() {
                     "description" to produit.description,
                     "images" to imagesEnLigne,
                     "vendeur" to produit.vendeur,
-                    "entreprise" to produit.entreprise
-                )
+                    "entreprise" to produit.entreprise,
+  "vendeurId" to produit.vendeurId              )
 
                 db.collection("Produits")
                     .document(produit.id)
