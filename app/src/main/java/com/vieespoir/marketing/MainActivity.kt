@@ -1065,18 +1065,18 @@ private fun ajouterCarrouselAccueil(
             }
 
             accueilCarrouselHandler.postDelayed(
-                this,
-                30_000L
-            )
+    this,
+    10_000L
+)
         }
     }
 
     accueilCarrouselRunnable = animation
 
     accueilCarrouselHandler.postDelayed(
-        animation,
-        30_000L
-    )
+    animation,
+    10_000L
+)
 }
 
 // ========================================================
