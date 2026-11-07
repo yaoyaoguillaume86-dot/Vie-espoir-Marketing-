@@ -964,6 +964,124 @@ override fun onDestroy() {
  // Présentation en deux colonnes, style boutique en ligne
  // ========================================================
 
+
+// ========================================================
+// VIE ESPOIR MARKETING
+// CARROUSEL AUTOMATIQUE - 30 SECONDES
+// ========================================================
+
+private val accueilCarrouselHandler =
+    Handler(Looper.getMainLooper())
+
+private var accueilCarrouselRunnable: Runnable? = null
+
+private fun arreterCarrouselAccueil() {
+    accueilCarrouselRunnable?.let {
+        accueilCarrouselHandler.removeCallbacks(it)
+    }
+    accueilCarrouselRunnable = null
+}
+
+private fun ajouterCarrouselAccueil(
+    parent: LinearLayout
+) {
+    arreterCarrouselAccueil()
+
+    if (produits.isEmpty()) return
+
+    val densite = resources.displayMetrics.density
+
+    fun dp(v: Int): Int =
+        (v * densite).toInt()
+
+    parent.addView(
+        titre("✨ Découvrez nos produits")
+    )
+
+    val defilement = HorizontalScrollView(this).apply {
+        isHorizontalScrollBarEnabled = false
+        isFillViewport = false
+    }
+
+    val ligne = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        setPadding(dp(4), dp(8), dp(4), dp(12))
+    }
+
+    defilement.addView(ligne)
+    parent.addView(defilement)
+
+    produits.forEach { produit ->
+
+        val conteneur = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+
+            layoutParams = LinearLayout.LayoutParams(
+                dp(170),
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                marginEnd = dp(10)
+            }
+        }
+
+        ligne.addView(conteneur)
+
+        ajouterCarteProduit(
+            parent = conteneur,
+            produit = produit,
+            compact = true
+        )
+    }
+
+    if (produits.size <= 1) return
+
+    val largeurEtape = dp(180)
+    var position = 0
+
+    val animation = object : Runnable {
+
+        override fun run() {
+
+            if (!defilement.isAttachedToWindow) {
+                return
+            }
+
+            val maximum = (
+                ligne.width - defilement.width
+            ).coerceAtLeast(0)
+
+            if (maximum > 0) {
+
+                position += largeurEtape
+
+                if (position > maximum) {
+                    position = 0
+                }
+
+                defilement.smoothScrollTo(
+                    position,
+                    0
+                )
+            }
+
+            accueilCarrouselHandler.postDelayed(
+                this,
+                30_000L
+            )
+        }
+    }
+
+    accueilCarrouselRunnable = animation
+
+    accueilCarrouselHandler.postDelayed(
+        animation,
+        30_000L
+    )
+}
+
+// ========================================================
+// FIN CARROUSEL AUTOMATIQUE
+// ========================================================
 private fun afficherProduitsAccueil() {
     if (!::zoneProduits.isInitialized) return
 
