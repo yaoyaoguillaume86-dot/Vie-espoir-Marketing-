@@ -496,222 +496,251 @@ private fun toast(
 
 // ========================================================  
 // ACCUEIL  
-// ========================================================  
+// ========================================================
 
-private fun afficherAccueil() {  
+private fun afficherAccueil() {
 
-    val root = layoutBase()  
+    val root = layoutBase()
 
-    val header =  
-        LinearLayout(this).apply {  
+    val densite = resources.displayMetrics.density
 
-            orientation =  
-                LinearLayout.HORIZONTAL  
+    fun dp(v: Int): Int =
+        (v * densite).toInt()
 
-            gravity =  
-                Gravity.CENTER_VERTICAL  
+    // ========================================================
+    // 1 - EN-TETE PROFESSIONNEL VIE ESPOIR MARKETING
+    // ========================================================
 
-            setPadding(  
-                8,  
-                10,  
-                8,  
-                10  
-            )  
+    val header = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        setPadding(dp(10), dp(10), dp(10), dp(10))
+        setBackgroundColor(VERT)
+    }
 
-            setBackgroundColor(  
-                Color.WHITE  
-            )  
-        }  
+    // Utilise l'icône officielle déjà installée
+    // dans le projet Android.
 
-    /*  
-     * PAS DE FICHIER LOGO.  
-     *  
-     * Le lion est simplement un caractère texte.  
-     * Aucun drawable n'est nécessaire.  
-     */  
+    val logo = ImageView(this).apply {
 
-    val logo =  
-        TextView(this).apply {  
+        setImageResource(
+            applicationInfo.icon
+        )
 
-            text = "🦁"  
-            textSize = 42f  
-            gravity = Gravity.CENTER  
-        }  
+        scaleType = ImageView.ScaleType.FIT_CENTER
 
-    val nom =  
-        TextView(this).apply {  
-
-            text =  
-                "VIE ESPOIR\nMARKETING"  
-
-            textSize = 20f  
-
-            setTextColor(  
-                VERT  
-            )  
-
-            typeface =  
-                Typeface.DEFAULT_BOLD  
-
-            gravity =  
-                Gravity.CENTER_VERTICAL  
-
-            layoutParams =  
-                LinearLayout.LayoutParams(  
-                    0,  
-                    ViewGroup.LayoutParams.WRAP_CONTENT,  
-                    1f  
-                )  
-        }  
-
-    val menu =  
-        Button(this).apply {  
-
-            text = "☰"  
-            textSize = 25f  
-
-            setTextColor(  
-                VERT  
-            )  
-
-            setBackgroundColor(  
-                GRIS  
-            )  
-
-            setOnClickListener {  
-                afficherMenu()  
-            }  
-        }  
-
-    header.addView(logo)  
-    header.addView(nom)  
-    header.addView(menu)  
-
-    root.addView(header)  
-
-    root.addView(  
-        texte(  
-            "Ensemble pour un meilleur avenir",  
-            14f,  
-            VERT  
-        ).apply {  
-
-            gravity =  
-                Gravity.CENTER  
-
-            typeface =  
-                Typeface.create(  
-                    Typeface.DEFAULT,  
-                    Typeface.ITALIC  
-                )  
-        }  
-    )  
-
-     if (compteConnecteId.isNotEmpty()) {
-
-    val compte = compteActuel()
-
-    if (compte != null) {
-        root.addView(
-            texte(
-                "👋 Bienvenue",
-                17f,
-                VERT
-            ).apply {
-                gravity = Gravity.CENTER
-                typeface = Typeface.DEFAULT_BOLD
-            }
+        layoutParams = LinearLayout.LayoutParams(
+            dp(65),
+            dp(65)
         )
     }
+
+    val nom = TextView(this).apply {
+
+        text = "VIE ESPOIR\nMARKETING"
+        textSize = 19f
+        setTextColor(Color.WHITE)
+        typeface = Typeface.DEFAULT_BOLD
+        gravity = Gravity.CENTER_VERTICAL
+
+        layoutParams = LinearLayout.LayoutParams(
+            0,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            1f
+        ).apply {
+            marginStart = dp(8)
+        }
+    }
+
+    val compteBouton = TextView(this).apply {
+
+        text = "👤"
+        textSize = 27f
+        gravity = Gravity.CENTER
+        setTextColor(Color.WHITE)
+
+        setPadding(dp(5), dp(5), dp(5), dp(5))
+
+        setOnClickListener {
+
+            if (compteActuel() != null) {
+                afficherMenu()
+            } else {
+                afficherConnexion()
+            }
+        }
+    }
+
+    val panierBouton = TextView(this).apply {
+
+        text = "🛒"
+        textSize = 27f
+        gravity = Gravity.CENTER
+        setTextColor(Color.WHITE)
+
+        setPadding(dp(5), dp(5), dp(5), dp(5))
+
+        setOnClickListener {
+            afficherPanier()
+        }
+    }
+
+    val menu = TextView(this).apply {
+
+        text = "☰"
+        textSize = 27f
+        gravity = Gravity.CENTER
+        setTextColor(Color.WHITE)
+
+        setPadding(dp(5), dp(5), dp(5), dp(5))
+
+        setOnClickListener {
+            afficherMenu()
+        }
+    }
+
+    header.addView(menu)
+    header.addView(logo)
+    header.addView(nom)
+    header.addView(compteBouton)
+    header.addView(panierBouton)
+
+    root.addView(header)
+
+    // ========================================================
+    // 2 - MESSAGE DE BIENVENUE
+    // ========================================================
+
+    root.addView(
+        texte(
+            "Ensemble pour un meilleur avenir",
+            14f,
+            VERT
+        ).apply {
+            gravity = Gravity.CENTER
+            typeface = Typeface.create(
+                Typeface.DEFAULT,
+                Typeface.ITALIC
+            )
+        }
+    )
+
+    if (compteConnecteId.isNotEmpty()) {
+
+        val compte = compteActuel()
+
+        if (compte != null) {
+
+            root.addView(
+                texte(
+                    "👋 Bienvenue",
+                    17f,
+                    VERT
+                ).apply {
+                    gravity = Gravity.CENTER
+                    typeface = Typeface.DEFAULT_BOLD
+                }
+            )
+        }
+    }
+
+    // ========================================================
+    // 3 - BARRE DE RECHERCHE
+    // ========================================================
+
+    val recherche = EditText(this).apply {
+
+        hint = "🔎 Rechercher un produit..."
+        textSize = 16f
+        setSingleLine(true)
+
+        setPadding(
+            dp(14),
+            dp(12),
+            dp(14),
+            dp(12)
+        )
+
+        setBackgroundColor(Color.WHITE)
+    }
+
+    root.addView(recherche)
+
+    root.addView(
+        boutonVert("🔎 Rechercher") {
+
+            afficherProduits(
+                recherche.text
+                    .toString()
+                    .trim()
+            )
+        }
+    )
+
+    // ========================================================
+    // 4 - PRODUITS DE LA BOUTIQUE
+    // ========================================================
+
+    root.addView(
+        titre("🛍️ Nos produits")
+    )
+
+    zoneProduits = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+    }
+
+    root.addView(zoneProduits)
+
+    // ========================================================
+    // 5 - ACCES AU PANIER
+    // ========================================================
+
+    root.addView(
+        bouton(
+            "🛒 Mon panier (${panier.size})"
+        ) {
+            afficherPanier()
+        }
+    )
+
+    // ========================================================
+    // 6 - PIED DE PAGE
+    // ========================================================
+
+    root.addView(
+        texte(
+            "VIE ESPOIR MARKETING\nProduits • Commandes • Vente • Entreprises",
+            13f,
+            Color.GRAY
+        ).apply {
+
+            gravity = Gravity.CENTER
+
+            setPadding(
+                dp(8),
+                dp(20),
+                dp(8),
+                dp(20)
+            )
+        }
+    )
+
+    // ========================================================
+    // 7 - AFFICHAGE DE LA PAGE
+    // ========================================================
+
+    viderHistoriqueEtAfficher(
+        scroll(root)
+    )
+
+    // Conserve les deux colonnes existantes
+    afficherProduitsAccueil()
 }
-    val recherche =  
-        EditText(this).apply {  
 
-            hint =  
-                "🔎 Rechercher un produit"  
+// ========================================================
+// FIN - PAGE D'ACCUEIL VIE ESPOIR MARKETING
+// ========================================================
 
-            textSize = 16f  
-
-            setSingleLine(true)  
-
-            setPadding(  
-                16,  
-                12,  
-                16,  
-                12  
-            )  
-
-            setBackgroundColor(  
-                Color.WHITE  
-            )  
-        }  
-
-    root.addView(recherche)  
-
-    root.addView(  
-        boutonVert(  
-            "🔎 Rechercher"  
-        ) {  
-
-            afficherProduits(  
-                recherche.text  
-                    .toString()  
-                    .trim()  
-            )  
-        }  
-    )  
-
-    root.addView(  
-        titre(  
-            "🛍️ Produits disponibles"  
-        )  
-    )  
-
-    zoneProduits =  
-        LinearLayout(this).apply {  
-
-            orientation =  
-                LinearLayout.VERTICAL  
-        }  
-
-    root.addView(  
-        zoneProduits  
-    )  
-
-    root.addView(  
-        bouton(  
-            "🛒 Mon panier (${panier.size})"  
-        ) {  
-
-            afficherPanier()  
-        }  
-    )  
-
-    root.addView(  
-        texte(  
-            "VIE ESPOIR MARKETING\nProduits • Commandes • Vente • Entreprises",  
-            13f,  
-            Color.GRAY  
-        ).apply {  
-
-            gravity =  
-                Gravity.CENTER  
-
-            setPadding(  
-                8,  
-                25,  
-                8,  
-                20  
-            )  
-        }  
-    )  
-
-    viderHistoriqueEtAfficher(  
-        scroll(root)  
-    )  
-
-    afficherProduitsAccueil()  
-}  
 
 // ========================================================  
 // PRODUITS ACCUEIL  
