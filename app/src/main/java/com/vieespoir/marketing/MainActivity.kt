@@ -1110,6 +1110,19 @@ private fun afficherProduitsAccueil() {
         return
     }
 
+// ========================================================
+// VIE ESPOIR MARKETING
+// ACTIVER LE CARROUSEL AUTOMATIQUE
+// DEFILEMENT HORIZONTAL TOUTES LES 30 SECONDES
+// ========================================================
+
+ajouterCarrouselAccueil(zoneProduits)
+
+// ========================================================
+// FIN ACTIVATION DU CARROUSEL
+// ========================================================
+
+
     val groupes = produits.groupBy { produit ->
         produit.categorie.trim()
             .ifEmpty { "Autres produits" }
