@@ -6418,7 +6418,14 @@ private fun enregistrerEvenement(
 private fun sauvegarderProduits() {
     sauvegarderProduitsLocalement()
 
-    val donneesProduits = produits.toList()
+    
+val uidVendeur = FirebaseAuth.getInstance()
+    .currentUser?.uid ?: return
+
+val donneesProduits = produits.filter {
+    it.vendeurId == uidVendeur
+}.toList()
+
 
     if (donneesProduits.isEmpty()) return
 
