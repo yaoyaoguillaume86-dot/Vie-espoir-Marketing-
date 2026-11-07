@@ -4303,6 +4303,37 @@ private fun afficherConnexion() {
                                 )
                                 .apply()
 
+// ========================================================
+// VIE ESPOIR MARKETING
+// SYNCHRONISATION DU COMPTE FIREBASE
+// CLIENT ET VENDEUR
+// ========================================================
+
+val compteFirebase = Compte(
+    id = uid,
+    nom = document.getString("nom") ?: "",
+    entreprise = document.getString("entreprise") ?: "",
+    email = document.getString("email") ?: e,
+    telephone = document.getString("telephone") ?: "",
+    adresse = document.getString("adresse") ?: "",
+    motDePasse = "",
+    type = role.uppercase(),
+    dateCreation = document.getLong("dateCreation")
+        ?: System.currentTimeMillis(),
+    valide = valide
+)
+
+// Éviter les doublons dans les comptes locaux
+comptes.removeAll { it.id == uid }
+
+// Ajouter le profil synchronisé
+comptes.add(compteFirebase)
+
+// ========================================================
+// FIN SYNCHRONISATION DU COMPTE
+// ========================================================
+
+
                             // ================================
                             // CONNEXION VENDEUR
                             // ================================
