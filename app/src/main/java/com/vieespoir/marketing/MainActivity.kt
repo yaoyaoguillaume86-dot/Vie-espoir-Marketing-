@@ -6326,62 +6326,203 @@ private fun ouvrirWhatsApp(
     }  
 }  
 
-// ========================================================  
-// PARTAGE PRODUIT  
-// ========================================================  
 
-private fun partagerProduit(  
-    produit: Produit  
-) {  
+// ========================================================
+// VIE ESPOIR MARKETING
+// PARTAGE PRODUIT AVEC PHOTO + TEXTE
+// WHATSAPP, FACEBOOK ET AUTRES APPLICATIONS
+// ========================================================
 
-    val prix =  
-        produit.prix  
-            .toIntOrNull()  
-            ?: 0  
+private fun partagerProduit(produit: Produit) {
 
-    val textePartage =  
-        """  
-        🛍️ VIE ESPOIR MARKETING  
-          
-        🏢 ${produit.entreprise.ifEmpty {  
-            "Boutique"  
-        }}  
-          
-        ${produit.nom}  
-          
-        💰 Prix :  
-        ${formaterNombre(prix)} FCFA  
-          
-        🏷️ ${produit.categorie}  
-          
-        ${produit.description}  
-          
-        📲 Ouvrez Vie Espoir Marketing pour voir le produit et commander.  
-          
-        📞 $ORANGE_WAVE  
-        """.trimIndent()  
+    val prix = produit.prix.toIntOrNull() ?: 0
 
-    val intent =  
-        Intent(  
-            Intent.ACTION_SEND  
-        ).apply {  
+    val textePartage = """
+        🛍️ VIE ESPOIR MARKETING
 
-            type =  
-                "text/plain"  
+        🏢 ${produit.entreprise.ifEmpty { "Boutique" }}
 
-            putExtra(  
-                Intent.EXTRA_TEXT,  
-                textePartage  
-            )  
-        }  
+        🛍️ ${produit.nom}
 
-    startActivity(  
-        Intent.createChooser(  
-            intent,  
-            "Partager le produit"  
-        )  
-    )  
-}  
+        💰 Prix : ${formaterNombre(prix)} FCFA
+
+        🏷️ ${produit.categorie}
+
+        ${produit.description}
+
+        📲 Découvrez ce produit sur Vie Espoir Marketing.
+
+        📞 $ORANGE_WAVE
+    """.trimIndent()
+
+    val photo = produit.images.firstOrNull {
+        it.isNotBlank()
+    }
+
+    if (photo == null) {
+        partagerTexteProduit(textePartage)
+        return
+    }
+
+    toast("Préparation de la photo...")
+
+    Thread {
+
+        try {
+
+            val bitmap: Bitmap? =
+                if (
+                    photo.startsWith("https://") ||
+                    photo.startsWith("http://")
+                ) {
+                    val connexion =
+                        URL(photo).openConnection()
+                            as HttpURLConnection
+
+                    try {
+                        connexion.connectTimeout = 15000
+                        connexion.readTimeout = 20000
+                        connexion.connect()
+
+                        if (connexion.responseCode !in 200..299) {
+                            throw Exception("Photo indisponible")
+                        }
+
+                        connexion.inputStream.use {
+                            BitmapFactory.decodeStream(it)
+                        }
+                    } finally {
+                        connexion.disconnect()
+                    }
+
+                } else {
+
+                    val uri = Uri.parse(photo)
+
+                    when (uri.scheme) {
+
+                        "content" ->
+                            contentResolver.openInputStream(uri)
+                                ?.use {
+                                    BitmapFactory.decodeStream(it)
+                                }
+
+                        "file" ->
+                            BitmapFactory.decodeFile(
+                                uri.path ?: ""
+                            )
+
+                        else ->
+                            BitmapFactory.decodeFile(photo)
+                    }
+                }
+
+            if (bitmap == null) {
+                throw Exception("Impossible de lire la photo")
+            }
+
+            val dossier = File(cacheDir, "partages")
+            dossier.mkdirs()
+
+            val fichier = File(
+                dossier,
+                "produit_${System.currentTimeMillis()}.jpg"
+            )
+
+            FileOutputStream(fichier).use {
+                bitmap.compress(
+                    Bitmap.CompressFormat.JPEG,
+                    85,
+                    it
+                )
+            }
+
+            val uriPartage =
+                androidx.core.content.FileProvider.getUriForFile(
+                    this,
+                    "$packageName.fileprovider",
+                    fichier
+                )
+
+            runOnUiThread {
+
+                val intent = Intent(Intent.ACTION_SEND).apply {
+
+                    type = "image/jpeg"
+
+                    putExtra(
+                        Intent.EXTRA_STREAM,
+                        uriPartage
+                    )
+
+                    putExtra(
+                        Intent.EXTRA_TEXT,
+                        textePartage
+                    )
+
+                    addFlags(
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+
+                    clipData = ClipData.newUri(
+                        contentResolver,
+                        "Photo produit",
+                        uriPartage
+                    )
+                }
+
+                startActivity(
+                    Intent.createChooser(
+                        intent,
+                        "Partager le produit"
+                    )
+                )
+            }
+
+        } catch (e: Exception) {
+
+            android.util.Log.e(
+                "PARTAGE_PRODUIT",
+                "Erreur de partage",
+                e
+            )
+
+            runOnUiThread {
+                toast("Photo indisponible, partage du texte")
+                partagerTexteProduit(textePartage)
+            }
+        }
+
+    }.start()
+}
+
+// ========================================================
+// PARTAGE TEXTE SI PHOTO ABSENTE
+// ========================================================
+
+private fun partagerTexteProduit(texte: String) {
+
+    val intent = Intent(Intent.ACTION_SEND).apply {
+
+        type = "text/plain"
+
+        putExtra(
+            Intent.EXTRA_TEXT,
+            texte
+        )
+    }
+
+    startActivity(
+        Intent.createChooser(
+            intent,
+            "Partager le produit"
+        )
+    )
+}
+
+// ========================================================
+// FIN PARTAGE PRODUIT
+// ========================================================
 
 // ========================================================  
 // PARTAGE APPLICATION  
