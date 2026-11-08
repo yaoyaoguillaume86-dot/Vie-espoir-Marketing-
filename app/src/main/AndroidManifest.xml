@@ -1,57 +1,86 @@
+
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Caméra -->
-    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- CAMÉRA -->
+    <uses-permission
+        android:name="android.permission.CAMERA" />
 
-    <!-- Internet pour WhatsApp et les fonctions en ligne -->
-    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- INTERNET -->
+    <uses-permission
+        android:name="android.permission.INTERNET" />
 
     <application
-    android:allowBackup="true"
-    android:label="Vie Espoir Marketing"
-    android:icon="@mipmap/ic_launcher"
-    android:roundIcon="@mipmap/ic_launcher"
-    android:supportsRtl="true"
-    android:theme="@style/AppTheme">
+        android:allowBackup="true"
+        android:label="Vie Espoir Marketing"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
 
-        <!--
-            Écran de lancement.
-            C'est lui qui s'affiche en premier.
-        -->
+        <!-- ====================================== -->
+        <!-- ÉCRAN DE DÉMARRAGE -->
+        <!-- ====================================== -->
+
         <activity
             android:name=".SplashActivity"
             android:exported="true">
 
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
+                <action
+                    android:name="android.intent.action.MAIN" />
+
+                <category
+                    android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
         </activity>
 
-        <!-- ================================================== -->
-<!-- OUVERTURE DIRECTE DES PRODUITS -->
-<!-- VIE ESPOIR MARKETING -->
-<!-- LIENS PARTAGES WHATSAPP ET FACEBOOK -->
-<!-- ================================================== -->
+        <!-- ====================================== -->
+        <!-- OUVERTURE DES PRODUITS PARTAGÉS -->
+        <!-- ====================================== -->
 
-<activity
-    android:name=".MainActivity"
-    android:exported="true">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
 
-    <intent-filter>
-        <action android:name="android.intent.action.VIEW" />
+            <intent-filter>
+                <action
+                    android:name="android.intent.action.VIEW" />
 
-        <category android:name="android.intent.category.DEFAULT" />
-        <category android:name="android.intent.category.BROWSABLE" />
+                <category
+                    android:name="android.intent.category.DEFAULT" />
 
-        <data
-            android:scheme="vieespoir"
-            android:host="produit" />
-    </intent-filter>
+                <category
+                    android:name="android.intent.category.BROWSABLE" />
 
-</activity>
+                <data
+                    android:scheme="vieespoir"
+                    android:host="produit" />
+            </intent-filter>
+
+        </activity>
+
+        <!-- ====================================== -->
+        <!-- PARTAGE DES PHOTOS DES PRODUITS -->
+        <!-- WHATSAPP / FACEBOOK -->
+        <!-- ====================================== -->
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+
+        </provider>
+
+        <!-- ====================================== -->
+        <!-- FIN CONFIGURATION -->
+        <!-- ====================================== -->
 
     </application>
 
