@@ -30,6 +30,12 @@ import java.net.URL
 import android.graphics.BitmapFactory
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.SetOptions
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
+import android.content.ClipData
+import android.text.TextUtils
+
 // ==========================================
 // ÉCRAN DE BIENVENUE
 // ==========================================
