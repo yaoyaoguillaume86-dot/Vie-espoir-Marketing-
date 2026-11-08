@@ -6464,11 +6464,13 @@ private fun partagerProduit(produit: Produit) {
                         Intent.FLAG_GRANT_READ_URI_PERMISSION
                     )
 
-                    clipData = ClipData.newUri(
-                        contentResolver,
-                        "Photo produit",
-                        uriPartage
-                    )
+                    
+clipData = android.content.ClipData.newUri(
+    contentResolver,
+    "Photo produit",
+    uriPartage
+)
+
                 }
 
                 startActivity(
