@@ -6618,14 +6618,15 @@ private fun partagerProduit(produit: Produit) {
                     type = "image/jpeg"
 
                     putExtra(
-                        Intent.EXTRA_STREAM,
-                        uriPartage
-                    )
+    Intent.EXTRA_STREAM,
+    uriPartage
+)
 
-                    putExtra(
-                        Intent.EXTRA_TEXT,
-                        textePartage
-                    )
+putExtra(
+    Intent.EXTRA_TEXT,
+    textePartage
+)
+                    
 
                     clipData = ClipData.newUri(
                         contentResolver,
