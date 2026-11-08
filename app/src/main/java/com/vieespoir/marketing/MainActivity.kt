@@ -6327,125 +6327,269 @@ private fun ouvrirWhatsApp(
 }  
 
 
-
  // ========================================================
  // VIE ESPOIR MARKETING
- // PARTAGE PRODUIT : PHOTO + TEXTE + LIEN
- // WHATSAPP, FACEBOOK ET AUTRES APPLICATIONS
+ // PARTAGE PUBLICITAIRE AUTOMATIQUE
+ // PHOTO + NOM + PRIX + BOUTIQUE + CONTACT
  // ========================================================
 
 private fun partagerProduit(produit: Produit) {
 
     val prix = produit.prix.toIntOrNull() ?: 0
 
-    // Remplacer par le véritable lien HTTPS public
-    // de la fiche produit lorsque celui-ci sera prêt.
-    val lienProduit = ""
-
-    val textePartage = """
-        🛍️ VIE ESPOIR MARKETING
-
-        📦 Produit : ${produit.nom}
-
-        💰 Prix : ${formaterNombre(prix)} FCFA
-
-        🏬 Boutique : ${produit.entreprise.ifEmpty { "Boutique" }}
-
-        🏷️ Catégorie : ${produit.categorie}
-
-        📝 ${produit.description}
-
-        📞 Contact : $ORANGE_WAVE
-
-        Découvrez notre boutique !
-        $lienProduit
-    """.trimIndent()
-
     val photo = produit.images.firstOrNull {
         it.isNotBlank()
     }
 
-    if (photo == null) {
-        partagerTexteProduit(textePartage)
-        return
-    }
+    val textePartage = """
+        🛍️ VIE ESPOIR MARKETING
+        📦 Produit : ${produit.nom}
+        💰 Prix : ${formaterNombre(prix)} FCFA
+        🏬 Boutique : ${produit.entreprise}
+        📝 ${produit.description}
+        📞 Contact : $ORANGE_WAVE
+    """.trimIndent()
 
-    toast("Préparation du partage...")
+    toast("Création de l'affiche publicitaire...")
 
     Thread {
-
         try {
 
-            val bitmap: Bitmap? =
-                if (
-                    photo.startsWith("https://") ||
-                    photo.startsWith("http://")
-                ) {
+            // ============================================
+            // 1. CHARGER LA PHOTO DU PRODUIT
+            // ============================================
 
-                    val connexion =
-                        URL(photo).openConnection()
-                            as HttpURLConnection
+            val photoBitmap: Bitmap? = if (photo == null) {
+                null
+            } else if (
+                photo.startsWith("https://") ||
+                photo.startsWith("http://")
+            ) {
+                val connexion =
+                    URL(photo).openConnection() as HttpURLConnection
 
-                    try {
-                        connexion.connectTimeout = 15000
-                        connexion.readTimeout = 20000
-                        connexion.connect()
+                try {
+                    connexion.connectTimeout = 15000
+                    connexion.readTimeout = 20000
+                    connexion.connect()
 
-                        if (connexion.responseCode !in 200..299) {
-                            throw Exception("Photo indisponible")
-                        }
+                    if (connexion.responseCode !in 200..299) {
+                        throw Exception("Photo inaccessible")
+                    }
 
-                        connexion.inputStream.use {
+                    connexion.inputStream.use {
+                        BitmapFactory.decodeStream(it)
+                    }
+                } finally {
+                    connexion.disconnect()
+                }
+
+            } else {
+                val uri = Uri.parse(photo)
+
+                when (uri.scheme) {
+                    "content" ->
+                        contentResolver.openInputStream(uri)?.use {
                             BitmapFactory.decodeStream(it)
                         }
 
-                    } finally {
-                        connexion.disconnect()
-                    }
+                    "file" ->
+                        BitmapFactory.decodeFile(uri.path ?: "")
 
-                } else {
-
-                    val uri = Uri.parse(photo)
-
-                    when (uri.scheme) {
-
-                        "content" ->
-                            contentResolver.openInputStream(uri)
-                                ?.use {
-                                    BitmapFactory.decodeStream(it)
-                                }
-
-                        "file" ->
-                            BitmapFactory.decodeFile(
-                                uri.path ?: ""
-                            )
-
-                        else ->
-                            BitmapFactory.decodeFile(photo)
-                    }
+                    else ->
+                        BitmapFactory.decodeFile(photo)
                 }
-
-            if (bitmap == null) {
-                throw Exception("Photo introuvable")
             }
+
+            // ============================================
+            // 2. CRÉER L'AFFICHE
+            // ============================================
+
+            val largeur = 1080
+            val hauteur = 1500
+
+            val affiche = Bitmap.createBitmap(
+                largeur,
+                hauteur,
+                Bitmap.Config.ARGB_8888
+            )
+
+            val canvas = Canvas(affiche)
+
+            canvas.drawColor(Color.WHITE)
+
+            val peinture = Paint(
+                Paint.ANTI_ALIAS_FLAG
+            )
+
+            // Bandeau vert
+            peinture.color = Color.rgb(20, 125, 65)
+
+            canvas.drawRect(
+                0f, 0f,
+                largeur.toFloat(), 170f,
+                peinture
+            )
+
+            peinture.color = Color.WHITE
+            peinture.textSize = 54f
+            peinture.typeface = Typeface.create(
+                Typeface.DEFAULT,
+                Typeface.BOLD
+            )
+            peinture.textAlign = Paint.Align.CENTER
+
+            canvas.drawText(
+                "VIE ESPOIR MARKETING",
+                540f,
+                105f,
+                peinture
+            )
+
+            // ============================================
+            // 3. AFFICHER LA PHOTO
+            // ============================================
+
+            if (photoBitmap != null) {
+
+                val zone = RectF(
+                    60f, 205f,
+                    1020f, 880f
+                )
+
+                val ratio = minOf(
+                    zone.width() / photoBitmap.width,
+                    zone.height() / photoBitmap.height
+                )
+
+                val w = photoBitmap.width * ratio
+                val h = photoBitmap.height * ratio
+
+                val destination = RectF(
+                    zone.centerX() - w / 2,
+                    zone.centerY() - h / 2,
+                    zone.centerX() + w / 2,
+                    zone.centerY() + h / 2
+                )
+
+                peinture.color = Color.WHITE
+
+                canvas.drawBitmap(
+                    photoBitmap,
+                    null,
+                    destination,
+                    peinture
+                )
+            }
+
+            // ============================================
+            // 4. ÉCRIRE LES INFORMATIONS
+            // ============================================
+
+            peinture.textAlign = Paint.Align.LEFT
+            peinture.color = Color.BLACK
+            peinture.typeface = Typeface.create(
+                Typeface.DEFAULT,
+                Typeface.BOLD
+            )
+
+            fun ecrire(
+                texte: String,
+                y: Float,
+                taille: Float,
+                couleur: Int = Color.BLACK
+            ) {
+                peinture.textSize = taille
+                peinture.color = couleur
+
+                val maximum = 940f
+
+                val affichage = TextUtils.ellipsize(
+                    texte,
+                    android.text.TextPaint(peinture),
+                    maximum,
+                    TextUtils.TruncateAt.END
+                ).toString()
+
+                canvas.drawText(
+                    affichage,
+                    70f,
+                    y,
+                    peinture
+                )
+            }
+
+            ecrire(
+                "Produit : ${produit.nom}",
+                960f,
+                48f
+            )
+
+            ecrire(
+                "Prix : ${formaterNombre(prix)} FCFA",
+                1040f,
+                60f,
+                Color.rgb(20, 125, 65)
+            )
+
+            ecrire(
+                "Boutique : ${produit.entreprise}",
+                1120f,
+                43f
+            )
+
+            ecrire(
+                produit.description,
+                1200f,
+                36f
+            )
+
+            ecrire(
+                "Contact : $ORANGE_WAVE",
+                1280f,
+                43f
+            )
+
+            // Bandeau inférieur
+            peinture.color = Color.rgb(20, 125, 65)
+
+            canvas.drawRect(
+                0f, 1370f,
+                1080f, 1500f,
+                peinture
+            )
+
+            peinture.color = Color.WHITE
+            peinture.textSize = 43f
+            peinture.textAlign = Paint.Align.CENTER
+
+            canvas.drawText(
+                "Découvrez notre boutique !",
+                540f,
+                1450f,
+                peinture
+            )
+
+            // ============================================
+            // 5. ENREGISTRER L'AFFICHE
+            // ============================================
 
             val dossier = File(cacheDir, "partages")
             dossier.mkdirs()
 
             val fichier = File(
                 dossier,
-                "produit_${System.currentTimeMillis()}.jpg"
+                "affiche_${System.currentTimeMillis()}.jpg"
             )
 
             FileOutputStream(fichier).use {
-                val reussi = bitmap.compress(
-                    Bitmap.CompressFormat.JPEG,
-                    85,
-                    it
-                )
-
-                if (!reussi) {
-                    throw Exception("Enregistrement photo impossible")
+                if (!affiche.compress(
+                        Bitmap.CompressFormat.JPEG,
+                        90,
+                        it
+                    )
+                ) {
+                    throw Exception("Enregistrement impossible")
                 }
             }
 
@@ -6455,6 +6599,10 @@ private fun partagerProduit(produit: Produit) {
                     "$packageName.fileprovider",
                     fichier
                 )
+
+            // ============================================
+            // 6. PARTAGER SUR LES RÉSEAUX SOCIAUX
+            // ============================================
 
             runOnUiThread {
 
@@ -6472,12 +6620,11 @@ private fun partagerProduit(produit: Produit) {
                         textePartage
                     )
 
-                    clipData =
-                        android.content.ClipData.newUri(
-                            contentResolver,
-                            "Photo du produit",
-                            uriPartage
-                        )
+                    clipData = ClipData.newUri(
+                        contentResolver,
+                        "Affiche produit",
+                        uriPartage
+                    )
 
                     addFlags(
                         Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -6485,43 +6632,36 @@ private fun partagerProduit(produit: Produit) {
                 }
 
                 try {
-
                     startActivity(
                         Intent.createChooser(
                             intent,
-                            "Partager le produit"
+                            "Partager l'affiche du produit"
                         )
                     )
-
                 } catch (e: Exception) {
-
                     toast("Impossible d'ouvrir le partage")
-                    partagerTexteProduit(textePartage)
                 }
             }
 
         } catch (e: Exception) {
 
-            android.util.Log.e(
+            Log.e(
                 "PARTAGE_PRODUIT",
-                "Erreur de partage",
+                "Erreur de création de l'affiche",
                 e
             )
 
             runOnUiThread {
-
-                toast("Photo indisponible")
-
-                partagerTexteProduit(textePartage)
+                toast("Erreur de création de l'affiche")
             }
         }
-
     }.start()
 }
 
 // ========================================================
-// FIN PARTAGE PRODUIT
+// FIN PARTAGE PUBLICITAIRE AUTOMATIQUE
 // ========================================================
+
 
 
 // ========================================================
