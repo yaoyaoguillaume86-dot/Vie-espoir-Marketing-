@@ -6327,32 +6327,38 @@ private fun ouvrirWhatsApp(
 }  
 
 
-// ========================================================
-// VIE ESPOIR MARKETING
-// PARTAGE PRODUIT AVEC PHOTO + TEXTE
-// WHATSAPP, FACEBOOK ET AUTRES APPLICATIONS
-// ========================================================
+
+ // ========================================================
+ // VIE ESPOIR MARKETING
+ // PARTAGE PRODUIT : PHOTO + TEXTE + LIEN
+ // WHATSAPP, FACEBOOK ET AUTRES APPLICATIONS
+ // ========================================================
 
 private fun partagerProduit(produit: Produit) {
 
     val prix = produit.prix.toIntOrNull() ?: 0
 
+    // Remplacer par le véritable lien HTTPS public
+    // de la fiche produit lorsque celui-ci sera prêt.
+    val lienProduit = ""
+
     val textePartage = """
         🛍️ VIE ESPOIR MARKETING
 
-        🏢 ${produit.entreprise.ifEmpty { "Boutique" }}
-
-        🛍️ ${produit.nom}
+        📦 Produit : ${produit.nom}
 
         💰 Prix : ${formaterNombre(prix)} FCFA
 
-        🏷️ ${produit.categorie}
+        🏬 Boutique : ${produit.entreprise.ifEmpty { "Boutique" }}
 
-        ${produit.description}
+        🏷️ Catégorie : ${produit.categorie}
 
-        📲 Découvrez ce produit sur Vie Espoir Marketing.
+        📝 ${produit.description}
 
-        📞 $ORANGE_WAVE
+        📞 Contact : $ORANGE_WAVE
+
+        Découvrez notre boutique !
+        $lienProduit
     """.trimIndent()
 
     val photo = produit.images.firstOrNull {
@@ -6364,7 +6370,7 @@ private fun partagerProduit(produit: Produit) {
         return
     }
 
-    toast("Préparation de la photo...")
+    toast("Préparation du partage...")
 
     Thread {
 
@@ -6375,6 +6381,7 @@ private fun partagerProduit(produit: Produit) {
                     photo.startsWith("https://") ||
                     photo.startsWith("http://")
                 ) {
+
                     val connexion =
                         URL(photo).openConnection()
                             as HttpURLConnection
@@ -6391,6 +6398,7 @@ private fun partagerProduit(produit: Produit) {
                         connexion.inputStream.use {
                             BitmapFactory.decodeStream(it)
                         }
+
                     } finally {
                         connexion.disconnect()
                     }
@@ -6418,7 +6426,7 @@ private fun partagerProduit(produit: Produit) {
                 }
 
             if (bitmap == null) {
-                throw Exception("Impossible de lire la photo")
+                throw Exception("Photo introuvable")
             }
 
             val dossier = File(cacheDir, "partages")
@@ -6430,11 +6438,15 @@ private fun partagerProduit(produit: Produit) {
             )
 
             FileOutputStream(fichier).use {
-                bitmap.compress(
+                val reussi = bitmap.compress(
                     Bitmap.CompressFormat.JPEG,
                     85,
                     it
                 )
+
+                if (!reussi) {
+                    throw Exception("Enregistrement photo impossible")
+                }
             }
 
             val uriPartage =
@@ -6460,25 +6472,32 @@ private fun partagerProduit(produit: Produit) {
                         textePartage
                     )
 
+                    clipData =
+                        android.content.ClipData.newUri(
+                            contentResolver,
+                            "Photo du produit",
+                            uriPartage
+                        )
+
                     addFlags(
                         Intent.FLAG_GRANT_READ_URI_PERMISSION
                     )
-
-                    
-clipData = android.content.ClipData.newUri(
-    contentResolver,
-    "Photo produit",
-    uriPartage
-)
-
                 }
 
-                startActivity(
-                    Intent.createChooser(
-                        intent,
-                        "Partager le produit"
+                try {
+
+                    startActivity(
+                        Intent.createChooser(
+                            intent,
+                            "Partager le produit"
+                        )
                     )
-                )
+
+                } catch (e: Exception) {
+
+                    toast("Impossible d'ouvrir le partage")
+                    partagerTexteProduit(textePartage)
+                }
             }
 
         } catch (e: Exception) {
@@ -6490,13 +6509,20 @@ clipData = android.content.ClipData.newUri(
             )
 
             runOnUiThread {
-                toast("Photo indisponible, partage du texte")
+
+                toast("Photo indisponible")
+
                 partagerTexteProduit(textePartage)
             }
         }
 
     }.start()
 }
+
+// ========================================================
+// FIN PARTAGE PRODUIT
+// ========================================================
+
 
 // ========================================================
 // PARTAGE TEXTE SI PHOTO ABSENTE
