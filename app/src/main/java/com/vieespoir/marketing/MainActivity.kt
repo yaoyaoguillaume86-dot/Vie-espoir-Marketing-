@@ -6607,8 +6607,10 @@ private fun partagerProduit(produit: Produit) {
                     fichier
                 )
 
+     
             // ============================================
             // 6. PARTAGER SUR LES RÉSEAUX SOCIAUX
+            // PRIORITÉ À LA PHOTO PUBLICITAIRE
             // ============================================
 
             runOnUiThread {
@@ -6618,15 +6620,9 @@ private fun partagerProduit(produit: Produit) {
                     type = "image/jpeg"
 
                     putExtra(
-    Intent.EXTRA_STREAM,
-    uriPartage
-)
-
-putExtra(
-    Intent.EXTRA_TEXT,
-    textePartage
-)
-                    
+                        Intent.EXTRA_STREAM,
+                        uriPartage
+                    )
 
                     clipData = ClipData.newUri(
                         contentResolver,
