@@ -35,6 +35,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.content.ClipData
 import android.text.TextUtils
+import android.util.Log
 
 // ==========================================
 // ÉCRAN DE BIENVENUE
