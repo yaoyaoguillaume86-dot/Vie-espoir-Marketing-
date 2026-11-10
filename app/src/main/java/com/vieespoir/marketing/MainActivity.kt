@@ -2817,96 +2817,212 @@ private fun afficherProduits(
     )  
 }  
 
-// ========================================================  
-// AJOUT PRODUIT  
-// ========================================================  
 
-private fun afficherAjouterProduit() {  
-
-  
 // ========================================================
 // VIE ESPOIR MARKETING
-// ENREGISTREMENT PRODUIT ADMINISTRATEUR ET VENDEUR
+// AJOUT PRODUIT - ADMINISTRATEUR ET VENDEUR
 // ========================================================
 
-val compteVendeur = compteActuel()
+private fun afficherAjouterProduit() {
 
-val uidVendeur = FirebaseAuth
-    .getInstance()
-    .currentUser?.uid
+    val root = layoutBase()
 
-if (uidVendeur == null) {
-    toast("Veuillez vous connecter")
-    afficherConnexion()
-    return@boutonVert
+    root.addView(
+        titre("Ajouter un produit")
+    )
+
+    // ====================================================
+    // NOM DU PRODUIT
+    // ====================================================
+
+    val champNom = EditText(this).apply {
+        hint = "Nom du produit"
+        inputType = InputType.TYPE_CLASS_TEXT
+    }
+    root.addView(champNom)
+
+    // ====================================================
+    // PRIX
+    // ====================================================
+
+    val champPrix = EditText(this).apply {
+        hint = "Prix en F CFA"
+        inputType = InputType.TYPE_CLASS_NUMBER
+    }
+    root.addView(champPrix)
+
+    // ====================================================
+    // CATEGORIE
+    // ====================================================
+
+    val champCategorie = EditText(this).apply {
+        hint = "Catégorie du produit"
+        inputType = InputType.TYPE_CLASS_TEXT
+    }
+    root.addView(champCategorie)
+
+    // ====================================================
+    // STOCK
+    // ====================================================
+
+    val champStock = EditText(this).apply {
+        hint = "Quantité en stock"
+        inputType = InputType.TYPE_CLASS_NUMBER
+    }
+    root.addView(champStock)
+
+    // ====================================================
+    // DESCRIPTION
+    // ====================================================
+
+    val champDescription = EditText(this).apply {
+        hint = "Description du produit"
+        minLines = 3
+        inputType =
+            InputType.TYPE_CLASS_TEXT or
+            InputType.TYPE_TEXT_FLAG_MULTI_LINE
+    }
+    root.addView(champDescription)
+
+    // ====================================================
+    // PHOTOS
+    // Utilise la galerie déjà présente dans l'application
+    // ====================================================
+
+    root.addView(
+        boutonVert("Choisir les photos") {
+            ouvrirGalerieMultiple()
+        }
+    )
+
+    // ====================================================
+    // ENREGISTRER LE PRODUIT
+    // ====================================================
+
+    root.addView(
+        boutonVert("Enregistrer le produit") {
+
+            val nomProduit =
+                champNom.text.toString().trim()
+
+            val prixProduit =
+                champPrix.text.toString()
+                    .trim()
+                    .toLongOrNull()
+
+            val categorieProduit =
+                champCategorie.text.toString().trim()
+
+            val stockProduit =
+                champStock.text.toString()
+                    .trim()
+                    .toIntOrNull()
+
+            val descriptionProduit =
+                champDescription.text.toString().trim()
+
+            // ============================================
+            // VALIDATION DES INFORMATIONS
+            // ============================================
+
+            if (nomProduit.isEmpty()) {
+                toast("Saisissez le nom du produit")
+                return@boutonVert
+            }
+
+            if (prixProduit == null || prixProduit <= 0L) {
+                toast("Saisissez un prix valide")
+                return@boutonVert
+            }
+
+            if (stockProduit == null || stockProduit < 0) {
+                toast("Saisissez un stock valide")
+                return@boutonVert
+            }
+
+            // ============================================
+            // IDENTIFICATION DU VENDEUR
+            // ============================================
+
+            val compteVendeur = compteActuel()
+
+            val utilisateurFirebase =
+                FirebaseAuth.getInstance().currentUser
+
+            if (utilisateurFirebase == null) {
+                toast("Veuillez vous connecter")
+                afficherConnexion()
+                return@boutonVert
+            }
+
+            val uidVendeur = utilisateurFirebase.uid
+
+            val estAdmin =
+                adminConnecte
+
+            val nomVendeur = if (estAdmin) {
+                "Administration Vie Espoir Marketing"
+            } else {
+                compteVendeur?.nom ?: ""
+            }
+
+            val nomEntreprise = if (estAdmin) {
+                "Vie Espoir Marketing"
+            } else {
+                compteVendeur?.entreprise ?: ""
+            }
+
+            // ============================================
+            // CREATION DU PRODUIT
+            // ============================================
+
+            val nouveauProduit = Produit(
+                nom = nomProduit,
+                prix = prixProduit,
+                categorie = categorieProduit.ifEmpty {
+                    "Autres"
+                },
+                stock = stockProduit,
+                description = descriptionProduit,
+                images = imagesProduit.toMutableList(),
+                vendeur = nomVendeur,
+                entreprise = nomEntreprise,
+                vendeurId = uidVendeur
+            )
+
+            // ============================================
+            // SAUVEGARDE LOCALE
+            // ============================================
+
+            produits.add(nouveauProduit)
+
+            sauvegarderProduits()
+
+            enregistrerEvenement(
+                "Nouveau produit ajouté : $nomProduit"
+            )
+
+            imagesProduit.clear()
+            imageProduit = ""
+
+            toast("Produit ajouté avec succès")
+
+            afficherAccueil()
+        }
+    )
+
+    // ====================================================
+    // AFFICHAGE DU FORMULAIRE
+    // ====================================================
+
+    setContentView(
+        scroll(root)
+    )
 }
 
 // ========================================================
-// IDENTIFICATION DU PROPRIETAIRE
+// FIN AJOUT PRODUIT
 // ========================================================
-
-val nomVendeur = if (estAdministrateur) {
-    "Administration Vie Espoir Marketing"
-} else {
-    compteVendeur?.nom ?: ""
-}
-
-val nomEntreprise = if (estAdministrateur) {
-    "Vie Espoir Marketing"
-} else {
-    compteVendeur?.entreprise ?: ""
-}
-
-// ========================================================
-// CREATION DU PRODUIT
-// ========================================================
-
-val nouveauProduit = Produit(
-    nom = nomProduit,
-    prix = prixProduit,
-    categorie = categorieProduit.ifEmpty {
-        "Autres"
-    },
-    stock = stockProduit,
-    description = descriptionProduit,
-    images = imagesProduit.toMutableList(),
-    vendeur = nomVendeur,
-    entreprise = nomEntreprise,
-    vendeurId = uidVendeur
-)
-
-// ========================================================
-// AJOUT A LA LISTE DES PRODUITS
-// ========================================================
-
-produits.add(nouveauProduit)
-
-// ========================================================
-// FIN CREATION DU PRODUIT
-// ========================================================
-
-            sauvegarderProduits()  
-
-            enregistrerEvenement(  
-                "Nouveau produit ajouté : $nomProduit"  
-            )  
-
-            imagesProduit.clear()  
-
-            imageProduit = ""  
-
-            toast(  
-                "Produit ajouté avec succès"  
-            )  
-
-            afficherAccueil()  
-        }  
-    )  
-
-    setContentView(  
-        scroll(root)  
-    )  
-}  
 
 // ========================================================  
 // MODIFIER PRODUIT  
