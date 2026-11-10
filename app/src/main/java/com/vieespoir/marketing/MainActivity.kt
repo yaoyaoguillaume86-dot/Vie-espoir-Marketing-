@@ -1618,85 +1618,48 @@ private fun ajouterCarteProduit(
         )
     )
 
-    // ========================================================
-    // BOUTONS PANIER ET PARTAGE
-    // ========================================================
+    
+// ========================================================
+// VIE ESPOIR MARKETING
+// PETIT BOUTON PANIER - STYLE JUMIA
+// SANS BOUTON PARTAGER SUR L'ACCUEIL
+// ========================================================
 
-    val actions = LinearLayout(this).apply {
-        orientation = LinearLayout.HORIZONTAL
-        gravity = Gravity.CENTER_VERTICAL
+val actions = LinearLayout(this).apply {
+    orientation = LinearLayout.HORIZONTAL
+    gravity = Gravity.CENTER
+}
+
+val panier = boutonVert("🛒 Panier") {
+
+    if (produit.stock <= 0) {
+        toast("Produit indisponible")
+    } else {
+        ajouterAuPanier(produit)
+        toast("Produit ajouté au panier")
     }
+}
 
-    val panier = boutonVert("🛒") {
-
-        if (produit.stock <= 0) {
-            toast("Produit indisponible")
-        } else {
-            ajouterAuPanier(produit)
-        }
-    }
-
-    val partager = bouton("📤") {
-
-        val message = """
-            🛍️ VIE ESPOIR MARKETING
-
-            📦 Produit : ${produit.nom}
-
-            💰 Prix : ${formaterNombre(prix)} FCFA
-
-            🏢 Boutique : ${produit.entreprise}
-
-            📝 ${produit.description}
-
-            📞 Contact : 0710405688
-
-            Découvrez notre boutique !
-        """.trimIndent()
-
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(
-                Intent.EXTRA_TEXT,
-                message
-            )
-        }
-
-        startActivity(
-            Intent.createChooser(
-                intent,
-                "Partager le produit"
-            )
+actions.addView(
+    panier,
+    LinearLayout.LayoutParams(
+        ViewGroup.LayoutParams.MATCH_PARENT,
+        dp(36)
+    ).apply {
+        setMargins(
+            0,
+            dp(6),
+            0,
+            0
         )
     }
+)
 
-    actions.addView(
-        panier,
-        LinearLayout.LayoutParams(
-            0,
-            dp(45),
-            1f
-        ).apply {
-            setMargins(
-                0, dp(5), dp(3), 0
-            )
-        }
-    )
+carte.addView(actions)
 
-    actions.addView(
-        partager,
-        LinearLayout.LayoutParams(
-            0,
-            dp(45),
-            1f
-        ).apply {
-            setMargins(
-                dp(3), dp(5), 0, 0
-            )
-        }
-    )
-
-    carte.addView(actions)
+// ========================================================
+// FIN - PETIT BOUTON PANIER
+// ========================================================
 
     // ========================================================
     // GESTION DU VENDEUR
