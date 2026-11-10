@@ -5740,8 +5740,10 @@ private fun afficherAdministration() {
 
             adminConnecte = true
 
-            // Ouvrir le formulaire de produit
-            afficherAjoutProduit()
+            
+// Ouvrir le formulaire de produit
+afficherAjouterProduit()
+
         }
     )
 
