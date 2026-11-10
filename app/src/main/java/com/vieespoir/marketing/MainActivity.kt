@@ -2823,43 +2823,56 @@ private fun afficherProduits(
 
 private fun afficherAjouterProduit() {  
 
-    val compte =  
-        compteActuel()  
+  
+// ========================================================
+// AUTORISATION ADMINISTRATEUR ET VENDEUR
+// ========================================================
 
-    
-    if (  
-        compte == null ||  
-        compte.type != "VENDEUR"  
-    ) {  
+val utilisateur = FirebaseAuth
+    .getInstance()
+    .currentUser
 
-        toast(  
-            "Connectez-vous comme vendeur."  
-        )  
+val uidAdministrateur =
+    "1kpZWN50IHhvz4y4OxS60MVjckx1"
 
-        afficherConnexion()  
+val estAdministrateur =
+    utilisateur?.uid == uidAdministrateur
 
-        return  
-    }  
+val compte = compteActuel()
 
-    if (!compte.valide) {  
+if (utilisateur == null) {
+    toast("Veuillez vous connecter")
+    afficherConnexion()
+    return
+}
 
-        toast(  
-            "Votre compte vendeur n'est pas validé."  
-        )  
+if (!estAdministrateur) {
 
-        return  
-    }  
+    if (
+        compte == null ||
+        compte.type != "VENDEUR"
+    ) {
+        toast("Connectez-vous comme vendeur")
+        afficherConnexion()
+        return
+    }
 
-    if (!vendeurPeutUtiliser()) {  
+    if (!compte.valide) {
+        toast("Votre compte vendeur n'est pas validé")
+        return
+    }
 
-        toast(  
-            "Votre période gratuite est terminée. Veuillez prendre un abonnement."  
-        )  
+    if (!vendeurPeutUtiliser()) {
+        toast("Votre abonnement vendeur est nécessaire")
+        afficherAbonnement()
+        return
+    }
+}
 
-        afficherAbonnement()  
+// ========================================================
+// FIN AUTORISATION
+// ========================================================
 
-        return  
-    }  
 
     imageProduit = ""  
 
