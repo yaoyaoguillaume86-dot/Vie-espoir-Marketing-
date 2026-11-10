@@ -2825,269 +2825,66 @@ private fun afficherAjouterProduit() {
 
   
 // ========================================================
-// AUTORISATION ADMINISTRATEUR ET VENDEUR
+// VIE ESPOIR MARKETING
+// ENREGISTREMENT PRODUIT ADMINISTRATEUR ET VENDEUR
 // ========================================================
 
-val utilisateur = FirebaseAuth
+val compteVendeur = compteActuel()
+
+val uidVendeur = FirebaseAuth
     .getInstance()
-    .currentUser
-
-val uidAdministrateur =
-    "1kpZWN50IHhvz4y4OxS60MVjckx1"
-
-val estAdministrateur =
-    utilisateur?.uid == uidAdministrateur
-
-val compte = compteActuel()
-
-if (utilisateur == null) {
-    toast("Veuillez vous connecter")
-    afficherConnexion()
-    return
-}
-
-if (!estAdministrateur) {
-
-    if (
-        compte == null ||
-        compte.type != "VENDEUR"
-    ) {
-        toast("Connectez-vous comme vendeur")
-        afficherConnexion()
-        return
-    }
-
-    if (!compte.valide) {
-        toast("Votre compte vendeur n'est pas validé")
-        return
-    }
-
-    if (!vendeurPeutUtiliser()) {
-        toast("Votre abonnement vendeur est nécessaire")
-        afficherAbonnement()
-        return
-    }
-}
-
-// ========================================================
-// FIN AUTORISATION
-// ========================================================
-
-
-    imageProduit = ""  
-
-    imagesProduit.clear()  
-
-    val root =  
-        layoutBase()  
-
-    root.addView(  
-        titre(  
-            "➕ Ajouter un produit"  
-        )  
-    )  
-
-    val nom =  
-        EditText(this).apply {  
-
-            hint =  
-                "Nom du produit"  
-
-            textSize = 16f  
-        }  
-
-    val prix =  
-        EditText(this).apply {  
-
-            hint =  
-                "Prix en FCFA"  
-
-            inputType =  
-                InputType.TYPE_CLASS_NUMBER  
-        }  
-
-    val categorie =  
-        EditText(this).apply {  
-
-            hint =  
-                "Catégorie"  
-        }  
-
-    val stock =  
-        EditText(this).apply {  
-
-            hint =  
-                "Quantité en stock"  
-
-            inputType =  
-                InputType.TYPE_CLASS_NUMBER  
-        }  
-
-    val description =  
-        EditText(this).apply {  
-
-            hint =  
-                "Description du produit"  
-
-            minLines = 3  
-
-            gravity =  
-                Gravity.TOP  
-        }  
-
-    root.addView(nom)  
-    root.addView(prix)  
-    root.addView(categorie)  
-    root.addView(stock)  
-    root.addView(description)  
-
-    galeriePhotos =  
-        LinearLayout(this).apply {  
-
-            orientation =  
-                LinearLayout.HORIZONTAL  
-
-            gravity =  
-                Gravity.CENTER  
-        }  
-
-    root.addView(  
-        texte(  
-            "📸 Photos du produit",  
-            17f,  
-            VERT  
-        )  
-    )  
-
-    root.addView(  
-        galeriePhotos  
-    )  
-
-    root.addView(  
-        bouton(  
-            "📷 Prendre une photo"  
-        ) {  
-
-            ouvrirCamera()  
-        }  
-    )  
-
-    root.addView(  
-        bouton(  
-            "🖼️ Ajouter des photos"  
-        ) {  
-
-            ouvrirGalerieMultiple()  
-        }  
-    )  
-
-    root.addView(  
-        boutonVert(  
-            "💾 Enregistrer le produit"  
-        ) {  
-
-            val nomProduit =  
-                nom.text  
-                    .toString()  
-                    .trim()  
-
-            val prixProduit =  
-                prix.text  
-                    .toString()  
-                    .trim()  
-
-            val categorieProduit =  
-                categorie.text  
-                    .toString()  
-                    .trim()  
-
-            val stockProduit =  
-                stock.text  
-                    .toString()  
-                    .toIntOrNull()  
-                    ?: 0  
-
-            val descriptionProduit =  
-                description.text  
-                    .toString()  
-                    .trim()  
-
-            if (  
-                nomProduit.isEmpty()  
-            ) {  
-
-                toast(  
-                    "Entrez le nom du produit"  
-                )  
-
-                return@boutonVert  
-            }  
-
-            if (  
-                prixProduit.isEmpty()  
-            ) {  
-
-                toast(  
-                    "Entrez le prix"  
-                )  
-
-                return@boutonVert  
-            }  
-
-            if (  
-                prixProduit  
-                    .toIntOrNull() == null  
-            ) {  
-
-                toast(  
-                    "Le prix doit être un nombre"  
-                )  
-
-                return@boutonVert  
-            }  
-
-            val compteVendeur =  
-                compteActuel()  
-
-val uidVendeur = FirebaseAuth.getInstance()
     .currentUser?.uid
 
-vendeur = if (estAdministrateur) {
+if (uidVendeur == null) {
+    toast("Veuillez vous connecter")
+    afficherConnexion()
+    return@boutonVert
+}
+
+// ========================================================
+// IDENTIFICATION DU PROPRIETAIRE
+// ========================================================
+
+val nomVendeur = if (estAdministrateur) {
     "Administration Vie Espoir Marketing"
 } else {
     compteVendeur?.nom ?: ""
-},
+}
 
-entreprise = if (estAdministrateur) {
+val nomEntreprise = if (estAdministrateur) {
     "Vie Espoir Marketing"
 } else {
     compteVendeur?.entreprise ?: ""
-},
+}
 
-vendeurId = uidVendeur,
+// ========================================================
+// CREATION DU PRODUIT
+// ========================================================
 
-                    stock =  
-                        stockProduit,  
-
-                    description =  
-                        descriptionProduit,  
-
-                    images =  
-                        imagesProduit  
-                            .toMutableList(),  
-
-                    vendeur =  
-                        compteVendeur  
-                            ?.nom  
-                            ?: "",  
-
-                    entreprise =  
-                        compteVendeur  
-                            ?.entreprise ?: "",
-
-vendeurId = uidVendeur
+val nouveauProduit = Produit(
+    nom = nomProduit,
+    prix = prixProduit,
+    categorie = categorieProduit.ifEmpty {
+        "Autres"
+    },
+    stock = stockProduit,
+    description = descriptionProduit,
+    images = imagesProduit.toMutableList(),
+    vendeur = nomVendeur,
+    entreprise = nomEntreprise,
+    vendeurId = uidVendeur
 )
-)
+
+// ========================================================
+// AJOUT A LA LISTE DES PRODUITS
+// ========================================================
+
+produits.add(nouveauProduit)
+
+// ========================================================
+// FIN CREATION DU PRODUIT
+// ========================================================
+
             sauvegarderProduits()  
 
             enregistrerEvenement(  
