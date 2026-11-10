@@ -3052,25 +3052,19 @@ if (!estAdministrateur) {
 val uidVendeur = FirebaseAuth.getInstance()
     .currentUser?.uid
 
-if (uidVendeur == null) {
-    toast("Veuillez vous connecter comme vendeur")
-    afficherConnexion()
-    return@boutonVert
-}
+vendeur = if (estAdministrateur) {
+    "Administration Vie Espoir Marketing"
+} else {
+    compteVendeur?.nom ?: ""
+},
 
-            produits.add(  
-                Produit(  
-                    nom =  
-                        nomProduit,  
+entreprise = if (estAdministrateur) {
+    "Vie Espoir Marketing"
+} else {
+    compteVendeur?.entreprise ?: ""
+},
 
-                    prix =  
-                        prixProduit,  
-
-                    categorie =  
-                        categorieProduit  
-                            .ifEmpty {  
-                                "Autres"  
-                            },  
+vendeurId = uidVendeur,
 
                     stock =  
                         stockProduit,  
