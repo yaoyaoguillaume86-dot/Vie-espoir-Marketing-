@@ -5714,23 +5714,22 @@ private fun afficherConnexionAdmin() {
 
 // ========================================================
 // FIN DE LA CONNEXION ADMINISTRATEUR
+// ========================================================    
+ 
 // ========================================================
-  // ========================================================
 // VIE ESPOIR MARKETING
-// TABLEAU DE BORD ADMINISTRATEUR
+// TABLEAU DE BORD ADMINISTRATEUR CORRIGÉ
 // ========================================================
 
 private fun afficherAdministration() {
 
-    val utilisateur =
-        com.google.firebase.auth.FirebaseAuth
-            .getInstance()
-            .currentUser
+    val utilisateur = FirebaseAuth
+        .getInstance()
+        .currentUser
 
     val uidAdministrateur =
         "1kpZWN50IHhvz4y4OxS60MVjckx1"
 
-    // Vérification de l'administrateur
     if (
         utilisateur == null ||
         utilisateur.uid != uidAdministrateur
@@ -5742,11 +5741,10 @@ private fun afficherAdministration() {
 
     adminConnecte = true
 
-    // Création du tableau de bord
     val root = layoutBase()
 
     root.addView(
-        titre("👑 Administration VIE ESPOIR MARKETING")
+        titre("👑 ADMINISTRATION VIE ESPOIR MARKETING")
     )
 
     root.addView(
@@ -5757,45 +5755,84 @@ private fun afficherAdministration() {
         )
     )
 
-    // Gestion des vendeurs
+    // ====================================================
+    // AJOUTER UN PRODUIT
+    // ====================================================
+
+    root.addView(
+        bouton("➕ AJOUTER UN PRODUIT") {
+
+            val admin = FirebaseAuth
+                .getInstance()
+                .currentUser
+
+            if (
+                admin == null ||
+                admin.uid != uidAdministrateur
+            ) {
+                adminConnecte = false
+                afficherConnexionAdmin()
+                return@bouton
+            }
+
+            adminConnecte = true
+
+            // Ouvrir le formulaire de produit
+            afficherAjoutProduit()
+        }
+    )
+
+    // ====================================================
+    // GESTION DES VENDEURS
+    // ====================================================
+
     root.addView(
         bouton("👥 Voir les vendeurs") {
             afficherVendeursAdmin()
         }
     )
 
-    // Gestion des commandes
+    // ====================================================
+    // GESTION DES COMMANDES
+    // ====================================================
+
     root.addView(
         bouton("📦 Voir les commandes") {
             afficherCommandesAdmin()
         }
     )
 
-    // Notifications administrateur
+    // ====================================================
+    // NOTIFICATIONS
+    // ====================================================
+
     root.addView(
         bouton("🔔 Voir les notifications") {
             afficherEvenementsAdmin()
         }
     )
 
-    // Retour à l'accueil
+    // ====================================================
+    // RETOUR À L'ACCUEIL
+    // ====================================================
+
     root.addView(
         bouton("⬅ Retour à l'accueil") {
-            adminConnecte = false
+
+            // Ne pas déconnecter l'administrateur
+            adminConnecte = true
+
             afficherAccueil()
         }
     )
 
-    // Affichage
-    setContentView(
-        scroll(root)
-    )
+    setContentView(scroll(root))
 }
 
 // ========================================================
-// FIN DU TABLEAU DE BORD ADMINISTRATEUR
-// ========================================================            
- 
+// FIN TABLEAU DE BORD ADMINISTRATEUR
+// ========================================================
+
 // ========================================================
 // VIE ESPOIR MARKETING
 // ADMINISTRATION - GESTION DES VENDEURS FIREBASE
