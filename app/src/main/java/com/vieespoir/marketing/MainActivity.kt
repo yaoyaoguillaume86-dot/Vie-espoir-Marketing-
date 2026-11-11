@@ -6609,91 +6609,75 @@ if (photoBitmap == null) {
             // FACEBOOK, WHATSAPP ET AUTRES
             // ====================================================
 
-            runOnUiThread {
-
-                val intentPartage = Intent(
-                    Intent.ACTION_SEND
-                ).apply {
-
-                    type = "image/jpeg"
-
-                    putExtra(
-                        Intent.EXTRA_STREAM,
-                        uriPartage
-                    )
-
-                    putExtra(
-                        Intent.EXTRA_TEXT,
-    
+            
             // ========================================================
             // VIE ESPOIR MARKETING
             // PARTAGE PHOTO + LIEN OFFICIEL APK
-            // VERSION CORRIGEE
+            // VERSION CORRIGEE SANS DOUBLON
             // ========================================================
 
-            val intentPartage = Intent(
-                Intent.ACTION_SEND
-            ).apply {
+            runOnUiThread {
 
-                type = "image/jpeg"
+                val intentPartage =
+                    Intent(Intent.ACTION_SEND).apply {
 
-                // PHOTO DU PRODUIT
-                putExtra(
-                    Intent.EXTRA_STREAM,
-                    uriPartage
-                )
+                        type = "image/jpeg"
 
-                // TEXTE + LIEN DE TELECHARGEMENT
-                putExtra(
-                    Intent.EXTRA_TEXT,
-                    """
-                    🛍️ VIE ESPOIR MARKETING
+                        // PHOTO PUBLICITAIRE
+                        putExtra(
+                            Intent.EXTRA_STREAM,
+                            uriPartage
+                        )
 
-                    Découvrez nos produits !
+                        // TEXTE + LIEN APK
+                        putExtra(
+                            Intent.EXTRA_TEXT,
+                            """
+                            🛍️ VIE ESPOIR MARKETING
 
-                    📲 Téléchargez notre application :
-                    https://github.com/yaoyaoguillaume86-dot/Vie-espoir-Marketing-/releases/download/v1.0.2/app-debug.apk
+                            Découvrez nos produits !
 
-                    Commandez facilement !
-                    """.trimIndent()
-                )
+                            📲 Téléchargez notre application :
+                            https://github.com/yaoyaoguillaume86-dot/Vie-espoir-Marketing-/releases/download/v1.0.2/app-debug.apk
 
-                // AUTORISATION DE PARTAGER LA PHOTO
-                clipData = ClipData.newUri(
-                    contentResolver,
-                    "Photo du produit",
-                    uriPartage
-                )
+                            Commandez facilement !
+                            """.trimIndent()
+                        )
 
-                addFlags(
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            }
+                        // AUTORISATION PHOTO
+                        clipData = ClipData.newUri(
+                            contentResolver,
+                            "Photo du produit",
+                            uriPartage
+                        )
 
-            // ========================================================
-            // OUVRIR WHATSAPP, FACEBOOK ET AUTRES APPLICATIONS
-            // ========================================================
+                        addFlags(
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        )
+                    }
 
-            try {
+                // OUVRIR LE PARTAGE
+                try {
 
-                startActivity(
-                    Intent.createChooser(
-                        intentPartage,
-                        "Partager le produit"
+                    startActivity(
+                        Intent.createChooser(
+                            intentPartage,
+                            "Partager le produit"
+                        )
                     )
-                )
 
-            } catch (e: Exception) {
+                } catch (e: Exception) {
 
-                Log.e(
-                    "PARTAGE_PRODUIT",
-                    "Erreur de partage",
-                    e
-                )
+                    Log.e(
+                        "PARTAGE_PRODUIT",
+                        "Erreur de partage",
+                        e
+                    )
 
-                toast(
-                    "Impossible de partager le produit"
-                )
+                    toast(
+                        "Impossible de partager le produit"
+                    )
+                }
             }
 
             // ========================================================
