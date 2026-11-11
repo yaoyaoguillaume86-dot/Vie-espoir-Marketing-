@@ -2,55 +2,118 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1">
-  <title>Vie Espoir Marketing</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f5f7f5;
-    }
-    header {
-      background: #08632e;
-      color: white;
-      padding: 22px;
-      text-align: center;
-    }
-    h1 { font-size: 25px; }
-    .slogan {
-      text-align: center;
-      color: #08632e;
-      font-style: italic;
-    }
-    .contenu { padding: 15px; }
-    .produits {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-    }
-    .produit {
-      background: white;
-      padding: 12px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px #ccc;
-    }
-    button, .bouton {
-      background: #08632e;
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .telecharger {
-      display: block;
-      text-align: center;
-      margin: 20px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport"
+ content="width=device-width, initial-scale=1">
+
+<title>Vie Espoir Marketing</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f5f7f5;
+  color: #222;
+}
+
+header {
+  background: #08632e;
+  color: white;
+  padding: 20px 12px;
+  text-align: center;
+}
+
+header h1 { font-size: 24px; }
+
+.slogan {
+  text-align: center;
+  color: #08632e;
+  font-style: italic;
+}
+
+main { padding: 12px; }
+
+input {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.produits {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.produit {
+  background: white;
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 2px 6px #ccc;
+  min-width: 0;
+}
+
+.produit img {
+  width: 100%;
+  height: 170px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.produit h3 {
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.prix {
+  font-size: 17px;
+  font-weight: bold;
+}
+
+.stock { color: #08632e; }
+.rupture { color: red; }
+
+button, .bouton {
+  background: #08632e;
+  color: white;
+  border: none;
+  border-radius: 7px;
+  padding: 12px;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+button:disabled {
+  background: #aaa;
+  cursor: not-allowed;
+}
+
+.panier {
+  margin-top: 25px;
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+}
+
+.panier-ligne {
+  padding: 10px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.telecharger {
+  display: block;
+  text-align: center;
+  margin: 20px;
+}
+
+#message { color: #555; }
+</style>
 </head>
+
 <body>
 
 <header>
@@ -62,20 +125,248 @@
   Ensemble pour un meilleur avenir
 </p>
 
-<main class="contenu">
+<main>
+  <input
+    id="recherche"
+    placeholder="🔎 Rechercher un produit...">
+
   <h2>🛍️ Nos produits</h2>
 
-  <div class="produits" id="produits">
-    <p>Chargement des produits...</p>
-  </div>
+  <p id="message">Chargement des produits...</p>
+
+  <div class="produits" id="produits"></div>
+
+  <section class="panier">
+    <h2>🛒 Mon panier</h2>
+    <div id="articlesPanier">
+      Votre panier est vide.
+    </div>
+    <h3 id="total">Total : 0 F CFA</h3>
+    <p>
+      La commande en ligne sera activée
+      après la configuration sécurisée
+      de Firebase.
+    </p>
+    <button disabled>
+      Commander (bientôt disponible)
+    </button>
+  </section>
 </main>
 
 <div class="telecharger">
   <a class="bouton"
-     href="https://github.com/yaoyaoguillaume86-dot/Vie-espoir-Marketing-/releases">
+   href="https://github.com/yaoyaoguillaume86-dot/Vie-espoir-Marketing-/releases">
     📲 Télécharger l'application
   </a>
 </div>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+
+import {
+  getFirestore,
+  collection,
+  getDocs
+}
+from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
+
+// ==================================================
+// VIE ESPOIR MARKETING
+// CONFIGURATION FIREBASE WEB
+// ==================================================
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA95GWxmQKfdqPAkVURrLIDKQTvxnlIB24",
+  authDomain: "vie-espoir-marketing.firebaseapp.com",
+  projectId: "vie-espoir-marketing",
+  storageBucket: "vie-espoir-marketing.firebasestorage.app",
+  messagingSenderId: "241290142539",
+  appId: "1:241290142539:web:7fa3f3b98b09ba46b8bece",
+  measurementId: "G-VZ4M38T8TV"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const zone = document.getElementById("produits");
+const message = document.getElementById("message");
+const recherche = document.getElementById("recherche");
+
+let produits = [];
+let panier = [];
+
+// ==================================================
+// AFFICHAGE DES PRODUITS
+// ==================================================
+
+function afficherProduits() {
+  zone.replaceChildren();
+
+  const terme = recherche.value
+    .trim().toLowerCase();
+
+  const liste = produits.filter(p =>
+    p.nom.toLowerCase().includes(terme)
+  );
+
+  if (liste.length === 0) {
+    message.textContent = "Aucun produit trouvé.";
+    return;
+  }
+
+  message.textContent = "";
+
+  liste.forEach(produit => {
+    const carte = document.createElement("article");
+    carte.className = "produit";
+
+    const image = document.createElement("img");
+    image.alt = produit.nom;
+
+    const photo = produit.images.find(
+      url => typeof url === "string" &&
+      url.startsWith("https://")
+    );
+
+    if (photo) {
+      image.src = photo;
+    } else {
+      image.alt = "Photo non disponible";
+    }
+
+    const nom = document.createElement("h3");
+    nom.textContent = produit.nom;
+
+    const prix = document.createElement("p");
+    prix.className = "prix";
+    prix.textContent =
+      produit.prix.toLocaleString("fr-FR") + " F CFA";
+
+    const stock = document.createElement("p");
+    stock.className =
+      produit.stock > 0 ? "stock" : "rupture";
+
+    stock.textContent = produit.stock > 0
+      ? "📦 Stock : " + produit.stock
+      : "Indisponible";
+
+    const bouton = document.createElement("button");
+    bouton.textContent = "+ Panier";
+    bouton.disabled = produit.stock <= 0;
+
+    bouton.addEventListener("click", () => {
+      ajouterAuPanier(produit);
+    });
+
+    carte.append(image, nom, prix, stock, bouton);
+    zone.appendChild(carte);
+  });
+}
+
+// ==================================================
+// CHARGEMENT FIRESTORE
+// ==================================================
+
+async function chargerProduits() {
+  try {
+    const resultat = await getDocs(
+      collection(db, "Produits")
+    );
+
+    produits = resultat.docs.map(doc => {
+      const p = doc.data();
+
+      const images = Array.isArray(p.images)
+        ? p.images
+        : (p.image ? [p.image] : []);
+
+      return {
+        id: doc.id,
+        nom: String(p.nom ?? p.Nom ?? p.name ?? "Produit"),
+        prix: Number(p.prix ?? p.Prix ?? 0) || 0,
+        stock: Number(p.stock ?? 0) || 0,
+        images
+      };
+    });
+
+    afficherProduits();
+
+  } catch (erreur) {
+    console.error("Erreur Firebase :", erreur);
+    message.textContent =
+      "Impossible de charger les produits. " +
+      "Vérifiez la connexion et les autorisations Firestore.";
+  }
+}
+
+// ==================================================
+// PANIER LOCAL
+// ==================================================
+
+function ajouterAuPanier(produit) {
+  const article = panier.find(
+    p => p.id === produit.id
+  );
+
+  if (article) {
+    if (article.quantite >= produit.stock) {
+      alert("Stock insuffisant");
+      return;
+    }
+    article.quantite++;
+  } else {
+    panier.push({
+      id: produit.id,
+      nom: produit.nom,
+      prix: produit.prix,
+      quantite: 1
+    });
+  }
+
+  afficherPanier();
+}
+
+function afficherPanier() {
+  const zonePanier =
+    document.getElementById("articlesPanier");
+
+  zonePanier.replaceChildren();
+
+  let total = 0;
+
+  if (panier.length === 0) {
+    zonePanier.textContent = "Votre panier est vide.";
+  }
+
+  panier.forEach(article => {
+    const ligne = document.createElement("div");
+    ligne.className = "panier-ligne";
+
+    const montant =
+      article.prix * article.quantite;
+
+    total += montant;
+
+    ligne.textContent =
+      article.nom + " × " + article.quantite +
+      " — " + montant.toLocaleString("fr-FR") +
+      " F CFA";
+
+    zonePanier.appendChild(ligne);
+  });
+
+  document.getElementById("total").textContent =
+    "Total : " + total.toLocaleString("fr-FR") +
+    " F CFA";
+}
+
+recherche.addEventListener("input", afficherProduits);
+
+chargerProduits();
+
+</script>
 
 </body>
 </html>
