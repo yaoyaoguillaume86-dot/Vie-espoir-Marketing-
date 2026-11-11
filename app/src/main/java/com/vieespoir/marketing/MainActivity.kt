@@ -6624,50 +6624,82 @@ if (photoBitmap == null) {
 
                     putExtra(
                         Intent.EXTRA_TEXT,
-                       
+    
+            // ========================================================
+            // VIE ESPOIR MARKETING
+            // PARTAGE PHOTO + LIEN OFFICIEL APK
+            // VERSION CORRIGEE
+            // ========================================================
 
-// ========================================================
-// VIE ESPOIR MARKETING
-// PARTAGE PHOTO + LIEN OFFICIEL APK
-// ========================================================
+            val intentPartage = Intent(
+                Intent.ACTION_SEND
+            ).apply {
 
-val intentPartage = Intent(Intent.ACTION_SEND).apply {
+                type = "image/jpeg"
 
-    type = "image/jpeg"
+                // PHOTO DU PRODUIT
+                putExtra(
+                    Intent.EXTRA_STREAM,
+                    uriPartage
+                )
 
-    putExtra(
-        Intent.EXTRA_STREAM,
-        uriPartage
-    )
+                // TEXTE + LIEN DE TELECHARGEMENT
+                putExtra(
+                    Intent.EXTRA_TEXT,
+                    """
+                    🛍️ VIE ESPOIR MARKETING
 
-    putExtra(
-        Intent.EXTRA_TEXT,
-        """
-        🛍️ VIE ESPOIR MARKETING
+                    Découvrez nos produits !
 
-        Découvrez nos produits !
+                    📲 Téléchargez notre application :
+                    https://github.com/yaoyaoguillaume86-dot/Vie-espoir-Marketing-/releases/download/v1.0.2/app-debug.apk
 
-        📲 Téléchargez notre application :
-        https://github.com/yaoyaoguillaume86-dot/Vie-espoir-Marketing-/releases/download/v1.0.2/app-debug.apk
+                    Commandez facilement !
+                    """.trimIndent()
+                )
 
-        Commandez facilement !
-        """.trimIndent()
-    )
+                // AUTORISATION DE PARTAGER LA PHOTO
+                clipData = ClipData.newUri(
+                    contentResolver,
+                    "Photo du produit",
+                    uriPartage
+                )
 
-    clipData = ClipData.newUri(
-        contentResolver,
-        "Photo du produit",
-        uriPartage
-    )
+                addFlags(
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            }
 
-    addFlags(
-        Intent.FLAG_GRANT_READ_URI_PERMISSION
-    )
-}
+            // ========================================================
+            // OUVRIR WHATSAPP, FACEBOOK ET AUTRES APPLICATIONS
+            // ========================================================
 
-// ========================================================
-// FIN PARTAGE PHOTO + LIEN APK
-// ========================================================
+            try {
+
+                startActivity(
+                    Intent.createChooser(
+                        intentPartage,
+                        "Partager le produit"
+                    )
+                )
+
+            } catch (e: Exception) {
+
+                Log.e(
+                    "PARTAGE_PRODUIT",
+                    "Erreur de partage",
+                    e
+                )
+
+                toast(
+                    "Impossible de partager le produit"
+                )
+            }
+
+            // ========================================================
+            // FIN PARTAGE PHOTO + LIEN APK
+            // ========================================================
+
 
 // ========================================================
 // PARTAGE TEXTE SI PHOTO ABSENTE
