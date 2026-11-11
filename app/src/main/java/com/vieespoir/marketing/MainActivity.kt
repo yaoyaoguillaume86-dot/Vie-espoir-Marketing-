@@ -1259,32 +1259,44 @@ private fun ajouterCarteProduit(
     }
 
     // ========================================================
-    // PHOTO PRINCIPALE
+    // PHOTO PRINCIPALE - GRAND FORMAT
+    // VIE ESPOIR MARKETING
     // ========================================================
 
     val image = ImageView(this).apply {
+
         layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            dp(if (compact) 125 else 160)
+            dp(if (compact) 245 else 300)
         )
 
-        scaleType = ImageView.ScaleType.FIT_CENTER
+        scaleType = ImageView.ScaleType.CENTER_CROP
+
         setBackgroundColor(Color.WHITE)
 
         contentDescription =
             "Photos de ${produit.nom}"
     }
 
+    // ========================================================
+    // AFFICHAGE DES PHOTOS DU PRODUIT
+    // ========================================================
+
     var positionAccueil = 0
 
     fun afficherPhotoAccueil() {
+
         if (photos.isNotEmpty()) {
+
             image.setImageDrawable(null)
+
             chargerImageProduit(
                 image,
                 photos[positionAccueil]
             )
+
         } else {
+
             image.setImageResource(
                 android.R.drawable.ic_menu_gallery
             )
@@ -1296,6 +1308,7 @@ private fun ajouterCarteProduit(
     // ========================================================
     // GRANDE GALERIE SANS FLECHES
     // ========================================================
+
 
     fun ouvrirGalerie() {
 
