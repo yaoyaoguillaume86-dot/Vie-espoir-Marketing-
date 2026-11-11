@@ -2817,10 +2817,10 @@ private fun afficherProduits(
     )  
 }  
 
-
 // ========================================================
 // VIE ESPOIR MARKETING
 // AJOUT PRODUIT - ADMINISTRATEUR ET VENDEUR
+// VERSION CORRIGEE
 // ========================================================
 
 private fun afficherAjouterProduit() {
@@ -2839,16 +2839,18 @@ private fun afficherAjouterProduit() {
         hint = "Nom du produit"
         inputType = InputType.TYPE_CLASS_TEXT
     }
+
     root.addView(champNom)
 
     // ====================================================
-    // PRIX
+    // PRIX DU PRODUIT
     // ====================================================
 
     val champPrix = EditText(this).apply {
         hint = "Prix en F CFA"
         inputType = InputType.TYPE_CLASS_NUMBER
     }
+
     root.addView(champPrix)
 
     // ====================================================
@@ -2859,6 +2861,7 @@ private fun afficherAjouterProduit() {
         hint = "Catégorie du produit"
         inputType = InputType.TYPE_CLASS_TEXT
     }
+
     root.addView(champCategorie)
 
     // ====================================================
@@ -2869,6 +2872,7 @@ private fun afficherAjouterProduit() {
         hint = "Quantité en stock"
         inputType = InputType.TYPE_CLASS_NUMBER
     }
+
     root.addView(champStock)
 
     // ====================================================
@@ -2882,11 +2886,11 @@ private fun afficherAjouterProduit() {
             InputType.TYPE_CLASS_TEXT or
             InputType.TYPE_TEXT_FLAG_MULTI_LINE
     }
+
     root.addView(champDescription)
 
     // ====================================================
-    // PHOTOS
-    // Utilise la galerie déjà présente dans l'application
+    // PHOTOS DU PRODUIT
     // ====================================================
 
     root.addView(
@@ -2896,19 +2900,22 @@ private fun afficherAjouterProduit() {
     )
 
     // ====================================================
-    // ENREGISTRER LE PRODUIT
+    // BOUTON ENREGISTRER LE PRODUIT
     // ====================================================
 
     root.addView(
         boutonVert("Enregistrer le produit") {
 
+            // ============================================
+            // RECUPERATION DES INFORMATIONS
+            // ============================================
+
             val nomProduit =
                 champNom.text.toString().trim()
 
+            // PRIX EN STRING : CORRECTION LONG / STRING
             val prixProduit =
-                champPrix.text.toString()
-                    .trim()
-                    .toLongOrNull()
+                champPrix.text.toString().trim()
 
             val categorieProduit =
                 champCategorie.text.toString().trim()
@@ -2922,7 +2929,7 @@ private fun afficherAjouterProduit() {
                 champDescription.text.toString().trim()
 
             // ============================================
-            // VALIDATION DES INFORMATIONS
+            // VERIFICATION DU NOM
             // ============================================
 
             if (nomProduit.isEmpty()) {
@@ -2930,10 +2937,18 @@ private fun afficherAjouterProduit() {
                 return@boutonVert
             }
 
-            if (prixProduit == null || prixProduit <= 0L) {
+            // ============================================
+            // VERIFICATION DU PRIX
+            // ============================================
+
+            if ((prixProduit.toLongOrNull() ?: 0L) <= 0L) {
                 toast("Saisissez un prix valide")
                 return@boutonVert
             }
+
+            // ============================================
+            // VERIFICATION DU STOCK
+            // ============================================
 
             if (stockProduit == null || stockProduit < 0) {
                 toast("Saisissez un stock valide")
@@ -2941,7 +2956,7 @@ private fun afficherAjouterProduit() {
             }
 
             // ============================================
-            // IDENTIFICATION DU VENDEUR
+            // IDENTIFICATION FIREBASE
             // ============================================
 
             val compteVendeur = compteActuel()
@@ -2957,8 +2972,11 @@ private fun afficherAjouterProduit() {
 
             val uidVendeur = utilisateurFirebase.uid
 
-            val estAdmin =
-                adminConnecte
+            // ============================================
+            // ADMINISTRATEUR OU VENDEUR
+            // ============================================
+
+            val estAdmin = adminConnecte
 
             val nomVendeur = if (estAdmin) {
                 "Administration Vie Espoir Marketing"
@@ -2991,7 +3009,7 @@ private fun afficherAjouterProduit() {
             )
 
             // ============================================
-            // SAUVEGARDE LOCALE
+            // ENREGISTREMENT LOCAL
             // ============================================
 
             produits.add(nouveauProduit)
@@ -3002,8 +3020,17 @@ private fun afficherAjouterProduit() {
                 "Nouveau produit ajouté : $nomProduit"
             )
 
+            // ============================================
+            // NETTOYAGE DES PHOTOS TEMPORAIRES
+            // ============================================
+
             imagesProduit.clear()
+
             imageProduit = ""
+
+            // ============================================
+            // CONFIRMATION
+            // ============================================
 
             toast("Produit ajouté avec succès")
 
@@ -3023,6 +3050,7 @@ private fun afficherAjouterProduit() {
 // ========================================================
 // FIN AJOUT PRODUIT
 // ========================================================
+
 
 // ========================================================  
 // MODIFIER PRODUIT  
