@@ -6625,10 +6625,11 @@ if (photoBitmap == null) {
                     putExtra(
                         Intent.EXTRA_TEXT,
                        
+
 // ========================================================
 // VIE ESPOIR MARKETING
-// LIEN OFFICIEL DE TELECHARGEMENT APK
-// VERSION v1.0.2 - PARTAGE WHATSAPP ET FACEBOOK
+// PARTAGE PHOTO + LIEN OFFICIEL APK
+// CORRECTION ERREUR COMPILATION
 // ========================================================
 
 putExtra(
@@ -6645,62 +6646,19 @@ Commandez facilement !
     """.trimIndent()
 )
 
-// ========================================================
-// FIN DU LIEN OFFICIEL DE TELECHARGEMENT
-// ========================================================
+clipData = ClipData.newUri(
+    contentResolver,
+    "Photo du produit",
+    uriPartage
+)
 
-                    
-
-                    clipData = ClipData.newUri(
-                        contentResolver,
-                        "Photo du produit",
-                        uriPartage
-                    )
-
-                    addFlags(
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    )
-                }
-
-                try {
-                    startActivity(
-                        Intent.createChooser(
-                            intentPartage,
-                            "Partager le produit"
-                        )
-                    )
-                } catch (e: Exception) {
-
-                    Log.e(
-                        "PARTAGE_PRODUIT",
-                        "Erreur ouverture partage",
-                        e
-                    )
-
-                    toast(
-                        "Impossible de partager le produit"
-                    )
-                }
-            }
-        } catch (e: Exception) {
-
-            Log.e(
-                "PARTAGE_PRODUIT",
-                "Erreur de création ou de partage de l'affiche",
-                e
-            )
-
-            runOnUiThread {
-                toast("Erreur de création de l'affiche")
-            }
-        }
-    }.start()
-}
+addFlags(
+    Intent.FLAG_GRANT_READ_URI_PERMISSION
+)
 
 // ========================================================
-// FIN PARTAGE PUBLICITAIRE AUTOMATIQUE
+// FIN PARTAGE PHOTO + LIEN APK
 // ========================================================
-
 
 
 
