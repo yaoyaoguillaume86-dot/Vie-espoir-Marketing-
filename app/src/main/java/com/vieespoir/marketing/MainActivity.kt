@@ -1084,7 +1084,6 @@ accueilCarrouselHandler.postDelayed(
     animation,
     5_000L
 )
-)
 }
 
 // ========================================================
