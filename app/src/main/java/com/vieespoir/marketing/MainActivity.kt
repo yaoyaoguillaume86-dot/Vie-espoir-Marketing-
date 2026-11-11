@@ -6358,6 +6358,35 @@ private fun partagerProduit(produit: Produit) {
                 }
             }
 
+```kotlin
+// ========================================================
+// VIE ESPOIR MARKETING
+// VERIFICATION PHOTO AVANT PARTAGE PUBLICITAIRE
+// FACEBOOK - WHATSAPP
+// ========================================================
+
+if (photoBitmap == null) {
+
+    Log.e(
+        "PARTAGE_PRODUIT",
+        "Photo absente ou impossible à décoder : $photo"
+    )
+
+    runOnUiThread {
+        toast(
+            "Impossible de charger la photo du produit"
+        )
+    }
+
+    return@Thread
+}
+
+// ========================================================
+// FIN VERIFICATION PHOTO
+// ========================================================
+```
+
+
             // ============================================
             // 2. CRÉER L'AFFICHE
             // ============================================
