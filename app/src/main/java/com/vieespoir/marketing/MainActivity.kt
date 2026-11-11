@@ -6563,9 +6563,18 @@ private fun partagerProduit(produit: Produit) {
             // PRIORITÉ À LA PHOTO PUBLICITAIRE
             // ============================================
 
+            
+            // ====================================================
+            // VIE ESPOIR MARKETING
+            // PARTAGE PHOTO + TEXTE
+            // FACEBOOK, WHATSAPP ET AUTRES
+            // ====================================================
+
             runOnUiThread {
 
-                val intent = Intent(Intent.ACTION_SEND).apply {
+                val intentPartage = Intent(
+                    Intent.ACTION_SEND
+                ).apply {
 
                     type = "image/jpeg"
 
@@ -6574,9 +6583,14 @@ private fun partagerProduit(produit: Produit) {
                         uriPartage
                     )
 
+                    putExtra(
+                        Intent.EXTRA_TEXT,
+                        "Découvrez nos produits sur Vie Espoir Marketing !"
+                    )
+
                     clipData = ClipData.newUri(
                         contentResolver,
-                        "Affiche produit",
+                        "Photo du produit",
                         uriPartage
                     )
 
@@ -6588,33 +6602,23 @@ private fun partagerProduit(produit: Produit) {
                 try {
                     startActivity(
                         Intent.createChooser(
-                            intent,
-                            "Partager l'affiche du produit"
+                            intentPartage,
+                            "Partager le produit"
                         )
                     )
                 } catch (e: Exception) {
-                    toast("Impossible d'ouvrir le partage")
+
+                    Log.e(
+                        "PARTAGE_PRODUIT",
+                        "Erreur ouverture partage",
+                        e
+                    )
+
+                    toast(
+                        "Impossible de partager le produit"
+                    )
                 }
             }
-
-        } catch (e: Exception) {
-
-            Log.e(
-                "PARTAGE_PRODUIT",
-                "Erreur de création de l'affiche",
-                e
-            )
-
-            runOnUiThread {
-                toast("Erreur de création de l'affiche")
-            }
-        }
-    }.start()
-}
-
-// ========================================================
-// FIN PARTAGE PUBLICITAIRE AUTOMATIQUE
-// ========================================================
 
 
 
