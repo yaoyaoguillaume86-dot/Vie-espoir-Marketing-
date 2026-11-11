@@ -1,0 +1,34 @@
+
+name: Publier Vie Espoir Marketing Web
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Recuperer les fichiers
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Installer Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Publier la boutique Web
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          if [ -z "$FIREBASE_TOKEN" ]; then
+            echo "Secret FIREBASE_TOKEN manquant"
+            exit 1
+          fi
+          firebase deploy --only hosting \
+            --project vie-espoir-marketing \
+            --token "$FIREBASE_TOKEN" \
+            --non-interactive
