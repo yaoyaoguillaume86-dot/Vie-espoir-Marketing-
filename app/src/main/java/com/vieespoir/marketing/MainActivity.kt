@@ -1254,7 +1254,7 @@ private fun ajouterCarteProduit(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
-            setMargins(dp(2), dp(3), dp(2), dp(5))
+            setMargins(dp(2), dp(2), dp(2), dp(3))
         }
     }
 
@@ -1265,7 +1265,7 @@ private fun ajouterCarteProduit(
     val image = ImageView(this).apply {
         layoutParams = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            dp(if (compact) 145 else 170)
+            dp(if (compact) 125 else 160)
         )
 
         scaleType = ImageView.ScaleType.FIT_CENTER
