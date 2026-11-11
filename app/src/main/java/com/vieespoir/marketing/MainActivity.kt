@@ -1630,7 +1630,7 @@ val actions = LinearLayout(this).apply {
     gravity = Gravity.CENTER
 }
 
-val panier = boutonVert("🛒 Panier") {
+val panier = boutonVert("+") {
 
     if (produit.stock <= 0) {
         toast("Produit indisponible")
@@ -1643,8 +1643,8 @@ val panier = boutonVert("🛒 Panier") {
 actions.addView(
     panier,
     LinearLayout.LayoutParams(
-        ViewGroup.LayoutParams.MATCH_PARENT,
-        dp(36)
+        dp(45),
+dp(45)
     ).apply {
         setMargins(
             0,
