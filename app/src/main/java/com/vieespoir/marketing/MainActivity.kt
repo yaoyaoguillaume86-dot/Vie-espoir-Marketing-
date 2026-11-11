@@ -6357,8 +6357,6 @@ private fun partagerProduit(produit: Produit) {
                         BitmapFactory.decodeFile(photo)
                 }
             }
-
-```kotlin
 // ========================================================
 // VIE ESPOIR MARKETING
 // VERIFICATION PHOTO AVANT PARTAGE PUBLICITAIRE
