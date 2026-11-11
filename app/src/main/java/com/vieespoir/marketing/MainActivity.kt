@@ -6629,39 +6629,45 @@ if (photoBitmap == null) {
 // ========================================================
 // VIE ESPOIR MARKETING
 // PARTAGE PHOTO + LIEN OFFICIEL APK
-// CORRECTION ERREUR COMPILATION
 // ========================================================
 
-putExtra(
-    Intent.EXTRA_TEXT,
-    """
-🛍️ VIE ESPOIR MARKETING
+val intentPartage = Intent(Intent.ACTION_SEND).apply {
 
-Découvrez nos produits !
+    type = "image/jpeg"
 
-📲 Téléchargez notre application :
-https://github.com/yaoyaoguillaume86-dot/Vie-espoir-Marketing-/releases/download/v1.0.2/app-debug.apk
+    putExtra(
+        Intent.EXTRA_STREAM,
+        uriPartage
+    )
 
-Commandez facilement !
-    """.trimIndent()
-)
+    putExtra(
+        Intent.EXTRA_TEXT,
+        """
+        🛍️ VIE ESPOIR MARKETING
 
-clipData = ClipData.newUri(
-    contentResolver,
-    "Photo du produit",
-    uriPartage
-)
+        Découvrez nos produits !
 
-addFlags(
-    Intent.FLAG_GRANT_READ_URI_PERMISSION
-)
+        📲 Téléchargez notre application :
+        https://github.com/yaoyaoguillaume86-dot/Vie-espoir-Marketing-/releases/download/v1.0.2/app-debug.apk
+
+        Commandez facilement !
+        """.trimIndent()
+    )
+
+    clipData = ClipData.newUri(
+        contentResolver,
+        "Photo du produit",
+        uriPartage
+    )
+
+    addFlags(
+        Intent.FLAG_GRANT_READ_URI_PERMISSION
+    )
+}
 
 // ========================================================
 // FIN PARTAGE PHOTO + LIEN APK
 // ========================================================
-
-
-
 
 // ========================================================
 // PARTAGE TEXTE SI PHOTO ABSENTE
