@@ -6645,6 +6645,26 @@ if (photoBitmap == null) {
                     )
                 }
             }
+        } catch (e: Exception) {
+
+            Log.e(
+                "PARTAGE_PRODUIT",
+                "Erreur de création ou de partage de l'affiche",
+                e
+            )
+
+            runOnUiThread {
+                toast("Erreur de création de l'affiche")
+            }
+        }
+    }.start()
+}
+
+// ========================================================
+// FIN PARTAGE PUBLICITAIRE AUTOMATIQUE
+// ========================================================
+
+
 
 
 
