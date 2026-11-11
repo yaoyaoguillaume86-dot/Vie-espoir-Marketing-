@@ -6624,17 +6624,32 @@ if (photoBitmap == null) {
 
                     putExtra(
                         Intent.EXTRA_TEXT,
-                       """
+                       
+// ========================================================
+// VIE ESPOIR MARKETING
+// LIEN OFFICIEL DE TELECHARGEMENT APK
+// VERSION v1.0.2 - PARTAGE WHATSAPP ET FACEBOOK
+// ========================================================
+
+putExtra(
+    Intent.EXTRA_TEXT,
+    """
 🛍️ VIE ESPOIR MARKETING
 
 Découvrez nos produits !
 
 📲 Téléchargez notre application :
-https://VOTRE-LIEN-APK
+https://github.com/yaoyaoguillaume86-dot/Vie-espoir-Marketing-/releases/download/v1.0.2/app-debug.apk
 
 Commandez facilement !
-""".trimIndent()
-                    )
+    """.trimIndent()
+)
+
+// ========================================================
+// FIN DU LIEN OFFICIEL DE TELECHARGEMENT
+// ========================================================
+
+                    
 
                     clipData = ClipData.newUri(
                         contentResolver,
