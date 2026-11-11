@@ -6597,22 +6597,11 @@ if (photoBitmap == null) {
                 )
 
      
-            // ============================================
-            // 6. PARTAGER SUR LES RÉSEAUX SOCIAUX
-            // PRIORITÉ À LA PHOTO PUBLICITAIRE
-            // ============================================
-
-            
-            // ====================================================
-            // VIE ESPOIR MARKETING
-            // PARTAGE PHOTO + TEXTE
-            // FACEBOOK, WHATSAPP ET AUTRES
-            // ====================================================
-
             
             // ========================================================
             // VIE ESPOIR MARKETING
-            // PARTAGE PHOTO + LIEN OFFICIEL APK
+            // 6. PARTAGER SUR LES RESEAUX SOCIAUX
+            // PHOTO PUBLICITAIRE + LIEN OFFICIEL APK
             // VERSION CORRIGEE SANS DOUBLON
             // ========================================================
 
@@ -6623,13 +6612,19 @@ if (photoBitmap == null) {
 
                         type = "image/jpeg"
 
-                        // PHOTO PUBLICITAIRE
+                        // ============================================
+                        // PHOTO PUBLICITAIRE DU PRODUIT
+                        // ============================================
+
                         putExtra(
                             Intent.EXTRA_STREAM,
                             uriPartage
                         )
 
-                        // TEXTE + LIEN APK
+                        // ============================================
+                        // TEXTE + LIEN DE TELECHARGEMENT APK
+                        // ============================================
+
                         putExtra(
                             Intent.EXTRA_TEXT,
                             """
@@ -6644,7 +6639,10 @@ if (photoBitmap == null) {
                             """.trimIndent()
                         )
 
-                        // AUTORISATION PHOTO
+                        // ============================================
+                        // AUTORISATION DE LECTURE PHOTO
+                        // ============================================
+
                         clipData = ClipData.newUri(
                             contentResolver,
                             "Photo du produit",
@@ -6656,7 +6654,10 @@ if (photoBitmap == null) {
                         )
                     }
 
-                // OUVRIR LE PARTAGE
+                // ================================================
+                // OUVRIR WHATSAPP, FACEBOOK ET AUTRES APPLICATIONS
+                // ================================================
+
                 try {
 
                     startActivity(
@@ -6670,7 +6671,7 @@ if (photoBitmap == null) {
 
                     Log.e(
                         "PARTAGE_PRODUIT",
-                        "Erreur de partage",
+                        "Erreur ouverture du partage",
                         e
                     )
 
@@ -6683,6 +6684,35 @@ if (photoBitmap == null) {
             // ========================================================
             // FIN PARTAGE PHOTO + LIEN APK
             // ========================================================
+
+        } catch (e: Exception) {
+
+            // ====================================================
+            // ERREUR DE CREATION DE L'AFFICHE PUBLICITAIRE
+            // ====================================================
+
+            Log.e(
+                "PARTAGE_PRODUIT",
+                "Erreur de création de l'affiche",
+                e
+            )
+
+            runOnUiThread {
+
+                toast(
+                    "Erreur de création de l'affiche"
+                )
+            }
+        }
+
+    }.start()
+
+}
+
+// ========================================================
+// FIN DE LA FONCTION PARTAGE PUBLICITAIRE
+// VIE ESPOIR MARKETING
+// ========================================================
 
 
 // ========================================================
