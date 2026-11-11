@@ -6624,7 +6624,16 @@ if (photoBitmap == null) {
 
                     putExtra(
                         Intent.EXTRA_TEXT,
-                        "Découvrez nos produits sur Vie Espoir Marketing !"
+                       """
+🛍️ VIE ESPOIR MARKETING
+
+Découvrez nos produits !
+
+📲 Téléchargez notre application :
+https://VOTRE-LIEN-APK
+
+Commandez facilement !
+""".trimIndent()
                     )
 
                     clipData = ClipData.newUri(
