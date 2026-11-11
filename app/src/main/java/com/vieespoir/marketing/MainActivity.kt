@@ -6742,93 +6742,140 @@ private fun partagerTexteProduit(texte: String) {
 // ========================================================
 // FIN PARTAGE PRODUIT
 // ========================================================
+// ========================================================
+// VIE ESPOIR MARKETING
+// PARTAGE APPLICATION
+// PHOTO DE LA PAGE D'ACCUEIL + LIEN APK
+// ========================================================
 
-// ========================================================  
-// PARTAGE APPLICATION  
-// ========================================================  
+private fun partagerApplication() {
 
-private fun partagerApplication() {  
+    val textePartage = """
+        🦁 VIE ESPOIR MARKETING
 
-    val textePartage =  
-        """  
-        🦁 VIE ESPOIR MARKETING  
-          
-        Découvrez notre plateforme de vente.  
-          
-        🏢 Entreprises  
-        🛍️ Produits  
-        🛒 Commandes  
-        💳 Paiements  
-        🚚 Livraison  
-          
-        Téléchargez Vie Espoir Marketing  
-        pour découvrir les produits et commander.  
-        """.trimIndent()  
+        🛍️ Découvrez notre boutique en ligne !
 
-    val intent =  
-        Intent(  
-            Intent.ACTION_SEND  
-        ).apply {  
+        📦 Produits
+        🛒 Commandes
+        💳 Paiements
+        🚚 Livraison
 
-            type =  
-                "text/plain"  
+        📲 Téléchargez notre application :
 
-            putExtra(  
-                Intent.EXTRA_TEXT,  
-                textePartage  
-            )  
-        }  
+        https://github.com/yaoyaoguillaume86-dot/Vie-espoir-Marketing-/releases/download/v1.0.2/app-debug.apk
 
-    startActivity(  
-        Intent.createChooser(  
-            intent,  
-            "Partager l'application"  
-        )  
-    )  
-}  
+    """.trimIndent()
 
-// ========================================================  
-// BOUTON RETOUR DU TÉLÉPHONE  
-// ========================================================  
+    try {
 
-@Suppress("DEPRECATION")  
-override fun onBackPressed() {  
+        // ================================================
+        // CAPTURER LA PAGE D'ACCUEIL
+        // ================================================
 
-    /*  
-     * NOUVELLE NAVIGATION :  
-     *  
-     * 1. Si un écran précédent existe :  
-     *    on revient à cet écran.  
-     *  
-     * 2. Si nous sommes déjà sur l'accueil :  
-     *    on demande confirmation avant de quitter.  
-     */  
+        val vueAccueil = window.decorView.rootView
 
-    if (  
-        afficherEcranPrecedent()  
-    ) {  
-        return  
-    }  
+        val bitmap = Bitmap.createBitmap(
+            vueAccueil.width,
+            vueAccueil.height,
+            Bitmap.Config.ARGB_8888
+        )
 
-    AlertDialog.Builder(this)  
-        .setTitle(  
-            "🚪 Quitter l'application"  
-        )  
-        .setMessage(  
-            "Voulez-vous vraiment quitter Vie Espoir Marketing ?"  
-        )  
-        .setNegativeButton(  
-            "Annuler",  
-            null  
-        )  
-        .setPositiveButton(  
-            "Quitter"  
-        ) { _, _ ->  
+        val canvas = Canvas(bitmap)
 
-            finishAffinity()  
-        }  
-        .show()  
-}  
+        vueAccueil.draw(canvas)
+
+        // ================================================
+        // ENREGISTRER LA PHOTO
+        // ================================================
+
+        val dossier = File(
+            cacheDir,
+            "images"
+        )
+
+        dossier.mkdirs()
+
+        val fichier = File(
+            dossier,
+            "accueil_vie_espoir.jpg"
+        )
+
+        FileOutputStream(fichier).use {
+
+            bitmap.compress(
+                Bitmap.CompressFormat.JPEG,
+                95,
+                it
+            )
+        }
+
+        // ================================================
+        // CREER URI DE PARTAGE
+        // ================================================
+
+        val uriPartage =
+            androidx.core.content.FileProvider.getUriForFile(
+                this,
+                "$packageName.fileprovider",
+                fichier
+            )
+
+        // ================================================
+        // PARTAGER PHOTO + LIEN APK
+        // ================================================
+
+        val intentPartage =
+            Intent(Intent.ACTION_SEND).apply {
+
+                type = "image/jpeg"
+
+                putExtra(
+                    Intent.EXTRA_STREAM,
+                    uriPartage
+                )
+
+                putExtra(
+                    Intent.EXTRA_TEXT,
+                    textePartage
+                )
+
+                clipData = ClipData.newUri(
+                    contentResolver,
+                    "Accueil Vie Espoir Marketing",
+                    uriPartage
+                )
+
+                addFlags(
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            }
+
+        startActivity(
+            Intent.createChooser(
+                intentPartage,
+                "Partager Vie Espoir Marketing"
+            )
+        )
+
+    } catch (e: Exception) {
+
+        Log.e(
+            "PARTAGE_APPLICATION",
+            "Erreur partage application",
+            e
+        )
+
+        Toast.makeText(
+            this,
+            "Impossible de partager l'application",
+            Toast.LENGTH_LONG
+        ).show()
+    }
+}
+
+// ========================================================
+// FIN PARTAGE APPLICATION
+// ========================================================
 
 // ========================================================  
 // QUITTER  
