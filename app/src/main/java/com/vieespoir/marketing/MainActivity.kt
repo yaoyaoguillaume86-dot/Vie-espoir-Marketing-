@@ -1073,16 +1073,17 @@ private fun ajouterCarrouselAccueil(
 
             accueilCarrouselHandler.postDelayed(
     this,
-    10_000L
+    5_000L
 )
         }
     }
 
     accueilCarrouselRunnable = animation
 
-    accueilCarrouselHandler.postDelayed(
+accueilCarrouselHandler.postDelayed(
     animation,
-    10_000L
+    5_000L
+)
 )
 }
 
