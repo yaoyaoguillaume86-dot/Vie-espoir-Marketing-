@@ -2132,280 +2132,371 @@ private fun ouvrirProduitParId(
         )
     }
 }
-// ========================================================  
-// PANIER  
-// ========================================================  
+ 
+// ========================================================
+// VIE ESPOIR MARKETING
+// PANIER COMPLET
+// PHOTOS + COMPTEUR + QUANTITES + COMMANDES
+// ========================================================
 
-private fun ajouterAuPanier(  
-    produit: Produit  
-) {  
+// ========================================================
+// 1. COMPTEUR DES ARTICLES DU PANIER
+// ========================================================
 
-    val existant =  
-        panier.find {  
-            it.produitId ==  
-                produit.id  
-        }  
+private fun nombreArticlesPanier(): Int {
 
-    if (existant != null) {  
+    return panier.sumOf { it.quantite }
+}
 
-        if (  
-            existant.quantite <  
-            produit.stock  
-        ) {  
+// ========================================================
+// 2. AJOUTER UN PRODUIT AU PANIER
+// ========================================================
 
-            existant.quantite++  
+private fun ajouterAuPanier(
+    produit: Produit
+) {
 
-        } else {  
+    val existant = panier.find {
+        it.produitId == produit.id
+    }
 
-            toast(  
-                "Stock maximum atteint"  
-            )  
+    if (existant != null) {
 
-            return  
-        }  
+        if (existant.quantite < produit.stock) {
 
-    } else {  
+            existant.quantite++
 
-        panier.add(  
-            PanierItem(  
-                produitId =  
-                    produit.id,  
+        } else {
 
-                nom =  
-                    produit.nom,  
+            toast("Stock maximum atteint")
+            return
+        }
 
-                prix =  
-                    produit.prix  
-                        .replace(" ", "")  
-                        .toIntOrNull()  
-                        ?: 0,  
+    } else {
 
-                quantite = 1,  
+        if (produit.stock <= 0) {
+            toast("Produit indisponible")
+            return
+        }
 
-                images =  
-                    produit.images  
-                        .toMutableList()  
-            )  
-        )  
-    }  
+        panier.add(
+            PanierItem(
+                produitId = produit.id,
+                nom = produit.nom,
+                prix = produit.prix
+                    .replace(" ", "")
+                    .toIntOrNull() ?: 0,
+                quantite = 1,
+                images = produit.images.toMutableList()
+            )
+        )
+    }
 
-    sauvegarderPanier()  
+    sauvegarderPanier()
 
-    toast(  
-        "Produit ajouté au panier"  
-    )  
-}  
+    toast(
+        "Produit ajouté au panier (${nombreArticlesPanier()})"
+    )
+}
 
-private fun afficherPanier() {  
+// ========================================================
+// 3. AFFICHER LE PANIER AVEC LES PHOTOS
+// ========================================================
 
-    val root =  
-        layoutBase()  
+private fun afficherPanier() {
 
-    root.addView(  
-        titre(  
-            "🛒 Mon panier"  
-        )  
-    )  
+    val root = layoutBase()
 
-    if (panier.isEmpty()) {  
+    root.addView(
+        titre(
+            "🛒 Mon panier (${nombreArticlesPanier()})"
+        )
+    )
 
-        root.addView(  
-            texte(  
-                "Votre panier est vide.",  
-                18f  
-            ).apply {  
+    // ====================================================
+    // PANIER VIDE
+    // ====================================================
 
-                gravity =  
-                    Gravity.CENTER  
+    if (panier.isEmpty()) {
 
-                setPadding(  
-                    10,  
-                    40,  
-                    10,  
-                    40  
-                )  
-            }  
-        )  
+        root.addView(
+            texte(
+                "Votre panier est vide.",
+                18f
+            ).apply {
 
-    } else {  
+                gravity = Gravity.CENTER
 
-        var total = 0  
+                setPadding(
+                    10, 40, 10, 40
+                )
+            }
+        )
 
-        for (item in panier) {  
+    } else {
 
-            val bloc =  
-                LinearLayout(this).apply {  
+        var total = 0
 
-                    orientation =  
-                        LinearLayout.VERTICAL  
+        // ================================================
+        // PARCOURIR LES PRODUITS DU PANIER
+        // ================================================
 
-                    setPadding(  
-                        12,  
-                        12,  
-                        12,  
-                        12  
-                    )  
+        for (item in panier) {
 
-                    setBackgroundColor(  
-                        Color.WHITE  
-                    )  
+            val bloc = LinearLayout(this).apply {
 
-                    layoutParams =  
-                        LinearLayout.LayoutParams(  
-                            ViewGroup.LayoutParams.MATCH_PARENT,  
-                            ViewGroup.LayoutParams.WRAP_CONTENT  
-                        ).apply {  
-                            setMargins(  
-                                0,  
-                                5,  
-                                0,  
-                                5  
-                            )  
-                        }  
-                }  
+                orientation = LinearLayout.VERTICAL
 
-            bloc.addView(  
-                texte(  
-                    item.nom,  
-                    19f,  
-                    VERT  
-                ).apply {  
+                setPadding(
+                    12, 12, 12, 12
+                )
 
-                    typeface =  
-                        Typeface.DEFAULT_BOLD  
-                }  
-            )  
+                setBackgroundColor(Color.WHITE)
 
-            bloc.addView(  
-                texte(  
-                    "${formaterNombre(item.prix)} FCFA",  
-                    16f  
-                )  
-            )  
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply {
 
-            bloc.addView(  
-                texte(  
-                    "Quantité : ${item.quantite}",  
-                    16f  
-                )  
-            )  
+                        setMargins(
+                            0, 5, 0, 5
+                        )
+                    }
+            }
 
-            bloc.addView(  
-                bouton(  
-                    "➕ Ajouter 1"  
-                ) {  
+            // ============================================
+            // PHOTO REELLE DU PRODUIT
+            // ============================================
 
-                    val produit =  
-                        produits.find {  
-                            it.id ==  
-                                item.produitId  
-                        }  
+            val imagePanier = ImageView(this).apply {
 
-                    if (  
-                        produit != null &&  
-                        item.quantite <  
-                        produit.stock  
-                    ) {  
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        dp(180)
+                    )
 
-                        item.quantite++  
+                scaleType =
+                    ImageView.ScaleType.FIT_CENTER
 
-                        sauvegarderPanier()  
+                setBackgroundColor(Color.WHITE)
 
-                        afficherPanier()  
+                contentDescription =
+                    "Photo de ${item.nom}"
+            }
 
-                    } else {  
+            val photoProduit =
+                item.images.firstOrNull()
 
-                        toast(  
-                            "Stock maximum atteint"  
-                        )  
-                    }  
-                }  
-            )  
+            if (!photoProduit.isNullOrBlank()) {
 
-            bloc.addView(  
-                bouton(  
-                    "➖ Retirer 1"  
-                ) {  
+                chargerImageProduit(
+                    imagePanier,
+                    photoProduit
+                )
 
-                    if (  
-                        item.quantite > 1  
-                    ) {  
+            } else {
 
-                        item.quantite--  
+                imagePanier.setImageResource(
+                    android.R.drawable.ic_menu_gallery
+                )
+            }
 
-                    } else {  
+            bloc.addView(imagePanier)
 
-                        panier.remove(  
-                            item  
-                        )  
-                    }  
+            // ============================================
+            // NOM DU PRODUIT
+            // ============================================
 
-                    sauvegarderPanier()  
+            bloc.addView(
+                texte(
+                    item.nom,
+                    19f,
+                    VERT
+                ).apply {
 
-                    afficherPanier()  
-                }  
-            )  
+                    typeface =
+                        Typeface.DEFAULT_BOLD
+                }
+            )
 
-            root.addView(  
-                bloc  
-            )  
+            // ============================================
+            // PRIX DU PRODUIT
+            // ============================================
 
-            total +=  
-                item.prix *  
-                item.quantite  
-        }  
+            bloc.addView(
+                texte(
+                    "${formaterNombre(item.prix)} FCFA",
+                    16f
+                )
+            )
 
-        root.addView(  
-            texte(  
-                "TOTAL : ${formaterNombre(total)} FCFA",  
-                22f,  
-                VERT  
-            ).apply {  
+            // ============================================
+            // QUANTITE DU PRODUIT
+            // ============================================
 
-                gravity =  
-                    Gravity.CENTER  
+            bloc.addView(
+                texte(
+                    "Quantité : ${item.quantite}",
+                    16f
+                )
+            )
 
-                typeface =  
-                    Typeface.DEFAULT_BOLD  
+            // ============================================
+            // SOUS-TOTAL DU PRODUIT
+            // ============================================
 
-                setPadding(  
-                    10,  
-                    25,  
-                    10,  
-                    25  
-                )  
-            }  
-        )  
+            val sousTotal =
+                item.prix.toLong() *
+                item.quantite
 
-        root.addView(  
-            boutonVert(  
-                "✅ Continuer la commande"  
-            ) {  
+            bloc.addView(
+                texte(
+                    "Sous-total : ${formaterNombre(sousTotal)} FCFA",
+                    16f,
+                    VERT
+                )
+            )
 
-                demanderInfosCommande(  
-                    total  
-                )  
-            }  
-        )  
+            // ============================================
+            // BOUTON AJOUTER UNE QUANTITE
+            // ============================================
 
-        root.addView(  
-            bouton(  
-                "🗑️ Vider le panier"  
-            ) {  
+            bloc.addView(
+                bouton(
+                    "➕ Ajouter 1"
+                ) {
 
-                panier.clear()  
+                    val produit =
+                        produits.find {
+                            it.id == item.produitId
+                        }
 
-                sauvegarderPanier()  
+                    if (
+                        produit != null &&
+                        item.quantite < produit.stock
+                    ) {
 
-                afficherPanier()  
-            }  
-        )  
-    }  
+                        item.quantite++
 
-    setContentView(  
-        scroll(root)  
-    )  
-}  
+                        sauvegarderPanier()
+
+                        afficherPanier()
+
+                    } else {
+
+                        toast(
+                            "Stock maximum atteint ou produit indisponible"
+                        )
+                    }
+                }
+            )
+
+            // ============================================
+            // BOUTON DIMINUER UNE QUANTITE
+            // ============================================
+
+            bloc.addView(
+                bouton(
+                    "➖ Retirer 1"
+                ) {
+
+                    if (item.quantite > 1) {
+
+                        item.quantite--
+
+                    } else {
+
+                        panier.remove(item)
+                    }
+
+                    sauvegarderPanier()
+
+                    afficherPanier()
+                }
+            )
+
+            // ============================================
+            // AFFICHER LE BLOC DU PRODUIT
+            // ============================================
+
+            root.addView(bloc)
+
+            total += (
+                item.prix.toLong() *
+                item.quantite
+            ).toInt()
+        }
+
+        // ================================================
+        // TOTAL GENERAL DU PANIER
+        // ================================================
+
+        root.addView(
+            texte(
+                "TOTAL : ${formaterNombre(total)} FCFA",
+                22f,
+                VERT
+            ).apply {
+
+                gravity = Gravity.CENTER
+
+                typeface =
+                    Typeface.DEFAULT_BOLD
+
+                setPadding(
+                    10, 25, 10, 25
+                )
+            }
+        )
+
+        // ================================================
+        // CONTINUER LA COMMANDE
+        // ================================================
+
+        root.addView(
+            boutonVert(
+                "✅ Continuer la commande"
+            ) {
+
+                demanderInfosCommande(total)
+            }
+        )
+
+        // ================================================
+        // VIDER LE PANIER
+        // ================================================
+
+        root.addView(
+            bouton(
+                "🗑️ Vider le panier"
+            ) {
+
+                panier.clear()
+
+                sauvegarderPanier()
+
+                afficherPanier()
+            }
+        )
+    }
+
+    // ====================================================
+    // AFFICHAGE FINAL DU PANIER
+    // ====================================================
+
+    setContentView(
+        scroll(root)
+    )
+}
+
+// ========================================================
+// FIN PANIER COMPLET
+// VIE ESPOIR MARKETING
+// ========================================================
+
+
 
 // ========================================================  
 // INFORMATIONS COMMANDE  
