@@ -2385,21 +2385,24 @@ private fun afficherPanier() {
                 )
             )
 
-            // ============================================
-            // SOUS-TOTAL DU PRODUIT
-            // ============================================
+   
+// ============================================
+// SOUS-TOTAL DU PRODUIT
+// VIE ESPOIR MARKETING - CORRIGE
+// ============================================
 
-            val sousTotal =
-                item.prix.toLong() *
-                item.quantite
+val sousTotal =
+    item.prix.toLong() *
+    item.quantite
 
-            bloc.addView(
-                texte(
-                    "Sous-total : ${formaterNombre(sousTotal.toInt())} FCFA"
-                    16f,
-                    VERT
-                )
-            )
+bloc.addView(
+    texte(
+        "Sous-total : ${formaterNombre(sousTotal.toInt())} FCFA",
+        16f,
+        VERT
+    )
+)
+
 
             // ============================================
             // BOUTON AJOUTER UNE QUANTITE
