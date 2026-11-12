@@ -67,7 +67,7 @@ class SplashActivity : android.app.Activity() {
         // ====================================================
 
         val imageBienvenue = android.widget.ImageView(this).apply {
-            setImageResource(R.drawable.bienvenue_vie_espoir)
+            setImageResource(R.drawable.a_clean_app_splash_screen_welcome_screen_for_vie)
             scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
             adjustViewBounds = true
         }
