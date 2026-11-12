@@ -2316,7 +2316,7 @@ private fun afficherPanier() {
                 layoutParams =
                     LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
-                        dp(180)
+                        (180 * resources.displayMetrics.density).toInt()
                     )
 
                 scaleType =
@@ -2395,7 +2395,7 @@ private fun afficherPanier() {
 
             bloc.addView(
                 texte(
-                    "Sous-total : ${formaterNombre(sousTotal)} FCFA",
+                    "Sous-total : ${formaterNombre(sousTotal.toInt())} FCFA"
                     16f,
                     VERT
                 )
