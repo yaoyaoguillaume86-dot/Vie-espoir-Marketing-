@@ -1631,38 +1631,78 @@ private fun ajouterCarteProduit(
         )
     )
 
-    
 // ========================================================
 // VIE ESPOIR MARKETING
-// PETIT BOUTON PANIER - STYLE JUMIA
-// SANS BOUTON PARTAGER SUR L'ACCUEIL
+// PETIT PANIER VERT - STYLE JUMIA
+// PAGE D'ACCUEIL
+// PHOTO GRANDE - PANIER DISCRET EN BAS A DROITE
 // ========================================================
 
 val actions = LinearLayout(this).apply {
+
     orientation = LinearLayout.HORIZONTAL
-    gravity = Gravity.CENTER
+
+    gravity = Gravity.END or Gravity.CENTER_VERTICAL
+
+    layoutParams = LinearLayout.LayoutParams(
+        ViewGroup.LayoutParams.MATCH_PARENT,
+        ViewGroup.LayoutParams.WRAP_CONTENT
+    )
 }
 
-val panier = boutonVert("+") {
+// ========================================================
+// PETIT BOUTON PANIER AVEC SIGNE PLUS
+// ========================================================
 
-    if (produit.stock <= 0) {
-        toast("Produit indisponible")
-    } else {
-        ajouterAuPanier(produit)
-        toast("Produit ajouté au panier")
+val petitPanier = TextView(this).apply {
+
+    text = "🛒+"
+
+    textSize = 17f
+
+    gravity = Gravity.CENTER
+
+    setTextColor(VERT)
+
+    background =
+        android.graphics.drawable.GradientDrawable().apply {
+
+            setColor(Color.rgb(232, 247, 235))
+
+            cornerRadius = dp(9).toFloat()
+        }
+
+    contentDescription =
+        "Ajouter ${produit.nom} au panier"
+
+    setOnClickListener {
+
+        if (produit.stock <= 0) {
+
+            toast("Produit indisponible")
+
+        } else {
+
+            ajouterAuPanier(produit)
+        }
     }
 }
 
+// ========================================================
+// POSITION DU PANIER EN BAS A DROITE
+// ========================================================
+
 actions.addView(
-    panier,
+    petitPanier,
     LinearLayout.LayoutParams(
         dp(45),
-dp(45)
+        dp(40)
     ).apply {
+
         setMargins(
             0,
-            dp(6),
-            0,
+            dp(4),
+            dp(3),
             0
         )
     }
@@ -1671,8 +1711,10 @@ dp(45)
 carte.addView(actions)
 
 // ========================================================
-// FIN - PETIT BOUTON PANIER
+// FIN PETIT PANIER - VIE ESPOIR MARKETING
 // ========================================================
+
+
 
     // ========================================================
     // GESTION DU VENDEUR
