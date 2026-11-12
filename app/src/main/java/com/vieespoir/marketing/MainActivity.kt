@@ -37,15 +37,20 @@ import android.content.ClipData
 import android.text.TextUtils
 import android.util.Log
 
-// ==========================================
-// ÉCRAN DE BIENVENUE
-// ==========================================
-
+// ========================================================
+// VIE ESPOIR MARKETING
+// ECRAN DE BIENVENUE OFFICIEL AVEC LOGO LION
+// VERIFICATION INTERNET + OUVERTURE AUTOMATIQUE
+// ========================================================
 
 class SplashActivity : android.app.Activity() {
 
-    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val handler =
+        android.os.Handler(android.os.Looper.getMainLooper())
+
     private var verificationEnCours = false
+    private var ouvertureEnCours = false
+    private var ecranDetruit = false
 
     private lateinit var message: android.widget.TextView
     private lateinit var boutonReessayer: android.widget.Button
@@ -53,54 +58,147 @@ class SplashActivity : android.app.Activity() {
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val layout = android.widget.LinearLayout(this)
-        layout.orientation = android.widget.LinearLayout.VERTICAL
-        layout.gravity = android.view.Gravity.CENTER
-        layout.setPadding(40, 40, 40, 40)
-        layout.setBackgroundColor(android.graphics.Color.WHITE)
-
-        val titre = android.widget.TextView(this)
-        titre.text = "BIENVENUE VIE ESPOIR MARKETING"
-        titre.textSize = 25f
-        titre.gravity = android.view.Gravity.CENTER
-        titre.setTextColor(android.graphics.Color.rgb(0, 120, 50))
-
-        message = android.widget.TextView(this)
-        message.text = "Vérification de la connexion Internet..."
-        message.textSize = 17f
-        message.gravity = android.view.Gravity.CENTER
-        message.setPadding(0, 30, 0, 30)
-
-        boutonReessayer = android.widget.Button(this)
-        boutonReessayer.text = "Réessayer"
-        boutonReessayer.visibility = android.view.View.GONE
-        boutonReessayer.setOnClickListener {
-            verifierInternet()
+        val fond = android.widget.FrameLayout(this).apply {
+            setBackgroundColor(android.graphics.Color.WHITE)
         }
 
-        layout.addView(titre)
-        layout.addView(message)
-        layout.addView(boutonReessayer)
+        // ====================================================
+        // IMAGE DE BIENVENUE : LION VERT ET DORE
+        // ====================================================
 
-        setContentView(layout)
+        val imageBienvenue = android.widget.ImageView(this).apply {
+            setImageResource(R.drawable.bienvenue_vie_espoir)
+            scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+            adjustViewBounds = true
+        }
+
+        fond.addView(
+            imageBienvenue,
+            android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+
+        // ====================================================
+        // ZONE DE CONNEXION INTERNET
+        // ====================================================
+
+        val zoneConnexion = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            gravity = android.view.Gravity.CENTER
+            setPadding(dp(16), dp(12), dp(16), dp(16))
+            setBackgroundColor(
+                android.graphics.Color.argb(235, 255, 255, 255)
+            )
+        }
+
+        val chargement =
+            android.widget.ProgressBar(this).apply {
+                isIndeterminate = true
+                indeterminateTintList =
+                    android.content.res.ColorStateList.valueOf(
+                        android.graphics.Color.rgb(0, 125, 45)
+                    )
+            }
+
+        zoneConnexion.addView(
+            chargement,
+            android.widget.LinearLayout.LayoutParams(
+                dp(36),
+                dp(36)
+            )
+        )
+
+        message = android.widget.TextView(this).apply {
+            text = "Vérification de la connexion Internet..."
+            textSize = 15f
+            gravity = android.view.Gravity.CENTER
+            setTextColor(
+                android.graphics.Color.rgb(0, 85, 35)
+            )
+            setPadding(0, dp(12), 0, dp(8))
+        }
+
+        zoneConnexion.addView(message)
+
+        boutonReessayer = android.widget.Button(this).apply {
+            text = "Réessayer"
+            visibility = android.view.View.GONE
+            setTextColor(android.graphics.Color.WHITE)
+            backgroundTintList =
+                android.content.res.ColorStateList.valueOf(
+                    android.graphics.Color.rgb(0, 125, 45)
+                )
+
+            setOnClickListener {
+                visibility = android.view.View.GONE
+                message.text =
+                    "Vérification de la connexion Internet..."
+                verifierInternet()
+            }
+        }
+
+        zoneConnexion.addView(boutonReessayer)
+
+        fond.addView(
+            zoneConnexion,
+            android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                android.view.Gravity.BOTTOM
+            ).apply {
+                bottomMargin = dp(30)
+            }
+        )
+
+        setContentView(fond)
+
+        // ====================================================
+        // AFFICHAGE DE BIENVENUE PENDANT 10 SECONDES
+        // ====================================================
 
         handler.postDelayed({
-            verifierInternet()
+            if (!ecranDetruit) {
+                verifierInternet()
+            }
         }, 10000)
     }
 
+    // ========================================================
+    // CONVERSION DP
+    // ========================================================
+
+    private fun dp(valeur: Int): Int {
+        return (
+            valeur * resources.displayMetrics.density
+        ).toInt()
+    }
+
+    // ========================================================
+    // VERIFICATION DE LA CONNEXION INTERNET
+    // ========================================================
+
     private fun verifierInternet() {
-        if (verificationEnCours) return
+
+        if (verificationEnCours || ouvertureEnCours || ecranDetruit) {
+            return
+        }
+
         verificationEnCours = true
 
         Thread {
+
             val connecte = try {
+
                 val gestionnaire =
                     getSystemService(CONNECTIVITY_SERVICE) as
-                    android.net.ConnectivityManager
+                        android.net.ConnectivityManager
 
                 val reseau = gestionnaire.activeNetwork
-                val capacites = gestionnaire.getNetworkCapabilities(reseau)
+
+                val capacites =
+                    gestionnaire.getNetworkCapabilities(reseau)
 
                 capacites != null &&
                     capacites.hasCapability(
@@ -109,43 +207,85 @@ class SplashActivity : android.app.Activity() {
                     capacites.hasCapability(
                         android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED
                     )
+
             } catch (_: Exception) {
                 false
             }
 
             runOnUiThread {
+
+                if (ecranDetruit || isFinishing) {
+                    return@runOnUiThread
+                }
+
                 verificationEnCours = false
 
                 if (connecte) {
-                    message.text = "Connexion réussie. Ouverture de l'application..."
+
+                    if (ouvertureEnCours) {
+                        return@runOnUiThread
+                    }
+
+                    ouvertureEnCours = true
+
+                    message.text =
+                        "Connexion réussie. Ouverture de l'application..."
+
+                    boutonReessayer.visibility =
+                        android.view.View.GONE
 
                     handler.postDelayed({
-                        startActivity(
-                            android.content.Intent(
-                                this,
-                                MainActivity::class.java
+
+                        if (!ecranDetruit && !isFinishing) {
+
+                            startActivity(
+                                android.content.Intent(
+                                    this,
+                                    MainActivity::class.java
+                                )
                             )
-                        )
-                        finish()
+
+                            finish()
+                        }
+
                     }, 500)
+
                 } else {
+
                     message.text =
                         "Pas de connexion Internet. Active Internet puis réessaie."
-                    boutonReessayer.visibility = android.view.View.VISIBLE
+
+                    boutonReessayer.visibility =
+                        android.view.View.VISIBLE
 
                     handler.postDelayed({
-                        verifierInternet()
+
+                        if (!ecranDetruit && !ouvertureEnCours) {
+                            verifierInternet()
+                        }
+
                     }, 5000)
                 }
             }
+
         }.start()
     }
 
+    // ========================================================
+    // FERMETURE PROPRE DE L'ECRAN
+    // ========================================================
+
     override fun onDestroy() {
+        ecranDetruit = true
         handler.removeCallbacksAndMessages(null)
         super.onDestroy()
     }
 }
+
+// ========================================================
+// FIN ECRAN DE BIENVENUE VIE ESPOIR MARKETING
+// ========================================================
+
 
 
 // ============================================================
