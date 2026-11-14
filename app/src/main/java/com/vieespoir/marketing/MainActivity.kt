@@ -443,6 +443,32 @@ private fun viderHistoriqueEtAfficher(view: View) {
     }  
 }  
 
+private var dernierAppuiRetour = 0L
+
+override fun onBackPressed() {
+
+    // Revenir à l'écran précédent
+    if (afficherEcranPrecedent()) {
+        dernierAppuiRetour = 0L
+        return
+    }
+
+    // À l'accueil général : double appui pour quitter
+    val maintenant = android.os.SystemClock.uptimeMillis()
+
+    if (maintenant - dernierAppuiRetour < 2000) {
+        finish()
+    } else {
+        dernierAppuiRetour = maintenant
+
+        android.widget.Toast.makeText(
+            this,
+            "Appuyez encore une fois pour quitter",
+            android.widget.Toast.LENGTH_SHORT
+        ).show()
+    }
+}
+
 // ========================================================  
 // STOCKAGE  
 // ========================================================  
