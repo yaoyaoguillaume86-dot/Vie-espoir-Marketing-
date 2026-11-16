@@ -2905,117 +2905,122 @@ private fun choisirPaiementCommande(
         .show()  
 }  
 
-// ========================================================  
-// CONFIRMATION COMMANDE  
-// ========================================================  
+ 
+// ========================================================
+// CONFIRMATION COMMANDE — SEPARATION PAR ENTREPRISE
+// ========================================================
 
-private fun confirmerCommande(  
-    client: String,  
-    telephone: String,  
-    total: Int,  
-    paiement: String  
-) {  
+private fun confirmerCommande(
+    client: String,
+    telephone: String,
+    total: Int,
+    paiement: String
+) {
 
-    val produitsCommande =  
-        panier.joinToString(", ") {  
+    val produitsSansVendeur = panier.any { item ->
+        val produit = produits.find {
+            it.id == item.produitId
+        }
 
-            "${it.nom} x${it.quantite}"  
-        }  
+        produit == null || produit.vendeurId.isBlank()
+    }
 
-    AlertDialog.Builder(this)  
-        .setTitle(  
-            "📋 Récapitulatif"  
-        )  
-        .setMessage(  
-            """  
-            Client : $client  
-              
-            Produits :  
-            $produitsCommande  
-              
-            Total :  
-            ${formaterNombre(total)} FCFA  
-              
-            Paiement :  
-            $paiement  
-            """.trimIndent()  
-        )  
-        .setNegativeButton(  
-            "Modifier",  
-            null  
-        )  
-        .setPositiveButton(  
-            "Confirmer la commande"  
-        ) { _, _ ->  
+    if (produitsSansVendeur) {
+        toast(
+            "Impossible de commander : un produit n'a pas de vendeur identifié."
+        )
+        return
+    }
 
-            val commande =  
-                Commande(  
-                    id =  
-                        System.currentTimeMillis()  
-                            .toString()  
-                            .takeLast(6),  
+    val produitsParVendeur = panier.groupBy { item ->
+        produits.find {
+            it.id == item.produitId
+        }!!.vendeurId
+    }
 
-                    client =  
-                        client,  
+    val produitsCommande = panier.joinToString(", ") {
+        "${it.nom} x${it.quantite}"
+    }
 
-                    telephone =  
-                        telephone,  
+    AlertDialog.Builder(this)
+        .setTitle("📋 Récapitulatif")
+        .setMessage(
+            """
+            Client : $client
 
-                    produit =  
-                        produitsCommande,  
+            Produits :
+            $produitsCommande
 
-                    montant =  
-                        total.toString(),  
+            Total :
+            ${formaterNombre(total)} FCFA
 
-                    paiement =  
-                        paiement,  
+            Paiement :
+            $paiement
+            """.trimIndent()
+        )
+        .setNegativeButton("Modifier", null)
+        .setPositiveButton("Confirmer la commande") { _, _ ->
 
-                    statut =  
-                        "Nouvelle"  
-                )  
+            var numero = 0
 
-            commandes.add(  
-                commande  
-            )  
+            // Une commande distincte pour chaque vendeur
+            for ((vendeurId, articles) in produitsParVendeur) {
 
-            // Déduction du stock  
-            for (item in panier) {  
+                val produitsDuVendeur =
+                    articles.joinToString(", ") {
+                        "${it.nom} x${it.quantite}"
+                    }
 
-                val produit =  
-                    produits.find {  
-                        it.id ==  
-                            item.produitId  
-                    }  
+                val montantVendeur =
+                    articles.sumOf {
+                        it.prix * it.quantite
+                    }
 
-                if (produit != null) {  
+                val commande = Commande(
+                    id = "${System.currentTimeMillis()}_${numero++}",
+                    client = client,
+                    telephone = telephone,
+                    produit = produitsDuVendeur,
+                    montant = montantVendeur.toString(),
+                    paiement = paiement,
+                    statut = "Nouvelle",
+                    vendeurId = vendeurId
+                )
 
-                    produit.stock =  
-                        (  
-                            produit.stock -  
-                            item.quantite  
-                        ).coerceAtLeast(0)  
-                }  
-            }  
+                commandes.add(commande)
+            }
 
-            sauvegarderProduits()  
-            sauvegarderCommandes()  
+            // Déduction du stock
+            for (item in panier) {
 
-            enregistrerEvenement(  
-                "Nouvelle commande #${commande.id} — $paiement — ${formaterNombre(total)} FCFA"  
-            )  
+                val produit = produits.find {
+                    it.id == item.produitId
+                }
 
-            panier.clear()  
+                if (produit != null) {
+                    produit.stock =
+                        (produit.stock - item.quantite)
+                            .coerceAtLeast(0)
+                }
+            }
 
-            sauvegarderPanier()  
+            sauvegarderProduits()
+            sauvegarderCommandes()
 
-            toast(  
-                "✅ Commande enregistrée"  
-            )  
+            enregistrerEvenement(
+                "Nouvelle commande de $client — ${formaterNombre(total)} FCFA"
+            )
 
-            afficherAccueil()  
-        }  
-        .show()  
-}  
+            panier.clear()
+            sauvegarderPanier()
+
+            toast("✅ Commande enregistrée")
+
+            afficherAccueil()
+        }
+        .show()
+}
+
 
 // ========================================================  
 // RECHERCHE  
