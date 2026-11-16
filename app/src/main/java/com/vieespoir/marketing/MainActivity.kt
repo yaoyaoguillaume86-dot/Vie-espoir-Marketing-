@@ -328,15 +328,18 @@ data class PanierItem(
     val images: MutableList<String> = mutableListOf()  
 )  
 
-data class Commande(  
-    val id: String,  
-    val client: String,  
-    val telephone: String,  
-    val produit: String,  
-    val montant: String,  
-    val paiement: String,  
-    var statut: String = "Nouvelle"  
-)  
+ 
+data class Commande(
+    val id: String,
+    val client: String,
+    val telephone: String,
+    val produit: String,
+    val montant: String,
+    val paiement: String,
+    var statut: String = "Nouvelle",
+    val vendeurId: String = ""
+)
+
 // ========================================================
 // ========================================================
 // VIE ESPOIR MARKETING
