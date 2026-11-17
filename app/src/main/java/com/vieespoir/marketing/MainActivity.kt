@@ -2907,10 +2907,10 @@ private fun choisirPaiementCommande(
 
  
 
-// ========================================================
-// CONFIRMATION COMMANDE
-// SEPARATION DES COMMANDES PAR ENTREPRISE
-// ========================================================
+ // ========================================================
+ // CONFIRMATION COMMANDE
+ // SEPARATION DES COMMANDES PAR ENTREPRISE
+ // ========================================================
 
 private fun confirmerCommande(
     client: String,
@@ -2919,14 +2919,13 @@ private fun confirmerCommande(
     paiement: String
 ) {
 
-    // Identifiant Firebase de l'administrateur Vie Espoir
     val uidVieEspoir =
         "1kpZWN50IHhvz4y4OxS60MVjckx1"
 
-    // Retrouver les propriétaires des produits
+    // Identifier chaque vendeur
     for (item in panier) {
 
-        val produit = productos.find {
+        val produit = produits.find {
             it.id == item.produitId
         }
 
@@ -2935,21 +2934,13 @@ private fun confirmerCommande(
             return
         }
 
-        // Corriger les anciens produits Vie Espoir
         if (produit.vendeurId.isBlank()) {
 
-            val entreprise =
-                produit.entreprise.trim()
+            val entreprise = produit.entreprise.trim()
 
             if (
-                entreprise.equals(
-                    "Vie Espoir Marketing",
-                    ignoreCase = true
-                ) ||
-                entreprise.equals(
-                    "Vie Espoir",
-                    ignoreCase = true
-                )
+                entreprise.equals("Vie Espoir Marketing", true) ||
+                entreprise.equals("Vie Espoir", true)
             ) {
                 produit.vendeurId = uidVieEspoir
             } else {
@@ -2962,18 +2953,16 @@ private fun confirmerCommande(
     }
 
     // Regrouper les produits par vendeur
-    val produitsParVendeur =
-        panier.groupBy { item ->
+    val produitsParVendeur = panier.groupBy { item ->
 
-            productos.find {
-                it.id == item.produitId
-            }!!.vendeurId
-        }
+        produits.find {
+            it.id == item.produitId
+        }!!.vendeurId
+    }
 
-    val produitsCommande =
-        panier.joinToString(", ") {
-            "${it.nom} x${it.quantite}"
-        }
+    val produitsCommande = panier.joinToString(", ") {
+        "${it.nom} x${it.quantite}"
+    }
 
     AlertDialog.Builder(this)
         .setTitle("📋 Récapitulatif")
@@ -3025,7 +3014,7 @@ private fun confirmerCommande(
             // Déduction du stock
             for (item in panier) {
 
-                val produit = productos.find {
+                val produit = produits.find {
                     it.id == item.produitId
                 }
 
