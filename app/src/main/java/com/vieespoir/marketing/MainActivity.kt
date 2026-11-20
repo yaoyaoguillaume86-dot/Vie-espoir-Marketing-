@@ -7074,111 +7074,48 @@ private fun partagerTexteProduit(texte: String) {
 // ========================================================
 // FIN PARTAGE PRODUIT
 // ========================================================
+
 // ========================================================
 // VIE ESPOIR MARKETING
-// PARTAGE APPLICATION
-// PHOTO DE LA PAGE D'ACCUEIL + LIEN APK
+// PARTAGER LA BOUTIQUE EN LIGNE
+// TELECHARGEMENT FACULTATIF
 // ========================================================
 
 private fun partagerApplication() {
+
+    val lienBoutique =
+        "https://vie-espoir-marketing.web.app"
 
     val textePartage = """
         🦁 VIE ESPOIR MARKETING
 
         🛍️ Découvrez notre boutique en ligne !
 
-        📦 Produits
-        🛒 Commandes
-        💳 Paiements
-        🚚 Livraison
+        📦 Découvrez nos produits
+        🛒 Consultez notre boutique
+        💳 Découvrez nos offres
+        🚚 Découvrez nos services
 
-        📲 Téléchargez notre application :
+        🌍 Ouvrez directement notre boutique ici :
 
-        https://github.com/yaoyaoguillaume86-dot/Vie-espoir-Marketing-/releases/download/v1.0.2/app-debug.apk
+        $lienBoutique
 
+        📲 Vous pourrez télécharger notre application
+        depuis la page d'accueil si vous le souhaitez.
+
+        Bienvenue chez VIE ESPOIR MARKETING !
     """.trimIndent()
 
     try {
 
-        // ================================================
-        // CAPTURER LA PAGE D'ACCUEIL
-        // ================================================
-
-        val vueAccueil = window.decorView.rootView
-
-        val bitmap = Bitmap.createBitmap(
-            vueAccueil.width,
-            vueAccueil.height,
-            Bitmap.Config.ARGB_8888
-        )
-
-        val canvas = Canvas(bitmap)
-
-        vueAccueil.draw(canvas)
-
-        // ================================================
-        // ENREGISTRER LA PHOTO
-        // ================================================
-
-        val dossier = File(
-            cacheDir,
-            "images"
-        )
-
-        dossier.mkdirs()
-
-        val fichier = File(
-            dossier,
-            "accueil_vie_espoir.jpg"
-        )
-
-        FileOutputStream(fichier).use {
-
-            bitmap.compress(
-                Bitmap.CompressFormat.JPEG,
-                95,
-                it
-            )
-        }
-
-        // ================================================
-        // CREER URI DE PARTAGE
-        // ================================================
-
-        val uriPartage =
-            androidx.core.content.FileProvider.getUriForFile(
-                this,
-                "$packageName.fileprovider",
-                fichier
-            )
-
-        // ================================================
-        // PARTAGER PHOTO + LIEN APK
-        // ================================================
-
         val intentPartage =
             Intent(Intent.ACTION_SEND).apply {
 
-                type = "image/jpeg"
-
-                putExtra(
-                    Intent.EXTRA_STREAM,
-                    uriPartage
-                )
+                type = "text/plain"
 
                 putExtra(
                     Intent.EXTRA_TEXT,
                     textePartage
-                )
-
-                clipData = ClipData.newUri(
-                    contentResolver,
-                    "Accueil Vie Espoir Marketing",
-                    uriPartage
-                )
-
-                addFlags(
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
                 )
             }
 
@@ -7199,7 +7136,7 @@ private fun partagerApplication() {
 
         Toast.makeText(
             this,
-            "Impossible de partager l'application",
+            "Impossible de partager la boutique",
             Toast.LENGTH_LONG
         ).show()
     }
@@ -7208,6 +7145,7 @@ private fun partagerApplication() {
 // ========================================================
 // FIN PARTAGE APPLICATION
 // ========================================================
+
 
 // ========================================================  
 // QUITTER  
