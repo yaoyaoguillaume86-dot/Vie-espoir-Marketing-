@@ -1261,7 +1261,9 @@ accueilCarrouselHandler.postDelayed(
 // ========================================================
 // FIN CARROUSEL AUTOMATIQUE
 // ========================================================
+
 private fun afficherProduitsAccueil() {
+
     if (!::zoneProduits.isInitialized) return
 
     zoneProduits.removeAllViews()
@@ -1271,53 +1273,66 @@ private fun afficherProduitsAccueil() {
     fun dp(valeur: Int): Int =
         (valeur * densite).toInt()
 
-    // Marges générales de l'accueil
     zoneProduits.setPadding(
         dp(10), dp(4), dp(10), dp(16)
     )
 
     zoneProduits.clipToPadding = false
 
-    if (produits.isEmpty()) {
+    // Afficher uniquement les produits actifs
+    val produitsDisponibles = produits.filter {
+        it.actif
+    }
+
+    if (produitsDisponibles.isEmpty()) {
+
         zoneProduits.addView(
-            texte("Aucun produit disponible pour le moment.", 16f)
-                .apply {
-                    gravity = Gravity.CENTER
-                    setPadding(dp(12), dp(30), dp(12), dp(30))
-                }
+            texte(
+                "Aucun produit disponible pour le moment.",
+                16f
+            ).apply {
+                gravity = Gravity.CENTER
+                setPadding(
+                    dp(12), dp(30), dp(12), dp(30)
+                )
+            }
         )
+
         return
     }
 
-// ========================================================
-// VIE ESPOIR MARKETING
-// ACTIVER LE CARROUSEL AUTOMATIQUE
-// DEFILEMENT HORIZONTAL TOUTES LES 30 SECONDES
-// ========================================================
+    // ========================================================
+    // CARROUSEL AUTOMATIQUE
+    // ========================================================
 
-ajouterCarrouselAccueil(zoneProduits)
+    ajouterCarrouselAccueil(zoneProduits)
 
-// ========================================================
-// FIN ACTIVATION DU CARROUSEL
-// ========================================================
+    // ========================================================
+    // REGROUPEMENT PAR CATEGORIE
+    // ========================================================
 
+    val groupes = produitsDisponibles.groupBy { produit ->
 
-    val groupes = produits.groupBy { produit ->
         produit.categorie.trim()
             .ifEmpty { "Autres produits" }
     }
 
     for ((categorie, listeProduits) in groupes) {
 
-        // Titre de la catégorie
         val titreCategorie = TextView(this).apply {
+
             text = categorie.replaceFirstChar {
-                if (it.isLowerCase()) it.titlecase() else it.toString()
+                if (it.isLowerCase()) it.titlecase()
+                else it.toString()
             }
+
             textSize = 20f
             setTextColor(VERT)
             typeface = Typeface.DEFAULT_BOLD
-            setPadding(dp(4), dp(20), dp(4), dp(10))
+
+            setPadding(
+                dp(4), dp(20), dp(4), dp(10)
+            )
         }
 
         zoneProduits.addView(
@@ -1332,15 +1347,21 @@ ajouterCarrouselAccueil(zoneProduits)
         for (paire in listeProduits.chunked(2)) {
 
             val rangeeProduits = LinearLayout(this).apply {
+
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.TOP
                 weightSum = 2f
             }
 
             for (produit in paire) {
+
                 val carteConteneur = LinearLayout(this).apply {
+
                     orientation = LinearLayout.VERTICAL
-                    setPadding(dp(4), dp(4), dp(4), dp(8))
+
+                    setPadding(
+                        dp(4), dp(4), dp(4), dp(8)
+                    )
                 }
 
                 rangeeProduits.addView(
@@ -1352,7 +1373,7 @@ ajouterCarrouselAccueil(zoneProduits)
                     )
                 )
 
-                // Réutilise ta carte existante et ses fonctionnalités
+                // Carte client existante
                 ajouterCarteProduit(
                     parent = carteConteneur,
                     produit = produit,
@@ -1360,8 +1381,9 @@ ajouterCarrouselAccueil(zoneProduits)
                 )
             }
 
-            // Garder la deuxième colonne vide si nécessaire
+            // Garder la deuxième colonne vide
             if (paire.size == 1) {
+
                 rangeeProduits.addView(
                     View(this),
                     LinearLayout.LayoutParams(
@@ -1382,6 +1404,7 @@ ajouterCarrouselAccueil(zoneProduits)
         }
     }
 }
+
 // ========================================================
 // CARTE PRODUIT — STYLE JUMIA
 // VIE ESPOIR MARKETING
