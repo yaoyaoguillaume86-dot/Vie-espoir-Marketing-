@@ -315,8 +315,11 @@ data class Produit(
     var vendeur: String = "",
     var entreprise: String = "",
 
-    // Identifiant Firebase du propriétaire du produit
-    var vendeurId: String = ""
+    // Identifiant Firebase du propriétaire
+    var vendeurId: String = "",
+
+    // Visibilité du produit dans la boutique
+    var actif: Boolean = true
 )
 
 
