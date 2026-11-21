@@ -928,10 +928,11 @@ private fun afficherAccueil() {
 // CHARGEMENT AUTOMATIQUE DES PRODUITS FIREBASE
 // VIE ESPOIR MARKETING
 // ========================================================
+
 private var ecouteurProduits: ListenerRegistration? = null
+
 private fun chargerProduitsFirebase() {
 
-    // Arrêter l'ancien écouteur pour éviter les doublons
     ecouteurProduits?.remove()
     ecouteurProduits = null
 
@@ -940,7 +941,6 @@ private fun chargerProduitsFirebase() {
         "Démarrage de la synchronisation automatique"
     )
 
-    // Écouter automatiquement les modifications Firebase
     ecouteurProduits = db.collection("Produits")
         .addSnapshotListener { result, erreur ->
 
@@ -959,9 +959,7 @@ private fun chargerProduitsFirebase() {
                 return@addSnapshotListener
             }
 
-            if (result == null) {
-                return@addSnapshotListener
-            }
+            if (result == null) return@addSnapshotListener
 
             val produitsRecus = ArrayList<Produit>()
 
@@ -969,18 +967,14 @@ private fun chargerProduitsFirebase() {
 
                 val donnees = document.data ?: continue
 
-                // NOM DU PRODUIT
                 val nom = (
                     donnees["nom"]
                         ?: donnees["Nom"]
                         ?: donnees["name"]
                 )?.toString()?.trim().orEmpty()
 
-                if (nom.isEmpty()) {
-                    continue
-                }
+                if (nom.isEmpty()) continue
 
-                // PRIX DU PRODUIT
                 val prixValeur =
                     donnees["prix"] ?: donnees["Prix"]
 
@@ -990,13 +984,11 @@ private fun chargerProduitsFirebase() {
                     else -> "0"
                 }
 
-                // CATÉGORIE
                 val categorie = (
                     donnees["categorie"]
                         ?: donnees["category"]
                 )?.toString() ?: "Autres produits"
 
-                // STOCK
                 val stock = when (
                     val valeur = donnees["stock"]
                 ) {
@@ -1005,25 +997,19 @@ private fun chargerProduitsFirebase() {
                     else -> 0
                 }
 
-                // RÉCUPÉRER TOUTES LES PHOTOS
+                // PHOTOS
                 val images = mutableListOf<String>()
 
                 val imagesFirebase = donnees["images"]
 
                 if (imagesFirebase is List<*>) {
-
                     for (image in imagesFirebase) {
-
-                        if (
-                            image is String &&
-                            image.isNotBlank()
-                        ) {
+                        if (image is String && image.isNotBlank()) {
                             images.add(image)
                         }
                     }
                 }
 
-                // Compatibilité avec une ancienne photo unique
                 val ancienneImage =
                     donnees["image"]?.toString()
 
@@ -1034,23 +1020,33 @@ private fun chargerProduitsFirebase() {
                     images.add(ancienneImage)
                 }
 
-                // DESCRIPTION
                 val description =
                     donnees["description"]?.toString() ?: ""
 
-                // VENDEUR
                 val vendeur =
                     donnees["vendeur"]?.toString() ?: ""
 
-                // ENTREPRISE
                 val entreprise =
                     donnees["entreprise"]?.toString() ?: ""
 
-                // CRÉER LE PRODUIT
+                // IDENTIFIANT DU VENDEUR
+                val vendeurId =
+                    donnees["vendeurId"]?.toString() ?: ""
+
+                // VISIBILITÉ DU PRODUIT
+                // Les anciens produits sans champ actif
+                // restent visibles par défaut.
+                val actif = when (val valeur = donnees["actif"]) {
+                    is Boolean -> valeur
+                    is String -> valeur.toBooleanStrictOrNull() ?: true
+                    else -> true
+                }
+
                 val produit = Produit(
-                    id = (donnees["id"]?.toString())
+                    id = donnees["id"]?.toString()
                         ?.takeIf { it.isNotBlank() }
                         ?: document.id,
+
                     nom = nom,
                     prix = prix,
                     categorie = categorie,
@@ -1058,13 +1054,15 @@ private fun chargerProduitsFirebase() {
                     description = description,
                     images = images,
                     vendeur = vendeur,
-                    entreprise = entreprise
+                    entreprise = entreprise,
+                    vendeurId = vendeurId,
+                    actif = actif
                 )
 
                 produitsRecus.add(produit)
             }
 
-            // ACTUALISER LA LISTE DES PRODUITS
+            // ACTUALISER LES PRODUITS
             produits.clear()
             produits.addAll(produitsRecus)
 
@@ -1073,65 +1071,43 @@ private fun chargerProduitsFirebase() {
                 "Produits synchronisés : ${produits.size}"
             )
 
-            // ========================================================
-// ACTUALISER L'ACCUEIL AUTOMATIQUEMENT
-// ========================================================
+            // ACTUALISER L'ACCUEIL
+            if (
+                ::zoneProduits.isInitialized &&
+                zoneProduits.isAttachedToWindow
+            ) {
+                afficherProduitsAccueil()
+            }
 
-if (
-    ::zoneProduits.isInitialized &&
-    zoneProduits.isAttachedToWindow
-) {
-    afficherProduitsAccueil()
-}
+            // OUVRIR UN PRODUIT PARTAGÉ
+            val idAouvrir = produitIdEnAttente
 
-// ========================================================
-// OUVRIR AUTOMATIQUEMENT LE PRODUIT PARTAGE
-// APRES SYNCHRONISATION FIREBASE
-// VIE ESPOIR MARKETING
-// ========================================================
+            if (!idAouvrir.isNullOrBlank()) {
 
-val idAouvrir = produitIdEnAttente
+                val produitTrouve = produits.find {
+                    it.id == idAouvrir
+                }
 
-if (!idAouvrir.isNullOrBlank()) {
+                if (produitTrouve != null) {
 
-    val produitTrouve = produits.find {
-        it.id.toString() == idAouvrir
-    }
+                    produitIdEnAttente = null
 
-    if (produitTrouve != null) {
+                    if (produitTrouve.actif) {
+                        afficherDetailProduit(produitTrouve)
+                    } else {
+                        toast("Ce produit n'est plus disponible.")
+                    }
 
-        // Effacer l'attente pour éviter
-        // de rouvrir le produit à chaque mise à jour
-        produitIdEnAttente = null
+                } else {
 
-        afficherDetailProduit(produitTrouve)
+                    produitIdEnAttente = null
 
-    } else {
-
-        android.util.Log.w(
-            "LIEN_PRODUIT",
-            "Produit introuvable : $idAouvrir"
-        )
-
-        produitIdEnAttente = null
-
-        toast("Ce produit est introuvable.")
-    }
-}
-
-// ========================================================
-// FIN DE L'ECOUTEUR FIREBASE
-// ========================================================
+                    toast("Ce produit est introuvable.")
+                }
+            }
         }
-
-// ========================================================
-// FIN DE LA FONCTION chargerProduitsFirebase
-// ========================================================
 }
 
-// ========================================================
-// FERMETURE DE LA SYNCHRONISATION FIREBASE
-// ========================================================
 
 override fun onDestroy() {
     ecouteurProduits?.remove()
