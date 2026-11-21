@@ -5167,81 +5167,243 @@ if (compte == null) {
 // MES PRODUITS VENDEUR  
 // ========================================================  
 
-private fun afficherMesProduitsVendeur() {  
+private fun afficherMesProduitsVendeur() {
 
-    val compte =  
-        compteActuel()  
+    val compte = compteActuel()
 
-    if (compte == null) {  
+    if (compte == null) {
+        afficherConnexion()
+        return
+    }
 
-        afficherConnexion()  
+    val uidAdmin = "1kpZWN50IHhvz4y4OxS60MVjckx1"
+    val estAdmin = compte.id == uidAdmin ||
+        compte.type.equals("admin", ignoreCase = true)
 
-        return  
-    }  
+    val root = layoutBase()
 
-    val root =  
-        layoutBase()  
+    root.addView(titre("🛍️ Mes produits"))
 
-    root.addView(  
-        titre(  
-            "🛍️ Mes produits"  
-        )  
-    )  
+    val liste = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+    }
 
-    val liste =  
-        LinearLayout(this).apply {  
-            orientation =  
-                LinearLayout.VERTICAL  
-        }  
+    root.addView(liste)
 
-    root.addView(  
-        liste  
-    )  
+    fun sauvegarderGestion(produit: Produit) {
 
-    var nombre = 0  
+        val donnees = hashMapOf<String, Any>(
+            "id" to produit.id,
+            "nom" to produit.nom,
+            "prix" to produit.prix,
+            "categorie" to produit.categorie,
+            "stock" to produit.stock,
+            "description" to produit.description,
+            "images" to produit.images.toList(),
+            "vendeur" to produit.vendeur,
+            "entreprise" to produit.entreprise,
+            "vendeurId" to produit.vendeurId,
+            "actif" to produit.actif
+        )
 
-    for (produit in produits) {  
+        db.collection("Produits")
+            .document(produit.id)
+            .set(donnees)
+            .addOnSuccessListener {
 
-        val appartient =  
-            produit.vendeur == compte.nom ||  
-            produit.entreprise == compte.entreprise  
+                sauvegarderProduitsLocalement()
 
-        if (appartient) {  
+                toast("Produit mis à jour avec succès")
 
-            ajouterCarteProduit(  
-                liste,  
-                produit  
-            )  
+                afficherMesProduitsVendeur()
+            }
+            .addOnFailureListener { erreur ->
 
-            nombre++  
-        }  
-    }  
+                toast("Erreur Firebase : ${erreur.localizedMessage}")
+            }
+    }
 
-    if (nombre == 0) {  
+    fun afficherModification(produit: Produit) {
 
-        liste.addView(  
-            texte(  
-                "Vous n'avez encore aucun produit.",  
-                17f  
-            ).apply {  
+        val formulaire = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(25, 10, 25, 10)
+        }
 
-                gravity =  
-                    Gravity.CENTER  
+        val champNom = android.widget.EditText(this).apply {
+            hint = "Nom du produit"
+            setText(produit.nom)
+        }
 
-                setPadding(  
-                    10,  
-                    35,  
-                    10,  
-                    35  
-                )  
-            }  
-        )  
-    }  
+        val champPrix = android.widget.EditText(this).apply {
+            hint = "Prix"
+            setText(produit.prix)
+        }
 
-    setContentView(  
-        scroll(root)  
-    )  
-}  
+        val champDescription = android.widget.EditText(this).apply {
+            hint = "Description"
+            setText(produit.description)
+            minLines = 2
+        }
+
+        formulaire.addView(champNom)
+        formulaire.addView(champPrix)
+        formulaire.addView(champDescription)
+
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Modifier le produit")
+            .setView(formulaire)
+            .setNegativeButton("Annuler", null)
+            .setPositiveButton("Enregistrer") { _, _ ->
+
+                val nom = champNom.text.toString().trim()
+                val prix = champPrix.text.toString().trim()
+
+                if (nom.isEmpty() || prix.isEmpty()) {
+                    toast("Veuillez remplir le nom et le prix")
+                    return@setPositiveButton
+                }
+
+                produit.nom = nom
+                produit.prix = prix
+                produit.description =
+                    champDescription.text.toString().trim()
+
+                sauvegarderGestion(produit)
+            }
+            .show()
+    }
+
+    fun modifierStock(produit: Produit, ajouter: Boolean) {
+
+        val champ = android.widget.EditText(this).apply {
+            hint = "Quantité"
+            inputType =
+                android.text.InputType.TYPE_CLASS_NUMBER
+        }
+
+        android.app.AlertDialog.Builder(this)
+            .setTitle(
+                if (ajouter) "Augmenter le stock"
+                else "Diminuer le stock"
+            )
+            .setView(champ)
+            .setNegativeButton("Annuler", null)
+            .setPositiveButton("Valider") { _, _ ->
+
+                val quantite =
+                    champ.text.toString().toIntOrNull()
+
+                if (quantite == null || quantite <= 0) {
+                    toast("Quantité invalide")
+                    return@setPositiveButton
+                }
+
+                if (ajouter) {
+
+                    produit.stock += quantite
+
+                } else {
+
+                    if (quantite > produit.stock) {
+                        toast("Stock insuffisant")
+                        return@setPositiveButton
+                    }
+
+                    produit.stock -= quantite
+                }
+
+                sauvegarderGestion(produit)
+            }
+            .show()
+    }
+
+    var nombre = 0
+
+    for (produit in produits) {
+
+        val appartient =
+            produit.vendeurId == compte.id ||
+            (
+                produit.vendeurId.isBlank() &&
+                (
+                    produit.vendeur == compte.nom ||
+                    produit.entreprise == compte.entreprise
+                )
+            )
+
+        if (estAdmin || appartient) {
+
+            val bloc = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(8, 8, 8, 18)
+            }
+
+            bloc.addView(
+                ajouterCarteProduit(bloc, produit)
+            )
+
+            bloc.addView(
+                texte(
+                    if (produit.actif) "🟢 Produit en vente"
+                    else "🔴 Produit masqué",
+                    15f
+                )
+            )
+
+            bloc.addView(
+                bouton("✏️ Modifier le produit") {
+                    afficherModification(produit)
+                }
+            )
+
+            bloc.addView(
+                bouton("➕ Augmenter le stock") {
+                    modifierStock(produit, true)
+                }
+            )
+
+            bloc.addView(
+                bouton("➖ Diminuer le stock") {
+                    modifierStock(produit, false)
+                }
+            )
+
+            bloc.addView(
+                bouton(
+                    if (produit.actif)
+                        "👁️ Masquer de la boutique"
+                    else
+                        "🛍️ Remettre en vente"
+                ) {
+
+                    produit.actif = !produit.actif
+
+                    sauvegarderGestion(produit)
+                }
+            )
+
+            liste.addView(bloc)
+
+            nombre++
+        }
+    }
+
+    if (nombre == 0) {
+
+        liste.addView(
+            texte(
+                "Vous n'avez encore aucun produit.",
+                17f
+            ).apply {
+                gravity = Gravity.CENTER
+                setPadding(10, 35, 10, 35)
+            }
+        )
+    }
+
+    setContentView(scroll(root))
+}
 
 // ========================================================  
 // COMPTE  
