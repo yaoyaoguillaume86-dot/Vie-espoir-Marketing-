@@ -7487,9 +7487,10 @@ val donneesProduits = produits.filter {
                     "stock" to produit.stock,
                     "description" to produit.description,
                     "images" to imagesEnLigne,
-                    "vendeur" to produit.vendeur,
-                    "entreprise" to produit.entreprise,
-  "vendeurId" to produit.vendeurId              )
+                     "vendeur" to produit.vendeur,
+"entreprise" to produit.entreprise,
+"vendeurId" to produit.vendeurId,
+"actif" to produit.actif            )
 
                 db.collection("Produits")
                     .document(produit.id)
