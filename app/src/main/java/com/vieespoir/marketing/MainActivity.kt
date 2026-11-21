@@ -1732,7 +1732,9 @@ private fun ajouterCarteProduit(
         }
     )
 
-    carte.addView(image)
+parent.addView(carte)
+
+
 
     // ========================================================
     // OUVRIR LES DETAILS DU PRODUIT
