@@ -5340,9 +5340,8 @@ private fun afficherMesProduitsVendeur() {
                 setPadding(8, 8, 8, 18)
             }
 
-            bloc.addView(
-                ajouterCarteProduit(bloc, produit)
-            )
+             ajouterCarteProduit(bloc, produit)
+          
 
             bloc.addView(
                 texte(
