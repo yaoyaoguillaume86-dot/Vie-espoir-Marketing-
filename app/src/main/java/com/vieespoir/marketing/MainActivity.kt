@@ -1475,7 +1475,7 @@ private fun ajouterCarteProduit(
     }
 
     afficherPhotoAccueil()
-
+carte.addView(image)
     // ========================================================
     // GRANDE GALERIE SANS FLECHES
     // ========================================================
