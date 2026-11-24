@@ -1732,7 +1732,7 @@ private fun ajouterCarteProduit(
         }
     )
 
-parent.addView(carte)
+
 
 
 
