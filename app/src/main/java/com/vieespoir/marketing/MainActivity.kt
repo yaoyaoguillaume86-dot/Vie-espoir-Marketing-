@@ -4929,25 +4929,18 @@ private fun afficherMotDePasseOublie() {
         .show()  
 }  
 
-// ========================================================  
-// ESPACE VENDEUR  
-// ========================================================  
-
-private fun afficherEspaceVendeur() {  
-// ========================================================
-// ========================================================
-// VIE ESPOIR MARKETING
-// SYNCHRONISATION FIREBASE DU PROFIL VENDEUR
-// CORRECTION PROFIL LOCAL INTROUVABLE
-// ========================================================
+   // ========================================================
+// ESPACE VENDEUR (MODERNISÉ)
 // ========================================================
 
-val compte = compteActuel()
-
-if (compte == null) {
+private fun afficherEspaceVendeur() {
+    val compteLocal = compteActuel()
+    if (compteLocal != null) {
+        rendreUiEspaceVendeur(compteLocal)
+        return
+    }
 
     val utilisateur = FirebaseAuth.getInstance().currentUser
-
     if (utilisateur == null) {
         toast("Veuillez vous connecter")
         afficherConnexion()
@@ -4955,14 +4948,12 @@ if (compte == null) {
     }
 
     val uid = utilisateur.uid
-
     toast("Chargement du profil vendeur...")
 
     db.collection("Comptes")
         .document(uid)
         .get()
         .addOnSuccessListener { document ->
-
             if (!document.exists()) {
                 toast("Profil vendeur absent de Firestore")
                 return@addOnSuccessListener
@@ -4997,7 +4988,6 @@ if (compte == null) {
 
             comptes.removeAll { it.id == uid }
             comptes.add(profil)
-
             compteConnecteId = uid
 
             prefs.edit()
@@ -5005,193 +4995,110 @@ if (compte == null) {
                 .apply()
 
             toast("Bienvenue dans votre espace vendeur")
-
-            afficherEspaceVendeur()
+            rendreUiEspaceVendeur(profil)
         }
         .addOnFailureListener { erreur ->
-
-            toast(
+            val msg = if (erreur.message?.contains("PERMISSION_DENIED", ignoreCase = true) == true) {
+                "Accès refusé à votre profil vendeur : vérifiez vos droits ou votre connexion."
+            } else {
                 "Erreur Firebase : ${erreur.localizedMessage}"
-            )
+            }
+            toast(msg)
         }
+}
 
-    return
+private fun rendreUiEspaceVendeur(compte: Compte) {
+    val root = layoutBase()
+
+    root.addView(titre("👨‍💼 Espace vendeur"))
+
+    val lignesProfil = buildList {
+        if (compte.nom.isNotBlank()) add("👋 ${compte.nom}")
+        if (compte.entreprise.isNotBlank()) add("🏢 ${compte.entreprise}")
+        else add("🏢 Boutique non renseignée")
+        if (compte.email.isNotBlank()) add("📧 ${compte.email}")
+        if (compte.telephone.isNotBlank()) add("📞 ${compte.telephone}")
+        else add("📞 Téléphone non renseigné")
+    }.joinToString("\n\n")
+
+    root.addView(
+        texte(lignesProfil, 17f, VERT).apply {
+            gravity = Gravity.CENTER
+            typeface = Typeface.DEFAULT_BOLD
+            setBackgroundColor(Color.WHITE)
+            setPadding(24, 24, 24, 24)
+        }
+    )
+
+    val jours = joursGratuitsRestants(compte)
+    if (jours > 0) {
+        root.addView(
+            texte("🎁 Il vous reste $jours jour(s) gratuit(s).", 16f, VERT).apply {
+                gravity = Gravity.CENTER
+                setPadding(12, 16, 12, 16)
+            }
+        )
+    } else {
+        root.addView(
+            texte("⚠️ Votre période gratuite est terminée.", 16f, Color.RED).apply {
+                gravity = Gravity.CENTER
+                setPadding(12, 16, 12, 16)
+            }
+        )
+    }
+
+    root.addView(boutonVert("➕ Ajouter un produit") { afficherAjouterProduit() })
+    root.addView(bouton("🛍️ Mes produits") { afficherMesProduitsVendeur() })
+    root.addView(bouton("📦 Mes commandes") { afficherCommandes() })
+    root.addView(bouton("📊 Mon tableau de bord") { afficherTableauDeBord() })
+    root.addView(bouton("📦 Gestion du stock") { afficherStock() })
+    root.addView(bouton("💎 Mon abonnement") { afficherAbonnement() })
+    root.addView(bouton("🚪 Se déconnecter") { deconnecter() })
+
+    setContentView(scroll(root))
 }
 
 // ========================================================
-// FIN SYNCHRONISATION FIREBASE
+// MES PRODUITS VENDEUR (MODERNISÉ)
 // ========================================================
-
-// ========================================================
-// FIN VERIFICATION DU PROFIL VENDEUR
-// ========================================================
-
-    val root =  
-        layoutBase()  
-
-    root.addView(  
-        titre(  
-            "👨‍💼 Espace vendeur"  
-        )  
-    )  
-
-    root.addView(  
-        texte(  
-            """  
-            👋 ${compte.nom}  
-              
-            🏢 ${compte.entreprise}  
-              
-            📧 ${compte.email}  
-              
-            📞 ${compte.telephone}  
-            """.trimIndent(),  
-            17f,  
-            VERT  
-        ).apply {  
-
-            gravity =  
-                Gravity.CENTER  
-
-            typeface =  
-                Typeface.DEFAULT_BOLD  
-
-            setBackgroundColor(  
-                Color.WHITE  
-            )  
-        }  
-    )  
-
-    val jours =  
-        joursGratuitsRestants(  
-            compte  
-        )  
-
-    if (jours > 0) {  
-
-        root.addView(  
-            texte(  
-                "🎁 Il vous reste $jours jour(s) gratuit(s).",  
-                17f,  
-                VERT  
-            ).apply {  
-
-                gravity =  
-                    Gravity.CENTER  
-            }  
-        )  
-
-    } else {  
-
-        root.addView(  
-            texte(  
-                "⚠️ Votre période gratuite est terminée.",  
-                17f,  
-                Color.RED  
-            ).apply {  
-
-                gravity =  
-                    Gravity.CENTER  
-            }  
-        )  
-    }  
-
-    root.addView(  
-        boutonVert(  
-            "➕ Ajouter un produit"  
-        ) {  
-
-            afficherAjouterProduit()  
-        }  
-    )  
-
-    root.addView(  
-        bouton(  
-            "🛍️ Mes produits"  
-        ) {  
-
-            afficherMesProduitsVendeur()  
-        }  
-    )  
-
-    root.addView(  
-        bouton(  
-            "📦 Mes commandes"  
-        ) {  
-
-            afficherCommandes()  
-        }  
-    )  
-
-    root.addView(  
-        bouton(  
-            "📊 Mon tableau de bord"  
-        ) {  
-
-            afficherTableauDeBord()  
-        }  
-    )  
-
-    root.addView(  
-        bouton(  
-            "📦 Gestion du stock"  
-        ) {  
-
-            afficherStock()  
-        }  
-    )  
-
-    root.addView(  
-        bouton(  
-            "💎 Mon abonnement"  
-        ) {  
-
-            afficherAbonnement()  
-        }  
-    )  
-
-    root.addView(  
-        bouton(  
-            "🚪 Se déconnecter"  
-        ) {  
-
-            deconnecter()  
-        }  
-    )  
-
-    setContentView(  
-        scroll(root)  
-    )  
-}  
-
-// ========================================================  
-// MES PRODUITS VENDEUR  
-// ========================================================  
 
 private fun afficherMesProduitsVendeur() {
-
     val compte = compteActuel()
-
     if (compte == null) {
         afficherConnexion()
         return
     }
 
+    val uidAuth = FirebaseAuth.getInstance().currentUser?.uid
     val uidAdmin = "1kpZWN50IHhvz4y4OxS60MVjckx1"
     val estAdmin = compte.id == uidAdmin ||
+        uidAuth == uidAdmin ||
         compte.type.equals("admin", ignoreCase = true)
 
     val root = layoutBase()
-
     root.addView(titre("🛍️ Mes produits"))
 
     val liste = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
     }
-
     root.addView(liste)
 
     fun sauvegarderGestion(produit: Produit) {
+        val uidActuel = FirebaseAuth.getInstance().currentUser?.uid
+        if (uidActuel == null) {
+            toast("Session expirée : veuillez vous reconnecter")
+            afficherConnexion()
+            return
+        }
+
+        if (produit.vendeurId.isBlank() && !estAdmin) {
+            produit.vendeurId = uidActuel
+        }
+
+        if (produit.stock <= 0) {
+            produit.stock = 0
+            produit.actif = false
+        }
 
         val donnees = hashMapOf<String, Any>(
             "id" to produit.id,
@@ -5204,28 +5111,29 @@ private fun afficherMesProduitsVendeur() {
             "vendeur" to produit.vendeur,
             "entreprise" to produit.entreprise,
             "vendeurId" to produit.vendeurId,
-            "actif" to produit.actif
+            "actif" to produit.actif,
+            "disponible" to (produit.stock > 0 && produit.actif)
         )
 
         db.collection("Produits")
             .document(produit.id)
-            .set(donnees)
+            .set(donnees, com.google.firebase.firestore.SetOptions.merge())
             .addOnSuccessListener {
-
                 sauvegarderProduitsLocalement()
-
                 toast("Produit mis à jour avec succès")
-
                 afficherMesProduitsVendeur()
             }
             .addOnFailureListener { erreur ->
-
-                toast("Erreur Firebase : ${erreur.localizedMessage}")
+                val msg = if (erreur.message?.contains("PERMISSION_DENIED", ignoreCase = true) == true) {
+                    "Accès refusé : vérifiez les règles Firestore ou votre propriété sur ce produit."
+                } else {
+                    "Erreur Firebase : ${erreur.localizedMessage}"
+                }
+                toast(msg)
             }
     }
 
     fun afficherModification(produit: Produit) {
-
         val formulaire = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(25, 10, 25, 10)
@@ -5256,7 +5164,6 @@ private fun afficherMesProduitsVendeur() {
             .setView(formulaire)
             .setNegativeButton("Annuler", null)
             .setPositiveButton("Enregistrer") { _, _ ->
-
                 val nom = champNom.text.toString().trim()
                 val prix = champPrix.text.toString().trim()
 
@@ -5267,51 +5174,43 @@ private fun afficherMesProduitsVendeur() {
 
                 produit.nom = nom
                 produit.prix = prix
-                produit.description =
-                    champDescription.text.toString().trim()
-
+                produit.description = champDescription.text.toString().trim()
                 sauvegarderGestion(produit)
             }
             .show()
     }
 
     fun modifierStock(produit: Produit, ajouter: Boolean) {
-
         val champ = android.widget.EditText(this).apply {
             hint = "Quantité"
-            inputType =
-                android.text.InputType.TYPE_CLASS_NUMBER
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
         }
 
         android.app.AlertDialog.Builder(this)
-            .setTitle(
-                if (ajouter) "Augmenter le stock"
-                else "Diminuer le stock"
-            )
+            .setTitle(if (ajouter) "Augmenter le stock" else "Diminuer le stock")
             .setView(champ)
             .setNegativeButton("Annuler", null)
             .setPositiveButton("Valider") { _, _ ->
-
-                val quantite =
-                    champ.text.toString().toIntOrNull()
-
+                val quantite = champ.text.toString().toIntOrNull()
                 if (quantite == null || quantite <= 0) {
                     toast("Quantité invalide")
                     return@setPositiveButton
                 }
 
                 if (ajouter) {
-
                     produit.stock += quantite
-
+                    if (!produit.actif && produit.stock > 0) {
+                        produit.actif = true
+                    }
                 } else {
-
                     if (quantite > produit.stock) {
                         toast("Stock insuffisant")
                         return@setPositiveButton
                     }
-
                     produit.stock -= quantite
+                    if (produit.stock == 0) {
+                        produit.actif = false
+                    }
                 }
 
                 sauvegarderGestion(produit)
@@ -5322,33 +5221,36 @@ private fun afficherMesProduitsVendeur() {
     var nombre = 0
 
     for (produit in produits) {
-
         val appartient =
             produit.vendeurId == compte.id ||
-            (
-                produit.vendeurId.isBlank() &&
+                (uidAuth != null && produit.vendeurId == uidAuth) ||
                 (
-                    produit.vendeur == compte.nom ||
-                    produit.entreprise == compte.entreprise
-                )
-            )
+                    produit.vendeurId.isBlank() &&
+                        (
+                            produit.vendeur == compte.nom ||
+                                produit.entreprise == compte.entreprise
+                            )
+                    )
 
         if (estAdmin || appartient) {
-
             val bloc = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
-                setPadding(8, 8, 8, 18)
+                setPadding(12, 12, 12, 20)
+                setBackgroundColor(Color.WHITE)
             }
 
-             ajouterCarteProduit(bloc, produit)
-          
+            ajouterCarteProduit(bloc, produit)
+
+            val statutTexte = when {
+                produit.stock <= 0 -> "⚠️ Rupture de stock (0)"
+                produit.actif -> "🟢 En vente • Stock : ${produit.stock}"
+                else -> "🔴 Masqué • Stock : ${produit.stock}"
+            }
 
             bloc.addView(
-                texte(
-                    if (produit.actif) "🟢 Produit en vente"
-                    else "🔴 Produit masqué",
-                    15f
-                )
+                texte(statutTexte, 15f).apply {
+                    setPadding(0, 8, 0, 8)
+                }
             )
 
             bloc.addView(
@@ -5357,45 +5259,43 @@ private fun afficherMesProduitsVendeur() {
                 }
             )
 
-            bloc.addView(
-                bouton("➕ Augmenter le stock") {
-                    modifierStock(produit, true)
-                }
-            )
+            val ligneStock = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+            }
 
-            bloc.addView(
-                bouton("➖ Diminuer le stock") {
-                    modifierStock(produit, false)
-                }
-            )
+            val btnMoins = bouton("➖") { modifierStock(produit, false) }.apply {
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            val btnPlus = bouton("➕") { modifierStock(produit, true) }.apply {
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+
+            ligneStock.addView(btnMoins)
+            ligneStock.addView(btnPlus)
+            bloc.addView(ligneStock)
 
             bloc.addView(
                 bouton(
-                    if (produit.actif)
-                        "👁️ Masquer de la boutique"
-                    else
-                        "🛍️ Remettre en vente"
+                    if (produit.actif) "👁️ Masquer de la boutique"
+                    else "🛍️ Remettre en vente"
                 ) {
-
+                    if (!produit.actif && produit.stock <= 0) {
+                        toast("Ajoutez du stock avant de remettre le produit en vente")
+                        return@bouton
+                    }
                     produit.actif = !produit.actif
-
                     sauvegarderGestion(produit)
                 }
             )
 
             liste.addView(bloc)
-
             nombre++
         }
     }
 
     if (nombre == 0) {
-
         liste.addView(
-            texte(
-                "Vous n'avez encore aucun produit.",
-                17f
-            ).apply {
+            texte("Vous n'avez encore aucun produit.", 17f).apply {
                 gravity = Gravity.CENTER
                 setPadding(10, 35, 10, 35)
             }
@@ -5404,7 +5304,9 @@ private fun afficherMesProduitsVendeur() {
 
     setContentView(scroll(root))
 }
+            
 
+                    
 // ========================================================  
 // COMPTE  
 // ========================================================  
