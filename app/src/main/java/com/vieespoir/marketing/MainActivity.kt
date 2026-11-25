@@ -6510,7 +6510,101 @@ val abonnements = creerCarte(
 // ========================================================
 // FIN TABLEAU DE BORD ADMINISTRATEUR
 // ========================================================
+private fun afficherDemandesAbonnementAdmin() {
 
+    val uidAdmin = "1kpZWN50IHhvz4y4OxS60MVjckx1"
+
+    if (FirebaseAuth.getInstance().currentUser?.uid != uidAdmin) {
+        afficherConnexionAdmin()
+        return
+    }
+
+    val db = com.google.firebase.firestore.FirebaseFirestore
+        .getInstance()
+
+    val root = layoutBase()
+
+    root.addView(titre("💳 Demandes d'abonnement"))
+
+    root.addView(
+        bouton("🔄 Actualiser") {
+            afficherDemandesAbonnementAdmin()
+        }
+    )
+
+    db.collection("PaiementsAbonnement")
+        .whereEqualTo("statut", "en_attente")
+        .get()
+        .addOnSuccessListener { resultat ->
+
+            if (resultat.isEmpty) {
+                root.addView(
+                    texte("Aucune demande en attente.", 17f)
+                )
+            }
+
+            for (document in resultat.documents) {
+
+                val nom = document.getString("nomVendeur") ?: "Inconnu"
+                val vendeurId = document.getString("vendeurId") ?: ""
+                val mois = document.getLong("formuleMois") ?: 0L
+                val montant = document.getLong("montant") ?: 0L
+                val telephone = document.getString("telephone") ?: ""
+                val moyen = document.getString("moyenPaiement") ?: ""
+
+                root.addView(
+                    texte(
+                        """
+                        Vendeur : $nom
+                        Téléphone : $telephone
+                        Durée : $mois mois
+                        Montant : $montant FCFA
+                        Paiement : $moyen
+                        Statut : EN ATTENTE
+                        """.trimIndent(),
+                        16f
+                    )
+                )
+
+                root.addView(
+                    boutonVert("✅ VALIDER") {
+                        activerAbonnementVendeur(
+                            document.id,
+                            vendeurId,
+                            mois.toInt()
+                        )
+                    }
+                )
+
+                root.addView(
+                    bouton("❌ REFUSER") {
+
+                        db.collection("PaiementsAbonnement")
+                            .document(document.id)
+                            .update("statut", "refuse")
+                            .addOnSuccessListener {
+                                toast("Demande refusée")
+                                afficherDemandesAbonnementAdmin()
+                            }
+                            .addOnFailureListener {
+                                toast("Erreur de refus")
+                            }
+                    }
+                )
+            }
+        }
+        .addOnFailureListener {
+            toast("Erreur de chargement des demandes")
+        }
+
+    root.addView(
+        bouton("⬅️ Retour") {
+            afficherAdministration()
+        }
+    )
+
+    setContentView(scroll(root))
+}
 // ========================================================
 // VIE ESPOIR MARKETING
 // ADMINISTRATION - GESTION DES VENDEURS FIREBASE
