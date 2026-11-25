@@ -6510,11 +6510,18 @@ val abonnements = creerCarte(
 // ========================================================
 // FIN TABLEAU DE BORD ADMINISTRATEUR
 // ========================================================
+
 private fun afficherDemandesAbonnementAdmin() {
+
+    // =========================================
+    // IDENTIFICATION ADMINISTRATEUR
+    // =========================================
 
     val uidAdmin = "1kpZWN50IHhvz4y4OxS60MVjckx1"
 
-    if (FirebaseAuth.getInstance().currentUser?.uid != uidAdmin) {
+    val utilisateur = FirebaseAuth.getInstance().currentUser
+
+    if (utilisateur == null || utilisateur.uid != uidAdmin) {
         afficherConnexionAdmin()
         return
     }
@@ -6524,50 +6531,179 @@ private fun afficherDemandesAbonnementAdmin() {
 
     val root = layoutBase()
 
-    root.addView(titre("💳 Demandes d'abonnement"))
+    // =========================================
+    // TITRE
+    // =========================================
 
     root.addView(
-        bouton("🔄 Actualiser") {
+        titre("💳 Demandes d'abonnement")
+    )
+
+    // =========================================
+    // ACTUALISER
+    // =========================================
+
+    root.addView(
+        bouton("🔄 ACTUALISER") {
             afficherDemandesAbonnementAdmin()
         }
     )
+
+    // =========================================
+    // RETOUR
+    // =========================================
+
+    root.addView(
+        bouton("⬅️ RETOUR") {
+            afficherAdministration()
+        }
+    )
+
+    // =========================================
+    // CHARGEMENT
+    // =========================================
+
+    val chargement = texte(
+        "⏳ Chargement des demandes...",
+        16f
+    )
+
+    root.addView(chargement)
+
+    setContentView(scroll(root))
+
+    android.util.Log.d(
+        "ADMIN_ABONNEMENT",
+        "Chargement des demandes démarré"
+    )
+
+    // =========================================
+    // LECTURE FIREBASE
+    // =========================================
 
     db.collection("PaiementsAbonnement")
         .whereEqualTo("statut", "en_attente")
         .get()
         .addOnSuccessListener { resultat ->
 
+            root.removeView(chargement)
+
+            android.util.Log.d(
+                "ADMIN_ABONNEMENT",
+                "Demandes trouvées : ${resultat.size()}"
+            )
+
             if (resultat.isEmpty) {
-                root.addView(
-                    texte("Aucune demande en attente.", 17f)
-                )
-            }
-
-            for (document in resultat.documents) {
-
-                val nom = document.getString("nomVendeur") ?: "Inconnu"
-                val vendeurId = document.getString("vendeurId") ?: ""
-                val mois = document.getLong("formuleMois") ?: 0L
-                val montant = document.getLong("montant") ?: 0L
-                val telephone = document.getString("telephone") ?: ""
-                val moyen = document.getString("moyenPaiement") ?: ""
 
                 root.addView(
                     texte(
-                        """
-                        Vendeur : $nom
-                        Téléphone : $telephone
-                        Durée : $mois mois
-                        Montant : $montant FCFA
-                        Paiement : $moyen
-                        Statut : EN ATTENTE
-                        """.trimIndent(),
-                        16f
+                        "📭 Aucune demande d'abonnement en attente.",
+                        17f
                     )
                 )
 
-                root.addView(
-                    boutonVert("✅ VALIDER") {
+                return@addOnSuccessListener
+            }
+
+            // =================================
+            // AFFICHAGE DES DEMANDES
+            // =================================
+
+            for (document in resultat.documents) {
+
+                val nom = document.getString("nomVendeur")
+                    ?: "Inconnu"
+
+                val vendeurId = document.getString("vendeurId")
+                    ?: ""
+
+                val mois = (
+                    document.get("formuleMois") as? Number
+                )?.toLong()
+                    ?: document.getString("formuleMois")?.toLongOrNull()
+                    ?: 0L
+
+                val montant = (
+                    document.get("montant") as? Number
+                )?.toLong()
+                    ?: document.getString("montant")?.toLongOrNull()
+                    ?: 0L
+
+                val telephone = document.getString("telephone")
+                    ?: "Non renseigné"
+
+                val moyen = document.getString("moyenPaiement")
+                    ?: "Non renseigné"
+
+                // CARTE DEMANDE
+
+                val carte = android.widget.LinearLayout(this).apply {
+
+                    orientation =
+                        android.widget.LinearLayout.VERTICAL
+
+                    setPadding(25, 25, 25, 25)
+
+                    setBackgroundColor(
+                        android.graphics.Color.rgb(240, 245, 240)
+                    )
+
+                    val params =
+                        android.widget.LinearLayout.LayoutParams(
+                            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                        )
+
+                    params.setMargins(10, 15, 10, 15)
+
+                    layoutParams = params
+                }
+
+                carte.addView(
+                    texte("👤 VENDEUR : $nom", 18f)
+                )
+
+                carte.addView(
+                    texte("📞 Téléphone : $telephone", 15f)
+                )
+
+                carte.addView(
+                    texte("🆔 Identifiant : $vendeurId", 13f)
+                )
+
+                carte.addView(
+                    texte("📅 Durée : $mois mois", 16f)
+                )
+
+                carte.addView(
+                    texte("💰 Montant : $montant FCFA", 17f)
+                )
+
+                carte.addView(
+                    texte("💳 Paiement : $moyen", 15f)
+                )
+
+                carte.addView(
+                    texte("🟠 STATUT : EN ATTENTE", 16f)
+                )
+
+                // =================================
+                // VALIDER LA DEMANDE
+                // =================================
+
+                carte.addView(
+                    boutonVert("✅ VALIDER L'ABONNEMENT") {
+
+                        if (vendeurId.isBlank()) {
+                            toast("Identifiant vendeur introuvable")
+                            return@boutonVert
+                        }
+
+                        if (mois <= 0) {
+                            toast("Durée d'abonnement invalide")
+                            return@boutonVert
+                        }
+
                         activerAbonnementVendeur(
                             document.id,
                             vendeurId,
@@ -6576,126 +6712,75 @@ private fun afficherDemandesAbonnementAdmin() {
                     }
                 )
 
-                root.addView(
+                // =================================
+                // REFUSER LA DEMANDE
+                // =================================
+
+                carte.addView(
                     bouton("❌ REFUSER") {
 
                         db.collection("PaiementsAbonnement")
                             .document(document.id)
                             .update("statut", "refuse")
                             .addOnSuccessListener {
+
                                 toast("Demande refusée")
+
                                 afficherDemandesAbonnementAdmin()
                             }
-                            .addOnFailureListener {
-                                toast("Erreur de refus")
+                            .addOnFailureListener { erreur ->
+
+                                android.util.Log.e(
+                                    "ADMIN_ABONNEMENT",
+                                    "Erreur refus",
+                                    erreur
+                                )
+
+                                toast(
+                                    "Erreur : ${erreur.message}"
+                                )
                             }
                     }
                 )
+
+                root.addView(carte)
             }
         }
-        .addOnFailureListener {
-            toast("Erreur de chargement des demandes")
-        }
 
-    root.addView(
-        bouton("⬅️ Retour") {
-            afficherAdministration()
-        }
-    )
+        // =====================================
+        // ERREUR FIREBASE
+        // =====================================
 
-    setContentView(scroll(root))
-}
-private fun activerAbonnementVendeur(
-    demandeId: String,
-    vendeurId: String,
-    mois: Int
-) {
+        .addOnFailureListener { erreur ->
 
-    val uidAdmin = "1kpZWN50IHhvz4y4OxS60MVjckx1"
+            root.removeView(chargement)
 
-    if (FirebaseAuth.getInstance().currentUser?.uid != uidAdmin) {
-        afficherConnexionAdmin()
-        return
-    }
-
-    if (mois !in 1..3 || vendeurId.isBlank()) {
-        toast("Informations invalides")
-        return
-    }
-
-    val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
-
-    val demandeRef = db.collection("PaiementsAbonnement")
-        .document(demandeId)
-
-    val compteRef = db.collection("Comptes")
-        .document(vendeurId)
-
-    db.runTransaction { transaction ->
-
-        val demande = transaction.get(demandeRef)
-        val compte = transaction.get(compteRef)
-
-        check(demande.exists()) { "Demande introuvable" }
-        check(compte.exists()) { "Compte vendeur introuvable" }
-        check(demande.getString("statut") == "en_attente") {
-            "Demande déjà traitée"
-        }
-
-        val maintenant = System.currentTimeMillis()
-        val ancienneFin = compte.getLong("dateFinAbonnement") ?: 0L
-        val ancienneDebut = compte.getLong("dateDebutAbonnement") ?: 0L
-
-        val base = maxOf(maintenant, ancienneFin)
-
-        val calendrier = java.util.Calendar.getInstance()
-        calendrier.timeInMillis = base
-        calendrier.add(java.util.Calendar.MONTH, mois)
-
-        val nouvelleFin = calendrier.timeInMillis
-
-        val debut = if (ancienneFin > maintenant && ancienneDebut > 0L) {
-            ancienneDebut
-        } else {
-            maintenant
-        }
-
-        transaction.update(
-            compteRef,
-            mapOf(
-                "abonnementActif" to true,
-                "dateDebutAbonnement" to debut,
-                "dateFinAbonnement" to nouvelleFin,
-                "formuleAbonnement" to mois
+            android.util.Log.e(
+                "ADMIN_ABONNEMENT",
+                "ÉCHEC DU CHARGEMENT FIREBASE",
+                erreur
             )
-        )
 
-        transaction.update(
-            demandeRef,
-            mapOf(
-                "statut" to "valide",
-                "dateValidation" to
-                    com.google.firebase.firestore.FieldValue.serverTimestamp()
+            root.addView(
+                texte(
+                    "❌ Impossible de charger les demandes.",
+                    17f
+                )
             )
-        )
 
-        null
-    }.addOnSuccessListener {
+            root.addView(
+                texte(
+                    "Détail Firebase : ${erreur.message}",
+                    14f
+                )
+            )
 
-        toast("Abonnement activé avec succès")
-        afficherDemandesAbonnementAdmin()
-
-    }.addOnFailureListener { erreur ->
-
-        android.util.Log.e(
-            "ABONNEMENT_ADMIN",
-            "Erreur activation",
-            erreur
-        )
-
-        toast("Activation impossible : ${erreur.message}")
-    }
+            toast(
+                "Erreur Firebase : ${erreur.message}"
+            )
+        }
 }
+
 
 // ========================================================
 // VIE ESPOIR MARKETING
