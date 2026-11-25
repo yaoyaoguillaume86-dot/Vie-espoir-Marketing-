@@ -5442,165 +5442,204 @@ private fun deconnecter() {
 // ABONNEMENT  
 // ========================================================  
 
-private fun afficherAbonnement() {  
+private fun afficherAbonnement() {
 
-    val compte =  
-        compteActuel()  
+    val compte = compteActuel()
 
-    if (compte == null) {  
+    if (compte == null) {
+        afficherConnexion()
+        return
+    }
 
-        afficherConnexion()  
+    val root = layoutBase()
 
-        return  
-    }  
+    root.addView(titre("💎 Abonnement vendeur"))
 
-    val root =  
-        layoutBase()  
+    val jours = joursGratuitsRestants(compte)
 
-    root.addView(  
-        titre(  
-            "💎 Abonnement vendeur"  
-        )  
-    )  
+    if (jours > 0) {
+        root.addView(
+            texte(
+                "🎁 Essai gratuit : $jours jour(s) restant(s).",
+                18f,
+                VERT
+            ).apply {
+                gravity = Gravity.CENTER
+            }
+        )
+    }
 
-    val jours =  
-        joursGratuitsRestants(  
-            compte  
-        )  
+    root.addView(
+        texte(
+            "Choisissez la durée de votre abonnement :",
+            17f,
+            VERT
+        ).apply {
+            gravity = Gravity.CENTER
+        }
+    )
 
-    if (jours > 0) {  
+    root.addView(
+        boutonVert("💎 1 mois — 5 000 FCFA") {
+            afficherPaiementAbonnement(1)
+        }
+    )
 
-        root.addView(  
-            texte(  
-                "🎁 Essai gratuit : $jours jour(s) restant(s).",  
-                18f,  
-                VERT  
-            ).apply {  
+    root.addView(
+        boutonVert("💎 2 mois — 10 000 FCFA") {
+            afficherPaiementAbonnement(2)
+        }
+    )
 
-                gravity =  
-                    Gravity.CENTER  
-            }  
-        )  
-    }  
+    root.addView(
+        boutonVert("💎 3 mois — 15 000 FCFA") {
+            afficherPaiementAbonnement(3)
+        }
+    )
 
-    root.addView(  
-        texte(  
-            "Après l'essai gratuit, l'abonnement commence à 5 000 FCFA par mois.",  
-            16f  
-        ).apply {  
+    setContentView(scroll(root))
+}
 
-            gravity =  
-                Gravity.CENTER  
 
-            setBackgroundColor(  
-                Color.WHITE  
-            )  
-        }  
-    )  
+private fun afficherPaiementAbonnement(mois: Int) {
 
-    root.addView(  
-        boutonVert(  
-            "💎 5 000 FCFA / mois"  
-        ) {  
+    val montant = mois * 5000
 
-            afficherPaiementAbonnement()  
-        }  
-    )  
+    val root = layoutBase()
 
-    setContentView(  
-        scroll(root)  
-    )  
-}  
+    root.addView(titre("💳 Paiement abonnement"))
 
-private fun afficherPaiementAbonnement() {  
+    root.addView(
+        texte(
+            """
+            Abonnement : $mois mois
 
-    val root =  
-        layoutBase()  
+            Montant : ${formaterNombre(montant)} FCFA
 
-    root.addView(  
-        titre(  
-            "💳 Paiement abonnement"  
-        )  
-    )  
+            Choisissez votre moyen de paiement.
+            """.trimIndent(),
+            18f,
+            VERT
+        ).apply {
+            gravity = Gravity.CENTER
+            setBackgroundColor(Color.WHITE)
+        }
+    )
 
-    root.addView(  
-        texte(  
-            """  
-            Abonnement :  
-            5 000 FCFA / mois  
-              
-            Choisissez votre moyen de paiement.  
-            """.trimIndent(),  
-            18f,  
-            VERT  
-        ).apply {  
+    root.addView(
+        boutonVert("🟠 Orange Money / Wave") {
+            enregistrerDemandeAbonnement(
+                mois,
+                "ORANGE_WAVE"
+            )
+        }
+    )
 
-            gravity =  
-                Gravity.CENTER  
+    root.addView(
+        boutonVert("🟡 MTN Mobile Money") {
+            enregistrerDemandeAbonnement(
+                mois,
+                "MTN"
+            )
+        }
+    )
 
-            setBackgroundColor(  
-                Color.WHITE  
-            )  
-        }  
-    )  
+    root.addView(
+        bouton("⬅️ Retour") {
+            afficherAbonnement()
+        }
+    )
 
-    root.addView(  
-        boutonVert(  
-            "🟠 Orange Money / Wave"  
-        ) {  
+    root.addView(
+        texte(
+            "L'administrateur vérifiera votre paiement avant d'activer votre abonnement.",
+            14f,
+            Color.GRAY
+        ).apply {
+            gravity = Gravity.CENTER
+        }
+    )
 
-            appelerNumero(  
-                ORANGE_WAVE  
-            )  
+    setContentView(scroll(root))
+}
 
-            enregistrerEvenement(  
-                "Demande de paiement abonnement — Orange/Wave"  
-            )  
-        }  
-    )  
 
-    root.addView(  
-        boutonVert(  
-            "🟡 MTN Mobile Money"  
-        ) {  
+// ENREGISTREMENT DE LA DEMANDE D'ABONNEMENT
 
-            appelerNumero(  
-                MTN  
-            )  
+private fun enregistrerDemandeAbonnement(
+    mois: Int,
+    moyenPaiement: String
+) {
 
-            enregistrerEvenement(  
-                "Demande de paiement abonnement — MTN"  
-            )  
-        }  
-    )  
+    val compte = compteActuel()
 
-    root.addView(  
-        bouton(  
-            "💬 WhatsApp"  
-        ) {  
+    if (compte == null) {
+        afficherConnexion()
+        return
+    }
 
-            ouvrirWhatsApp(  
-                ORANGE_WAVE  
-            )  
-        }  
-    )  
+    if (mois !in 1..3) {
+        toast("Durée d'abonnement invalide")
+        return
+    }
 
-    root.addView(  
-        texte(  
-            "Après paiement, l'administrateur doit confirmer l'activation.",  
-            14f,  
-            Color.GRAY  
-        ).apply {  
+    val uid = FirebaseAuth.getInstance()
+        .currentUser?.uid
 
-            gravity =  
-                Gravity.CENTER  
-        }  
-    )  
+    if (uid.isNullOrBlank()) {
+        toast("Veuillez vous reconnecter")
+        afficherConnexion()
+        return
+    }
 
-    setContentView(  
-        scroll(root)  
-    )  
-}  
+    val montant = mois * 5000
+
+    val donnees = hashMapOf<String, Any>(
+        "vendeurId" to uid,
+        "nomVendeur" to compte.nom,
+        "telephone" to compte.telephone,
+        "formuleMois" to mois,
+        "montant" to montant,
+        "moyenPaiement" to moyenPaiement,
+        "statut" to "en_attente",
+        "dateDemande" to
+            com.google.firebase.firestore.FieldValue.serverTimestamp()
+    )
+
+    com.google.firebase.firestore.FirebaseFirestore
+        .getInstance()
+        .collection("PaiementsAbonnement")
+        .add(donnees)
+        .addOnSuccessListener {
+
+            toast(
+                "Demande enregistrée. En attente de validation."
+            )
+
+            enregistrerEvenement(
+                "Demande abonnement $mois mois — $moyenPaiement"
+            )
+
+            if (moyenPaiement == "ORANGE_WAVE") {
+                appelerNumero(ORANGE_WAVE)
+            } else {
+                appelerNumero(MTN)
+            }
+
+        }
+        .addOnFailureListener { erreur ->
+
+            android.util.Log.e(
+                "ABONNEMENT",
+                "Erreur enregistrement demande",
+                erreur
+            )
+
+            toast(
+                "Impossible d'enregistrer la demande. Vérifiez votre connexion."
+            )
+        }
+}
 
 // ========================================================  
 // COMMANDES  
