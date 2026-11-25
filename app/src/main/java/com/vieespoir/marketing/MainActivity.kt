@@ -352,19 +352,29 @@ data class Commande(
 // INFORMATIONS PERSONNELLES
 //
 // ========================================================
-// ========================================================
-data class Compte(  
-    val id: String,  
-    var nom: String,  
-    var entreprise: String,  
-    var email: String,  
-    var telephone: String,  
-    var adresse: String,  
-    var motDePasse: String,  
-    var type: String,  
-    var dateCreation: Long,  
-    var valide: Boolean = false  
-)  
+// =======================================================
+
+data class Compte(
+    val id: String,
+    var nom: String,
+    var entreprise: String,
+    var email: String,
+    var telephone: String,
+    var adresse: String,
+    var motDePasse: String,
+    var type: String,
+    var dateCreation: Long,
+    var valide: Boolean = false,
+
+    // =================================
+    // ABONNEMENT VENDEUR
+    // =================================
+
+    var abonnementActif: Boolean = false,
+    var dateDebutAbonnement: Long = 0L,
+    var dateFinAbonnement: Long = 0L,
+    var formuleAbonnement: Int = 0
+)
 
 // ========================================================  
 // DONNÉES  
