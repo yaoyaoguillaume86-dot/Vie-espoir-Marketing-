@@ -6037,21 +6037,15 @@ private fun afficherConnexionAdmin() {
 
 // ========================================================
 // FIN DE LA CONNEXION ADMINISTRATEUR
-// ========================================================    
- 
-// ========================================================
-// VIE ESPOIR MARKETING
-// TABLEAU DE BORD ADMINISTRATEUR CORRIGÉ
-// ========================================================
+// ======================================================== 
 
 private fun afficherAdministration() {
 
-    val utilisateur = FirebaseAuth
-        .getInstance()
-        .currentUser
-
     val uidAdministrateur =
         "1kpZWN50IHhvz4y4OxS60MVjckx1"
+
+    val utilisateur =
+        FirebaseAuth.getInstance().currentUser
 
     if (
         utilisateur == null ||
@@ -6064,94 +6058,340 @@ private fun afficherAdministration() {
 
     adminConnecte = true
 
-    val root = layoutBase()
+    // =========================================
+    // COULEURS ET DIMENSIONS
+    // =========================================
 
-    root.addView(
-        titre("👑 ADMINISTRATION VIE ESPOIR MARKETING")
+    val vert = android.graphics.Color.rgb(23, 107, 58)
+    val fond = android.graphics.Color.rgb(243, 247, 244)
+    val gris = android.graphics.Color.rgb(100, 116, 139)
+
+    fun dp(v: Int): Int =
+        (v * resources.displayMetrics.density).toInt()
+
+    // =========================================
+    // CONTENEUR PRINCIPAL
+    // =========================================
+
+    val root = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(dp(16), dp(16), dp(16), dp(20))
+        setBackgroundColor(fond)
+    }
+
+    // =========================================
+    // EN-TÊTE VERT
+    // =========================================
+
+    val entete = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(dp(20), dp(22), dp(20), dp(22))
+
+        background = android.graphics.drawable.GradientDrawable().apply {
+            setColor(vert)
+            cornerRadius = dp(18).toFloat()
+        }
+    }
+
+    entete.addView(
+        TextView(this).apply {
+            text = "👑 VIE ESPOIR MARKETING"
+            textSize = 20f
+            setTextColor(android.graphics.Color.WHITE)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+        }
+    )
+
+    entete.addView(
+        TextView(this).apply {
+            text = "TABLEAU DE BORD ADMINISTRATEUR"
+            textSize = 12f
+            setTextColor(android.graphics.Color.WHITE)
+            setPadding(0, dp(12), 0, dp(5))
+        }
+    )
+
+    entete.addView(
+        TextView(this).apply {
+            text = "Bienvenue dans votre espace de gestion."
+            textSize = 14f
+            setTextColor(android.graphics.Color.WHITE)
+        }
     )
 
     root.addView(
-        texte(
-            "Bienvenue dans votre espace administrateur.",
-            17f,
-            VERT
-        )
+        entete,
+        LinearLayout.LayoutParams(
+            -1,
+            -2
+        ).apply {
+            bottomMargin = dp(22)
+        }
     )
 
-    // ====================================================
-    // AJOUTER UN PRODUIT
-    // ====================================================
+    // =========================================
+    // TITRE DES RUBRIQUES
+    // =========================================
 
     root.addView(
-        bouton("➕ AJOUTER UN PRODUIT") {
+        TextView(this).apply {
+            text = "GESTION DE VOTRE ENTREPRISE"
+            textSize = 15f
+            setTextColor(vert)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setPadding(0, 0, 0, dp(14))
+        }
+    )
 
-            val admin = FirebaseAuth
-                .getInstance()
-                .currentUser
+    // =========================================
+    // CRÉATION DES CARTES
+    // =========================================
 
-            if (
-                admin == null ||
-                admin.uid != uidAdministrateur
-            ) {
-                adminConnecte = false
-                afficherConnexionAdmin()
-                return@bouton
+    fun creerCarte(
+        icone: String,
+        nom: String,
+        description: String,
+        couleur: Int,
+        action: () -> Unit
+    ): LinearLayout {
+
+        return LinearLayout(this).apply {
+
+            orientation = LinearLayout.VERTICAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+
+            setPadding(dp(14), dp(17), dp(10), dp(17))
+
+            background =
+                android.graphics.drawable.GradientDrawable().apply {
+                    setColor(android.graphics.Color.WHITE)
+                    cornerRadius = dp(15).toFloat()
+                    setStroke(
+                        dp(1),
+                        android.graphics.Color.rgb(230, 237, 232)
+                    )
+                }
+
+            elevation = dp(2).toFloat()
+
+            isClickable = true
+            isFocusable = true
+
+            addView(
+                TextView(this@MainActivity).apply {
+                    text = icone
+                    textSize = 29f
+                    setPadding(0, 0, 0, dp(12))
+                }
+            )
+
+            addView(
+                TextView(this@MainActivity).apply {
+                    text = nom
+                    textSize = 16f
+                    setTextColor(couleur)
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                }
+            )
+
+            addView(
+                TextView(this@MainActivity).apply {
+                    text = description
+                    textSize = 11f
+                    setTextColor(gris)
+                    setPadding(0, dp(5), 0, 0)
+                }
+            )
+
+            setOnClickListener {
+                val admin = FirebaseAuth
+                    .getInstance()
+                    .currentUser
+
+                if (
+                    admin == null ||
+                    admin.uid != uidAdministrateur
+                ) {
+                    adminConnecte = false
+                    afficherConnexionAdmin()
+                    return@setOnClickListener
+                }
+
+                adminConnecte = true
+                action()
             }
-
-            adminConnecte = true
-
-            
-// Ouvrir le formulaire de produit
-afficherAjouterProduit()
-
         }
-    )
+    }
 
-    // ====================================================
-    // GESTION DES VENDEURS
-    // ====================================================
+    // =========================================
+    // DISPOSITION DEUX COLONNES
+    // =========================================
+
+    fun ajouterLigne(
+        carteGauche: View,
+        carteDroite: View
+    ) {
+
+        val ligne = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            weightSum = 2f
+        }
+
+        ligne.addView(
+            carteGauche,
+            LinearLayout.LayoutParams(
+                0,
+                dp(140),
+                1f
+            ).apply {
+                marginEnd = dp(7)
+                bottomMargin = dp(13)
+            }
+        )
+
+        ligne.addView(
+            carteDroite,
+            LinearLayout.LayoutParams(
+                0,
+                dp(140),
+                1f
+            ).apply {
+                marginStart = dp(7)
+                bottomMargin = dp(13)
+            }
+        )
+
+        root.addView(ligne)
+    }
+
+    // =========================================
+    // CARTE VENDEURS
+    // =========================================
+
+    val vendeurs = creerCarte(
+        "👥",
+        "Vendeurs",
+        "Gestion des comptes",
+        vert
+    ) {
+        afficherVendeursAdmin()
+    }
+
+    // =========================================
+    // CARTE ABONNEMENTS
+    // =========================================
+
+    val abonnements = creerCarte(
+        "💳",
+        "Abonnements",
+        "Paiements et activation",
+        android.graphics.Color.rgb(37, 99, 235)
+    ) {
+        toast("Rubrique abonnements à intégrer")
+    }
+
+    // =========================================
+    // CARTE PRODUITS
+    // =========================================
+
+    val produits = creerCarte(
+        "📦",
+        "Produits",
+        "Ajouter et gérer",
+        android.graphics.Color.rgb(217, 119, 6)
+    ) {
+        afficherAjouterProduit()
+    }
+
+    // =========================================
+    // CARTE COMMANDES
+    // =========================================
+
+    val commandes = creerCarte(
+        "🛒",
+        "Commandes",
+        "Suivi des ventes",
+        android.graphics.Color.rgb(124, 58, 237)
+    ) {
+        afficherCommandesAdmin()
+    }
+
+    // =========================================
+    // CARTE NOTIFICATIONS
+    // =========================================
+
+    val notifications = creerCarte(
+        "🔔",
+        "Notifications",
+        "Alertes et messages",
+        android.graphics.Color.rgb(219, 39, 119)
+    ) {
+        afficherEvenementsAdmin()
+    }
+
+    // =========================================
+    // CARTE FINANCES
+    // =========================================
+
+    val finances = creerCarte(
+        "📊",
+        "Finances",
+        "Suivi des revenus",
+        android.graphics.Color.rgb(8, 145, 178)
+    ) {
+        toast("Gestion financière à intégrer")
+    }
+
+    // =========================================
+    // AFFICHAGE DES CARTES
+    // =========================================
+
+    ajouterLigne(vendeurs, abonnements)
+    ajouterLigne(produits, commandes)
+    ajouterLigne(notifications, finances)
+
+    // =========================================
+    // PARAMÈTRES
+    // =========================================
+
+    val parametres = bouton("⚙️ PARAMÈTRES ADMINISTRATEUR") {
+        toast("Paramètres à intégrer")
+    }
 
     root.addView(
-        bouton("👥 Voir les vendeurs") {
-            afficherVendeursAdmin()
+        parametres,
+        LinearLayout.LayoutParams(-1, -2).apply {
+            bottomMargin = dp(12)
         }
     )
 
-    // ====================================================
-    // GESTION DES COMMANDES
-    // ====================================================
+    // =========================================
+    // QUITTER
+    // =========================================
 
     root.addView(
-        bouton("📦 Voir les commandes") {
-            afficherCommandesAdmin()
+        bouton("🚪 QUITTER L'ADMINISTRATION") {
+
+            AlertDialog.Builder(this)
+                .setTitle("Quitter l'administration")
+                .setMessage("Voulez-vous quitter cet espace ?")
+                .setNegativeButton("ANNULER", null)
+                .setPositiveButton("QUITTER") { _, _ ->
+
+                    adminConnecte = false
+                    afficherAccueil()
+                }
+                .show()
         }
     )
 
-    // ====================================================
-    // NOTIFICATIONS
-    // ====================================================
+    // =========================================
+    // AFFICHAGE ET HISTORIQUE
+    // =========================================
 
-    root.addView(
-        bouton("🔔 Voir les notifications") {
-            afficherEvenementsAdmin()
-        }
-    )
+    val page = scroll(root)
 
-    // ====================================================
-    // RETOUR À L'ACCUEIL
-    // ====================================================
-
-    root.addView(
-        bouton("⬅ Retour à l'accueil") {
-
-            // Ne pas déconnecter l'administrateur
-            adminConnecte = true
-
-            afficherAccueil()
-        }
-    )
-
-    setContentView(scroll(root))
+    viderHistoriqueEtAfficher(page)
 }
 
 // ========================================================
