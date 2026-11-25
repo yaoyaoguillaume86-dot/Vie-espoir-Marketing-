@@ -6370,17 +6370,16 @@ private fun afficherAdministration() {
     // 2. ABONNEMENTS
     // =========================================
 
-    val abonnements = creerCarte(
-        "💳",
-        "Abonnements",
-        "Paiements et activation",
-        android.graphics.Color.rgb(37, 99, 235)
-    ) {
-        afficherInformation(
-            "GESTION DES ABONNEMENTS",
-            "Cette rubrique permettra de gérer les abonnements des vendeurs, les paiements, les activations et les dates d'expiration."
-        )
-    }
+   
+val abonnements = creerCarte(
+    "💳",
+    "Abonnements",
+    "Paiements et activation",
+    android.graphics.Color.rgb(37, 99, 235)
+) {
+    afficherDemandesAbonnementAdmin()
+}
+
 
     // =========================================
     // 3. PRODUITS
