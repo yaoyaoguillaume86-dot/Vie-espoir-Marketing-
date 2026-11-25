@@ -6605,6 +6605,98 @@ private fun afficherDemandesAbonnementAdmin() {
 
     setContentView(scroll(root))
 }
+private fun activerAbonnementVendeur(
+    demandeId: String,
+    vendeurId: String,
+    mois: Int
+) {
+
+    val uidAdmin = "1kpZWN50IHhvz4y4OxS60MVjckx1"
+
+    if (FirebaseAuth.getInstance().currentUser?.uid != uidAdmin) {
+        afficherConnexionAdmin()
+        return
+    }
+
+    if (mois !in 1..3 || vendeurId.isBlank()) {
+        toast("Informations invalides")
+        return
+    }
+
+    val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+
+    val demandeRef = db.collection("PaiementsAbonnement")
+        .document(demandeId)
+
+    val compteRef = db.collection("Comptes")
+        .document(vendeurId)
+
+    db.runTransaction { transaction ->
+
+        val demande = transaction.get(demandeRef)
+        val compte = transaction.get(compteRef)
+
+        check(demande.exists()) { "Demande introuvable" }
+        check(compte.exists()) { "Compte vendeur introuvable" }
+        check(demande.getString("statut") == "en_attente") {
+            "Demande déjà traitée"
+        }
+
+        val maintenant = System.currentTimeMillis()
+        val ancienneFin = compte.getLong("dateFinAbonnement") ?: 0L
+        val ancienneDebut = compte.getLong("dateDebutAbonnement") ?: 0L
+
+        val base = maxOf(maintenant, ancienneFin)
+
+        val calendrier = java.util.Calendar.getInstance()
+        calendrier.timeInMillis = base
+        calendrier.add(java.util.Calendar.MONTH, mois)
+
+        val nouvelleFin = calendrier.timeInMillis
+
+        val debut = if (ancienneFin > maintenant && ancienneDebut > 0L) {
+            ancienneDebut
+        } else {
+            maintenant
+        }
+
+        transaction.update(
+            compteRef,
+            mapOf(
+                "abonnementActif" to true,
+                "dateDebutAbonnement" to debut,
+                "dateFinAbonnement" to nouvelleFin,
+                "formuleAbonnement" to mois
+            )
+        )
+
+        transaction.update(
+            demandeRef,
+            mapOf(
+                "statut" to "valide",
+                "dateValidation" to
+                    com.google.firebase.firestore.FieldValue.serverTimestamp()
+            )
+        )
+
+        null
+    }.addOnSuccessListener {
+
+        toast("Abonnement activé avec succès")
+        afficherDemandesAbonnementAdmin()
+
+    }.addOnFailureListener { erreur ->
+
+        android.util.Log.e(
+            "ABONNEMENT_ADMIN",
+            "Erreur activation",
+            erreur
+        )
+
+        toast("Activation impossible : ${erreur.message}")
+    }
+}
+
 // ========================================================
 // VIE ESPOIR MARKETING
 // ADMINISTRATION - GESTION DES VENDEURS FIREBASE
