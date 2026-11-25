@@ -1906,11 +1906,12 @@ carte.addView(actions)
     val compte = compteActuel()
 
     if (
-        compte != null &&
-        compte.type == "VENDEUR" &&
-        compte.valide
-    ) {
-
+    compte != null &&
+    compte.type == "VENDEUR" &&
+    compte.valide &&
+    vendeurPeutUtiliser()
+) {
+       
         val appartient =
             produit.vendeur == compte.nom ||
             produit.entreprise == compte.entreprise
