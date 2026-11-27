@@ -5018,53 +5018,251 @@ private fun afficherEspaceVendeur() {
         }
 }
 
+// ========================================================
+// TABLEAU DE BORD PROFESSIONNEL VENDEUR
+// VIE ESPOIR MARKETING
+// ========================================================
+
 private fun rendreUiEspaceVendeur(compte: Compte) {
+
     val root = layoutBase()
 
-    root.addView(titre("👨‍💼 Espace vendeur"))
+    val vertFonce = Color.rgb(15, 75, 45)
+    val vertClair = Color.rgb(235, 247, 238)
+    val blanc = Color.WHITE
+    val gris = Color.DKGRAY
 
-    val lignesProfil = buildList {
-        if (compte.nom.isNotBlank()) add("👋 ${compte.nom}")
-        if (compte.entreprise.isNotBlank()) add("🏢 ${compte.entreprise}")
-        else add("🏢 Boutique non renseignée")
-        if (compte.email.isNotBlank()) add("📧 ${compte.email}")
-        if (compte.telephone.isNotBlank()) add("📞 ${compte.telephone}")
-        else add("📞 Téléphone non renseigné")
-    }.joinToString("\n\n")
+    fun dp(v: Int): Int =
+        (v * resources.displayMetrics.density).toInt()
 
-    root.addView(
-        texte(lignesProfil, 17f, VERT).apply {
+    root.setBackgroundColor(vertClair)
+
+    // ========================================================
+    // EN-TÊTE
+    // ========================================================
+
+    val entete = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(dp(20), dp(25), dp(20), dp(25))
+        setBackgroundColor(vertFonce)
+    }
+
+    entete.addView(TextView(this).apply {
+        text = "VIE ESPOIR MARKETING"
+        textSize = 23f
+        setTextColor(blanc)
+        typeface = Typeface.DEFAULT_BOLD
+    })
+
+    entete.addView(TextView(this).apply {
+        text = "ESPACE PROFESSIONNEL VENDEUR"
+        textSize = 13f
+        setTextColor(Color.LTGRAY)
+    })
+
+    entete.addView(TextView(this).apply {
+        text = "Bienvenue ${compte.nom}"
+        textSize = 18f
+        setTextColor(blanc)
+        typeface = Typeface.DEFAULT_BOLD
+        setPadding(0, dp(15), 0, 0)
+    })
+
+    root.addView(entete)
+
+    // ========================================================
+    // PROFIL VENDEUR
+    // ========================================================
+
+    val profil = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(dp(18), dp(18), dp(18), dp(18))
+        setBackgroundColor(blanc)
+        elevation = dp(4).toFloat()
+    }
+
+    profil.addView(TextView(this).apply {
+        text = "👤 MON PROFIL PROFESSIONNEL"
+        textSize = 17f
+        setTextColor(vertFonce)
+        typeface = Typeface.DEFAULT_BOLD
+    })
+
+    profil.addView(TextView(this).apply {
+        text = "Responsable : ${compte.nom}\n" +
+            "Boutique : ${compte.entreprise.ifBlank { "Non renseignée" }}\n" +
+            "Téléphone : ${compte.telephone.ifBlank { "Non renseigné" }}\n" +
+            "Email : ${compte.email}"
+        textSize = 14f
+        setTextColor(gris)
+        setPadding(0, dp(12), 0, 0)
+    })
+
+    root.addView(profil, LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.MATCH_PARENT,
+        LinearLayout.LayoutParams.WRAP_CONTENT
+    ).apply {
+        setMargins(dp(12), dp(12), dp(12), dp(8))
+    })
+
+    // ========================================================
+    // ABONNEMENT
+    // ========================================================
+
+    val jours = joursGratuitsRestants(compte)
+
+    root.addView(boutonVert(
+        if (jours > 0)
+            "🎁 Période gratuite : $jours jour(s) restant(s)"
+        else
+            "💎 Consulter mon abonnement"
+    ) {
+        afficherAbonnement()
+    })
+
+    // ========================================================
+    // TITRE DES MENUS
+    // ========================================================
+
+    root.addView(TextView(this).apply {
+        text = "GESTION DE MON ACTIVITÉ"
+        textSize = 18f
+        setTextColor(vertFonce)
+        typeface = Typeface.DEFAULT_BOLD
+        setPadding(dp(16), dp(18), dp(16), dp(10))
+    })
+
+    // ========================================================
+    // FABRICATION DES CARTES
+    // ========================================================
+
+    fun creerCarte(
+        icone: String,
+        nom: String,
+        description: String,
+        action: () -> Unit
+    ): LinearLayout {
+
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            typeface = Typeface.DEFAULT_BOLD
-            setBackgroundColor(Color.WHITE)
-            setPadding(24, 24, 24, 24)
+            setPadding(dp(8), dp(15), dp(8), dp(15))
+            setBackgroundColor(blanc)
+            elevation = dp(4).toFloat()
+            isClickable = true
+            isFocusable = true
+
+            addView(TextView(this@MainActivity).apply {
+                text = icone
+                textSize = 30f
+                gravity = Gravity.CENTER
+            })
+
+            addView(TextView(this@MainActivity).apply {
+                text = nom
+                textSize = 15f
+                setTextColor(vertFonce)
+                typeface = Typeface.DEFAULT_BOLD
+                gravity = Gravity.CENTER
+                setPadding(0, dp(8), 0, dp(5))
+            })
+
+            addView(TextView(this@MainActivity).apply {
+                text = description
+                textSize = 11f
+                setTextColor(gris)
+                gravity = Gravity.CENTER
+            })
+
+            setOnClickListener {
+                action()
+            }
+        }
+    }
+
+    // ========================================================
+    // DISPOSITION DE DEUX CARTES PAR LIGNE
+    // ========================================================
+
+    fun ajouterLigne(
+        gauche: LinearLayout,
+        droite: LinearLayout
+    ) {
+        val ligne = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+
+        ligne.addView(gauche, LinearLayout.LayoutParams(
+            0, dp(145), 1f
+        ).apply {
+            setMargins(dp(6), dp(6), dp(6), dp(6))
+        })
+
+        ligne.addView(droite, LinearLayout.LayoutParams(
+            0, dp(145), 1f
+        ).apply {
+            setMargins(dp(6), dp(6), dp(6), dp(6))
+        })
+
+        root.addView(ligne)
+    }
+
+    // ========================================================
+    // MENUS VENDEUR
+    // ========================================================
+
+    ajouterLigne(
+        creerCarte("➕", "Ajouter produit", "Publier un produit") {
+            afficherAjouterProduit()
+        },
+        creerCarte("🛍️", "Mes produits", "Gérer mes produits") {
+            afficherMesProduitsVendeur()
         }
     )
 
-    val jours = joursGratuitsRestants(compte)
-    if (jours > 0) {
-        root.addView(
-            texte("🎁 Il vous reste $jours jour(s) gratuit(s).", 16f, VERT).apply {
-                gravity = Gravity.CENTER
-                setPadding(12, 16, 12, 16)
-            }
-        )
-    } else {
-        root.addView(
-            texte("⚠️ Votre période gratuite est terminée.", 16f, Color.RED).apply {
-                gravity = Gravity.CENTER
-                setPadding(12, 16, 12, 16)
-            }
-        )
-    }
+    ajouterLigne(
+        creerCarte("📦", "Mes commandes", "Gérer les commandes") {
+            afficherCommandes()
+        },
+        creerCarte("📊", "Tableau de bord", "Voir mes résultats") {
+            afficherTableauDeBord()
+        }
+    )
 
-    root.addView(boutonVert("➕ Ajouter un produit") { afficherAjouterProduit() })
-    root.addView(bouton("🛍️ Mes produits") { afficherMesProduitsVendeur() })
-    root.addView(bouton("📦 Mes commandes") { afficherCommandes() })
-    root.addView(bouton("📊 Mon tableau de bord") { afficherTableauDeBord() })
-    root.addView(bouton("📦 Gestion du stock") { afficherStock() })
-    root.addView(bouton("💎 Mon abonnement") { afficherAbonnement() })
-    root.addView(bouton("🚪 Se déconnecter") { deconnecter() })
+    ajouterLigne(
+        creerCarte("🏬", "Gestion du stock", "Inventaire et quantités") {
+            afficherStock()
+        },
+        creerCarte("🚚", "Livraisons", "Suivre les livraisons") {
+            afficherLivraisonsVendeur()
+        }
+    )
+
+    ajouterLigne(
+        creerCarte("💰", "Mes finances", "Recettes et commissions") {
+            afficherFinancesVendeur()
+        },
+        creerCarte("💎", "Abonnement", "Gérer mon abonnement") {
+            afficherAbonnement()
+        }
+    )
+
+    ajouterLigne(
+        creerCarte("🔔", "Notifications", "Voir mes alertes") {
+            afficherNotificationsVendeur()
+        },
+        creerCarte("⚙️", "Mon profil", "Informations de ma boutique") {
+            afficherProfilVendeur()
+        }
+    )
+
+    // ========================================================
+    // DÉCONNEXION
+    // ========================================================
+
+    root.addView(bouton("🚪 SE DÉCONNECTER") {
+        deconnecter()
+    })
 
     setContentView(scroll(root))
 }
