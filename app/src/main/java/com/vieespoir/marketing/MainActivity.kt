@@ -6263,7 +6263,7 @@ private fun afficherFinancesVendeur() {
 
         ✅ Commandes livrées : $nombreLivrees
 
-        💰 Chiffre d'affaires des commandes livrées :${formaterNombre(chiffreAffaires)} FCFA
+        💰 Chiffre d'affaires des commandes livrées : ${formaterNombre(chiffreAffaires.toInt())} FCFA
 
         📊 Commandes en attente :
         ${mesCommandes.count { it.statut == "Nouvelle" }}
