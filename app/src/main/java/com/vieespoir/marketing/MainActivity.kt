@@ -6127,6 +6127,377 @@ private fun afficherCommandes() {
     )  
 }  
 
+
+// ========================================================
+// 1. LIVRAISONS VENDEUR
+// ========================================================
+
+private fun afficherLivraisonsVendeur() {
+
+    val compte = compteActuel()
+
+    if (compte == null) {
+        afficherConnexion()
+        return
+    }
+
+    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: compte.id
+
+    val liste = commandes.filter {
+        it.vendeurId == uid &&
+        it.statut in listOf(
+            "En préparation",
+            "En livraison",
+            "Livrée"
+        )
+    }
+
+    val root = layoutBase()
+
+    root.addView(titre("🚚 Mes livraisons"))
+
+    root.addView(texte(
+        "Total des livraisons : ${liste.size}",
+        17f,
+        VERT
+    ))
+
+    if (liste.isEmpty()) {
+        root.addView(texte(
+            "📭 Aucune livraison pour le moment.",
+            17f
+        ))
+    }
+
+    for (commande in liste) {
+
+        val bloc = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(20, 20, 20, 20)
+            setBackgroundColor(Color.WHITE)
+        }
+
+        bloc.addView(texte(
+            """
+            📦 Commande #${commande.id}
+            👤 Client : ${commande.client}
+            📞 Téléphone : ${commande.telephone}
+            🛍️ Produit : ${commande.produit}
+            💰 Montant : ${commande.montant} FCFA
+            📌 Statut : ${commande.statut}
+            """.trimIndent(),
+            16f
+        ))
+
+        if (commande.statut == "En préparation") {
+            bloc.addView(boutonVert("🚚 Confirmer départ en livraison") {
+                commande.statut = "En livraison"
+                sauvegarderCommandes()
+                afficherLivraisonsVendeur()
+            })
+        }
+
+        if (commande.statut == "En livraison") {
+            bloc.addView(boutonVert("✅ Confirmer livraison") {
+                commande.statut = "Livrée"
+                sauvegarderCommandes()
+
+                enregistrerEvenement(
+                    "Commande #${commande.id} livrée"
+                )
+
+                afficherLivraisonsVendeur()
+            })
+        }
+
+        root.addView(bloc)
+    }
+
+    root.addView(bouton("⬅️ Retour") {
+        afficherEspaceVendeur()
+    })
+
+    setContentView(scroll(root))
+}
+
+
+// ========================================================
+// 2. FINANCES VENDEUR
+// ========================================================
+
+private fun afficherFinancesVendeur() {
+
+    val compte = compteActuel()
+
+    if (compte == null) {
+        afficherConnexion()
+        return
+    }
+
+    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: compte.id
+
+    val mesCommandes = commandes.filter {
+        it.vendeurId == uid
+    }
+
+    val commandesLivrees = mesCommandes.filter {
+        it.statut == "Livrée"
+    }
+
+    val chiffreAffaires = commandesLivrees.sumOf {
+        it.montant.toLongOrNull() ?: 0L
+    }
+
+    val nombreCommandes = mesCommandes.size
+    val nombreLivrees = commandesLivrees.size
+
+    val root = layoutBase()
+
+    root.addView(titre("💰 Mes finances"))
+
+    root.addView(texte(
+        """
+        👤 Vendeur : ${compte.nom}
+
+        📦 Total commandes : $nombreCommandes
+
+        ✅ Commandes livrées : $nombreLivrees
+
+        💰 Chiffre d'affaires des commandes livrées :
+        ${formaterNombre(chiffreAffaires)} FCFA
+
+        📊 Commandes en attente :
+        ${mesCommandes.count { it.statut == "Nouvelle" }}
+
+        🚚 En livraison :
+        ${mesCommandes.count { it.statut == "En livraison" }}
+
+        ❌ Commandes annulées :
+        ${mesCommandes.count { it.statut == "Annulée" }}
+        """.trimIndent(),
+        17f,
+        VERT
+    ).apply {
+        setBackgroundColor(Color.WHITE)
+        setPadding(20, 25, 20, 25)
+    })
+
+    root.addView(texte(
+        "Le chiffre d'affaires affiché correspond uniquement aux commandes marquées Livrée. Les commissions ne sont pas encore déduites.",
+        14f,
+        Color.GRAY
+    ))
+
+    root.addView(bouton("🔄 Actualiser") {
+        afficherFinancesVendeur()
+    })
+
+    root.addView(bouton("⬅️ Retour") {
+        afficherEspaceVendeur()
+    })
+
+    setContentView(scroll(root))
+}
+
+
+// ========================================================
+// 3. NOTIFICATIONS VENDEUR
+// ========================================================
+
+private fun afficherNotificationsVendeur() {
+
+    val compte = compteActuel()
+
+    if (compte == null) {
+        afficherConnexion()
+        return
+    }
+
+    val uid = FirebaseAuth.getInstance().currentUser?.uid
+
+    if (uid.isNullOrBlank()) {
+        afficherConnexion()
+        return
+    }
+
+    val root = layoutBase()
+
+    root.addView(titre("🔔 Mes notifications"))
+
+    root.addView(texte(
+        "👤 ${compte.nom}",
+        17f,
+        VERT
+    ))
+
+    root.addView(texte(
+        """
+        📦 Commandes : ${commandes.count {
+            it.vendeurId == uid && it.statut == "Nouvelle"
+        }} nouvelle(s) commande(s).
+
+        🚚 Livraisons : ${commandes.count {
+            it.vendeurId == uid && it.statut == "En livraison"
+        }} livraison(s) en cours.
+
+        💎 Abonnement : ${
+            if (compte.abonnementActif) "Actif" else "Non actif"
+        }
+        """.trimIndent(),
+        16f
+    ))
+
+    root.addView(texte(
+        "Les notifications détaillées nécessitent le raccordement à la collection de notifications de ton projet Firebase.",
+        14f,
+        Color.GRAY
+    ))
+
+    root.addView(boutonVert("🔄 Actualiser") {
+        afficherNotificationsVendeur()
+    })
+
+    root.addView(bouton("⬅️ Retour") {
+        afficherEspaceVendeur()
+    })
+
+    setContentView(scroll(root))
+}
+
+
+// ========================================================
+// 4. PROFIL VENDEUR
+// ========================================================
+
+private fun afficherProfilVendeur() {
+
+    val compte = compteActuel()
+
+    if (compte == null) {
+        afficherConnexion()
+        return
+    }
+
+    val root = layoutBase()
+
+    root.addView(titre("⚙️ Mon profil vendeur"))
+
+    root.addView(texte(
+        """
+        👤 Nom : ${compte.nom}
+
+        🏢 Entreprise : ${compte.entreprise}
+
+        📧 Email : ${compte.email}
+
+        📞 Téléphone : ${compte.telephone}
+
+        📍 Adresse : ${compte.adresse}
+
+        💎 Abonnement : ${
+            if (compte.abonnementActif) "Actif" else "Inactif"
+        }
+        """.trimIndent(),
+        17f,
+        VERT
+    ).apply {
+        setBackgroundColor(Color.WHITE)
+        setPadding(20, 20, 20, 20)
+    })
+
+    root.addView(boutonVert("✏️ Modifier mes informations") {
+
+        val formulaire = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(20, 10, 20, 10)
+        }
+
+        val nom = android.widget.EditText(this).apply {
+            hint = "Nom"
+            setText(compte.nom)
+        }
+
+        val entreprise = android.widget.EditText(this).apply {
+            hint = "Entreprise"
+            setText(compte.entreprise)
+        }
+
+        val email = android.widget.EditText(this).apply {
+            hint = "Email"
+            setText(compte.email)
+        }
+
+        val telephone = android.widget.EditText(this).apply {
+            hint = "Téléphone"
+            setText(compte.telephone)
+        }
+
+        val adresse = android.widget.EditText(this).apply {
+            hint = "Adresse"
+            setText(compte.adresse)
+        }
+
+        formulaire.addView(nom)
+        formulaire.addView(entreprise)
+        formulaire.addView(email)
+        formulaire.addView(telephone)
+        formulaire.addView(adresse)
+
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Modifier mon profil")
+            .setView(formulaire)
+            .setNegativeButton("Annuler", null)
+            .setPositiveButton("Enregistrer") { _, _ ->
+
+                val nouveauNom = nom.text.toString().trim()
+                val nouvelleEntreprise = entreprise.text.toString().trim()
+                val nouvelEmail = email.text.toString().trim()
+                val nouveauTelephone = telephone.text.toString().trim()
+                val nouvelleAdresse = adresse.text.toString().trim()
+
+                if (nouveauNom.isEmpty() || nouvelEmail.isEmpty()) {
+                    toast("Le nom et l'email sont obligatoires")
+                    return@setPositiveButton
+                }
+
+                val donnees = hashMapOf<String, Any>(
+                    "nom" to nouveauNom,
+                    "entreprise" to nouvelleEntreprise,
+                    "email" to nouvelEmail,
+                    "telephone" to nouveauTelephone,
+                    "adresse" to nouvelleAdresse
+                )
+
+                FirebaseFirestore.getInstance()
+                    .collection("Comptes")
+                    .document(compte.id)
+                    .update(donnees as Map<String, Any>)
+                    .addOnSuccessListener {
+
+                        compte.nom = nouveauNom
+                        compte.entreprise = nouvelleEntreprise
+                        compte.email = nouvelEmail
+                        compte.telephone = nouveauTelephone
+                        compte.adresse = nouvelleAdresse
+
+                        toast("Profil mis à jour")
+
+                        afficherProfilVendeur()
+                    }
+                    .addOnFailureListener { erreur ->
+                        toast("Erreur : ${erreur.localizedMessage}")
+                    }
+            }
+            .show()
+    })
+
+    root.addView(bouton("⬅️ Retour") {
+        afficherEspaceVendeur()
+    })
+
+    setContentView(scroll(root))
+}
+
 // ========================================================  
 // TABLEAU DE BORD  
 // ========================================================  
