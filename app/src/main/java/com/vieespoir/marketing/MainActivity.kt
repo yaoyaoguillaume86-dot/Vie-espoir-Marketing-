@@ -5762,6 +5762,118 @@ private fun afficherPaiementAbonnement(mois: Int) {
 }
 
 
+private fun activerAbonnementVendeur(
+    demandeId: String,
+    vendeurId: String,
+    mois: Int
+) {
+    val uidAdmin = "1kpZWN50IHhvz4y4OxS60MVjckx1"
+    val utilisateur = FirebaseAuth.getInstance().currentUser
+
+    if (utilisateur == null || utilisateur.uid != uidAdmin) {
+        toast("Accès réservé à l'administrateur")
+        return
+    }
+
+    if (demandeId.isBlank() || vendeurId.isBlank() || mois !in 1..3) {
+        toast("Informations d'abonnement invalides")
+        return
+    }
+
+    val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+
+    val demandeRef = db.collection("PaiementsAbonnement")
+        .document(demandeId)
+
+    val compteRef = db.collection("Comptes")
+        .document(vendeurId)
+
+    val dateDebut = System.currentTimeMillis()
+
+    val calendrier = java.util.Calendar.getInstance().apply {
+        timeInMillis = dateDebut
+        add(java.util.Calendar.MONTH, mois)
+    }
+
+    val dateFin = calendrier.timeInMillis
+    val montantAttendu = mois * 5000L
+
+    db.runTransaction { transaction ->
+
+        val demande = transaction.get(demandeRef)
+        val compte = transaction.get(compteRef)
+
+        if (!demande.exists()) {
+            throw Exception("Demande d'abonnement introuvable")
+        }
+
+        if (!compte.exists()) {
+            throw Exception("Compte vendeur introuvable")
+        }
+
+        val statut = demande.getString("statut")
+
+        if (statut != "en_attente") {
+            throw Exception("Cette demande a déjà été traitée")
+        }
+
+        val idVendeurDemande = demande.getString("vendeurId")
+
+        if (idVendeurDemande != vendeurId) {
+            throw Exception("Identifiant vendeur incorrect")
+        }
+
+        val duree = (demande.get("formuleMois") as? Number)?.toInt()
+
+        if (duree != mois) {
+            throw Exception("Durée d'abonnement incorrecte")
+        }
+
+        val montant = (demande.get("montant") as? Number)?.toLong()
+
+        if (montant != montantAttendu) {
+            throw Exception("Montant du paiement incorrect")
+        }
+
+        transaction.update(
+            compteRef,
+            mapOf(
+                "abonnementActif" to true,
+                "dateDebutAbonnement" to dateDebut,
+                "dateFinAbonnement" to dateFin,
+                "formuleAbonnement" to mois
+            )
+        )
+
+        transaction.update(
+            demandeRef,
+            mapOf(
+                "statut" to "valide",
+                "dateValidation" to
+                    com.google.firebase.firestore.FieldValue.serverTimestamp()
+            )
+        )
+
+        null
+
+    }.addOnSuccessListener {
+
+        toast("Abonnement vendeur activé avec succès !")
+
+        afficherDemandesAbonnementAdmin()
+
+    }.addOnFailureListener { erreur ->
+
+        android.util.Log.e(
+            "ACTIVATION_ABONNEMENT",
+            "Erreur activation",
+            erreur
+        )
+
+        toast("Échec activation : ${erreur.localizedMessage}")
+    }
+}
+
 // ENREGISTREMENT DE LA DEMANDE D'ABONNEMENT
 
 private fun enregistrerDemandeAbonnement(
